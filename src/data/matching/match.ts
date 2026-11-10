@@ -1,9 +1,12 @@
 import type { Comparable } from "../types.js";
 import type { MlProduct } from "../ml/catalog.js";
 import {
+  extractCodeSuffixWords,
   extractModelCodes,
   extractVariants,
   hasAccessoryWords,
+  hasBundleWords,
+  hasConditionWords,
   normalizeBrand,
   normalizeWords,
 } from "./normalize.js";
@@ -41,6 +44,23 @@ function brandsEqual(a: Comparable, b: Comparable): boolean {
   return false;
 }
 
+function brandOf(a: Comparable, b: Comparable): string | null {
+  const m = a.marca ?? b.marca;
+  return m ? normalizeBrand(m) : null;
+}
+
+// "para <brand>" or "compatible con <brand>": the title is for owners of the robot, not the robot.
+function isForBrand(title: string, brand: string | null): boolean {
+  if (brand === null) return false;
+  const words = normalizeWords(title);
+  const needle = normalizeWords(brand);
+  if (needle.length === 0) return false;
+  const at = words.findIndex((_, i) => needle.every((n, k) => words[i + k] === n));
+  if (at <= 0) return false;
+  const before = words.slice(0, at);
+  return before.includes("PARA") || before.some((w, i) => w === "COMPATIBLE" && before[i + 1] === "CON");
+}
+
 function mlCodes(c: Comparable): string[] {
   if (c.modelo) {
     const fromModel = extractModelCodes(c.modelo);
@@ -71,10 +91,23 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
   const variantsOther = extractVariants(other.titulo);
 
   let match: Match | null = null;
+  // First applicable reason to lower to dudosa; guards never raise confidence.
+  let lowered: { motivo: string; extra: Record<string, unknown> } | null = null;
+  const lower = (motivo: string, extra: Record<string, unknown> = {}) => {
+    lowered ??= { motivo, extra };
+  };
 
   if (gtinA !== null && gtinB !== null) {
     if (gtinA !== gtinB) return null;
     match = { confianza: "alta", regla: "gtin", evidencia: { gtin: gtinA } };
+    // Cross-check: a shared GTIN must not contradict brand or model code.
+    const brandMl = ml.marca ? normalizeBrand(ml.marca) : null;
+    const brandOther = other.marca ? normalizeBrand(other.marca) : null;
+    if (brandMl !== null && brandOther !== null && brandMl !== brandOther) {
+      lower("marca_conflicto", { marca_ml: brandMl, marca_otra: brandOther });
+    } else if (codesMl.length > 0 && codesOther.length > 0 && !codesMl.some((c) => codesOther.includes(c))) {
+      lower("codigo_conflicto", { codigos_ml: codesMl, codigos_otra: codesOther });
+    }
   } else if (brandsEqual(ml, other)) {
     const evidencia = { codigos_ml: codesMl, codigos_otra: codesOther, variantes_ml: variantsMl, variantes_otra: variantsOther };
     if (codesMl.length === 1 && codesOther.length === 1 && codesMl[0] === codesOther[0] && sameList(variantsMl, variantsOther)) {
@@ -86,21 +119,32 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
   if (match === null) return null;
 
   // Guards only ever lower a match to dudosa.
-  const accML = hasAccessoryWords(ml.titulo);
-  const accOther = hasAccessoryWords(other.titulo);
-  if (accML !== accOther) {
-    return { ...match, confianza: "dudosa", motivo: "accesorio", evidencia: { ...match.evidencia, accesorio_en: accML ? "ml" : "otra" } };
+  const accML = hasAccessoryWords(ml.titulo) || isForBrand(ml.titulo, brandOf(ml, other));
+  const accOther = hasAccessoryWords(other.titulo) || isForBrand(other.titulo, brandOf(ml, other));
+  if (accML || accOther) lower("accesorio", { accesorio_en: accML && accOther ? "ambas" : accML ? "ml" : "otra" });
+
+  if (hasConditionWords(ml.titulo) || hasConditionWords(other.titulo)) lower("condicion");
+
+  if (hasBundleWords(ml.titulo) !== hasBundleWords(other.titulo)) lower("bundle");
+
+  if (match.regla !== "gtin") {
+    const sufML = extractCodeSuffixWords(ml.titulo);
+    const sufOther = extractCodeSuffixWords(other.titulo);
+    const diff = [...sufML.filter((w) => !sufOther.includes(w)), ...sufOther.filter((w) => !sufML.includes(w))];
+    if (diff.length > 0) lower("sufijo_modelo", { sufijos: diff });
   }
+
   const pa = ml.precio_ars;
   const pb = other.precio_ars;
   if (pa !== null && pb !== null) {
     const lo = Math.min(pa, pb);
     const hi = Math.max(pa, pb);
-    if (lo <= 0 || hi / lo > PRICE_RATIO_LIMIT) {
-      return { ...match, confianza: "dudosa", motivo: "cociente_precio", evidencia: { ...match.evidencia, precio_ml: pa, precio_otra: pb } };
-    }
+    if (lo <= 0 || hi / lo > PRICE_RATIO_LIMIT) lower("cociente_precio", { precio_ml: pa, precio_otra: pb });
   }
-  return match;
+
+  if (lowered === null) return match;
+  const { motivo, extra } = lowered as { motivo: string; extra: Record<string, unknown> };
+  return { ...match, confianza: "dudosa", motivo, evidencia: { ...match.evidencia, ...extra } };
 }
 
 export function pickCatalogProduct(
