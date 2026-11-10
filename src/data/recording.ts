@@ -21,6 +21,13 @@ export function sanitizeJson(value: unknown): unknown {
   return value;
 }
 
+/** Redacts `"apiKey":"…"` values and Google-style `AIza…` tokens embedded in non-JSON bodies. */
+export function redactEmbeddedKeys(text: string): string {
+  return text
+    .replace(/("apiKey"\s*:\s*")[^"]*(")/g, "$1REDACTED$2")
+    .replace(/AIza[0-9A-Za-z_-]{20,}/g, "REDACTED");
+}
+
 function urlOf(input: Parameters<typeof fetch>[0]): string {
   return typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 }
@@ -53,7 +60,7 @@ export function createRecordingFetch(inner: typeof fetch, dir: string): typeof f
     const isJson = type.includes("json");
     const text = await copy.text();
     const file = `${createHash("sha1").update(url).digest("hex")}.${isJson ? "json" : "html"}`;
-    let body = text;
+    let body = isJson ? text : redactEmbeddedKeys(text);
     if (isJson) {
       try {
         body = `${JSON.stringify(sanitizeJson(JSON.parse(text)), null, 2)}\n`;

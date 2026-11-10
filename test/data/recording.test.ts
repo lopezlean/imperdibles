@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createRecordingFetch, createReplayFetch, sanitizeJson } from "../../src/data/recording.js";
+import { createRecordingFetch, createReplayFetch, redactEmbeddedKeys, sanitizeJson } from "../../src/data/recording.js";
 
 const dirs: string[] = [];
 function tmp(): string {
@@ -69,7 +69,27 @@ describe("sanitizeJson", () => {
   });
 });
 
+describe("redactEmbeddedKeys", () => {
+  it("replaces apiKey values and bare AIza tokens", () => {
+    const out = redactEmbeddedKeys('{"googleMaps":{"apiKey":"AIzaSyFAKEFAKEFAKE"},"x":"AIzaSyABCDEFGHIJKLMNOPQRSTUV_-1"}');
+    expect(out).toBe('{"googleMaps":{"apiKey":"REDACTED"},"x":"REDACTED"}');
+  });
+});
+
 describe("recording and replay", () => {
+  it("stores html bodies with embedded API keys redacted", async () => {
+    const dir = tmp();
+    const fake: typeof fetch = async () =>
+      new Response('<html><script>{"apiKey":"AIzaSyFAKEFAKEFAKE"}</script></html>', {
+        headers: { "content-type": "text/html" },
+      });
+    await createRecordingFetch(fake, dir)("https://www.example.test/k");
+    const res = await createReplayFetch(dir)("https://www.example.test/k");
+    const text = await res.text();
+    expect(text).toContain('"apiKey":"REDACTED"');
+    expect(text).not.toContain("AIza");
+  });
+
   it("replays identical status, body and ratelimit headers", async () => {
     const dir = tmp();
     const rec = createRecordingFetch(upstream, dir);
