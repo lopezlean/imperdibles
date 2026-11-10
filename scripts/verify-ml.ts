@@ -1,0 +1,69 @@
+import "dotenv/config";
+import { createTokenProvider, MlAuthError } from "../src/data/ml/auth.js";
+import { createD1HttpClient } from "../src/shared/db/d1-http-client.js";
+import { DATA_ENV_KEYS, loadLocalEnv } from "../src/shared/env.js";
+
+const ML_API = "https://api.mercadolibre.com";
+const LIST_PRICE_FIELDS = ["original_price", "regular_amount", "base_price"];
+const args = process.argv.slice(2);
+const refreshMode = args.includes("--refresh");
+const query = args.find((a) => !a.startsWith("--"));
+
+function fieldNames(value: unknown, into = new Set<string>(), prefix = ""): Set<string> {
+  if (Array.isArray(value)) value.forEach((v) => fieldNames(v, into, prefix));
+  else if (value !== null && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) {
+      into.add(prefix + k);
+      fieldNames(v, into, `${prefix}${k}.`);
+    }
+  }
+  return into;
+}
+
+try {
+  const env = loadLocalEnv(process.env, DATA_ENV_KEYS);
+  const db = createD1HttpClient({ accountId: env.cfAccountId, databaseId: env.d1DatabaseId, apiToken: env.cfApiToken });
+  const tokens = createTokenProvider({ db, fetch, env, now: () => new Date() });
+
+  if (refreshMode) {
+    const read = async () =>
+      (await db.all<{ refresh_token: string }>("SELECT refresh_token FROM tokens_ml WHERE id = 1"))[0]?.refresh_token;
+    const before = await read();
+    await tokens.forceRefresh();
+    const after = await read();
+    console.log(`refresh_token changed after refresh: ${before !== after ? "yes" : "no"}`);
+  } else if (query) {
+    const token = await tokens.get();
+    const get = async (path: string) => {
+      const res = await fetch(`${ML_API}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+      const limitHeaders = [...res.headers].filter(([n]) => /ratelimit|retry/i.test(n)).map(([n, v]) => `${n}: ${v}`);
+      console.log(`GET ${path.split("?")[0]} -> HTTP ${res.status}`);
+      console.log(`  headers ratelimit/retry: ${limitHeaders.length ? limitHeaders.join("; ") : "none"}`);
+      return res.ok ? ((await res.json()) as unknown) : undefined;
+    };
+    const search = (await get(`/products/search?site_id=MLA&status=active&q=${encodeURIComponent(query)}`)) as
+      | { results?: { id?: string }[] }
+      | undefined;
+    const first = search?.results?.[0]?.id;
+    if (!first) {
+      console.error("no product found, nothing else to check");
+      process.exitCode = 1;
+    } else {
+      await get(`/products/${first}`);
+      const items = await get(`/products/${first}/items`);
+      const offers = (items as { results?: unknown[] } | unknown[] | undefined);
+      const list = Array.isArray(offers) ? offers : (offers?.results ?? []);
+      const names = fieldNames(list);
+      console.log(`offer count: ${list.length}`);
+      console.log(`offer fields: ${[...names].sort().join(", ") || "none"}`);
+      for (const f of LIST_PRICE_FIELDS) console.log(`  ${f}: ${[...names].some((n) => n.split(".").pop() === f) ? "present" : "absent"}`);
+    }
+  } else {
+    console.error('Uso: pnpm verify:ml "<consulta>" | pnpm verify:ml --refresh');
+    process.exitCode = 1;
+  }
+} catch (error) {
+  // Only the reason or the variable names are printed, never token values.
+  console.error(error instanceof MlAuthError ? error.reason : error instanceof Error ? `${error.constructor.name}: ${error.message}` : "error");
+  process.exitCode = 1;
+}
