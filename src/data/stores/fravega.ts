@@ -58,7 +58,11 @@ const productSlug = (path: string): string => path.replace(/^\/p\//, "").replace
 export function parseFravegaListing(html: string, observedAt: string): ListingParse {
   const $ = cheerio.load(html);
   const articles = $("article").toArray();
-  if (articles.length === 0) throw formatError("No <article> found in the listing");
+  if (articles.length === 0) {
+    // A legitimate empty search carries the store's explicit marker; anything else is a format change.
+    if ($('[data-test-id="results-not-found"]').length > 0) return { listings: [], rejected: [] };
+    throw formatError("No <article> found in the listing");
+  }
   const enrichment = readEnrichment(html);
 
   const listings: Listing[] = [];

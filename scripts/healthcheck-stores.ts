@@ -21,6 +21,7 @@ for (const store of STORES) {
     const { listings, rejected } = store.parse(await res.text(), artIso(new Date()));
     const reasons = new Map<string, number>();
     for (const r of rejected) reasons.set(r.reason, (reasons.get(r.reason) ?? 0) + 1);
+    // An empty result is a legitimate zero-hit search (the parser only returns it for the store's no-results marker).
     const detail = [...reasons].map(([reason, n]) => `${reason}: ${n}`).join(", ");
     console.log(`${store.id}: ${listings.length} listings, ${rejected.length} rejected${detail ? ` (${detail})` : ""}`);
   } catch (error) {

@@ -153,6 +153,14 @@ describe("parseFravegaListing format changes", () => {
     expect(() => parseFravegaListing("<html></html>", T)).toThrow(StoreFormatError);
   });
 
+  it("treats the recorded no-results page as an empty parse, not a format change", () => {
+    expect(parseFravegaListing(read("listing-no-results.html"), T)).toEqual({ listings: [], rejected: [] });
+  });
+
+  it("still throws on a page with neither articles nor the no-results marker", () => {
+    expect(() => parseFravegaListing(read("listing-broken-derived.html"), T)).toThrow(StoreFormatError);
+  });
+
   it("throws when no article has a readable price", () => {
     expect(() => parseFravegaListing(page(article({ price: "Consultar" })), T)).toThrow(StoreFormatError);
   });
@@ -179,6 +187,13 @@ describe("createFravegaAdapter", () => {
     expect(get.mock.calls[0]![0]).toBe("https://www.fravega.com/l/?keyword=aspiradora%20robot");
     expect(listings.length).toBe(2);
     expect(listings[0]!.observado_en).toBe("2026-11-12T06:00:00-03:00");
+  });
+
+  it("returns [] for a no-results page and does not call onRejected", async () => {
+    const onRejected = vi.fn();
+    const { adapter } = setup(new Response(read("listing-no-results.html"), { status: 200 }), onRejected);
+    await expect(adapter.search("zzqxv imposible 99817")).resolves.toEqual([]);
+    expect(onRejected).not.toHaveBeenCalled();
   });
 
   it.each([404, 503])("rejects with UpstreamError on %i", async (status) => {
