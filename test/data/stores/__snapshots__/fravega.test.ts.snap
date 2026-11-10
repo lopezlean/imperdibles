@@ -1,0 +1,97 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseFravegaListing on the recorded listing > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "condicion": null,
+      "gtin": "7796962017233",
+      "marca": "Philco",
+      "modelo": null,
+      "observado_en": "2026-11-12T06:00:00-03:00",
+      "precio_ars": 163999,
+      "ref_externa": "/p/aspiradora-robot-trapeadora-philco-limpieza-sense-antichoque-con-app-phra26n-60505/",
+      "tienda": "fravega",
+      "titulo": "Aspiradora Robot Trapeadora Philco Limpieza SENSE Antichoque Con App PHRA26N",
+      "url": "https://www.fravega.com/p/aspiradora-robot-trapeadora-philco-limpieza-sense-antichoque-con-app-phra26n-60505/",
+      "vendedor": "Frávega",
+    },
+    {
+      "condicion": null,
+      "gtin": "885155035226",
+      "marca": "Irobot",
+      "modelo": null,
+      "observado_en": "2026-11-12T06:00:00-03:00",
+      "precio_ars": 1199999,
+      "ref_externa": "/p/aspiradora-irobot-m611330-braava-jet-m6-black-60346/",
+      "tienda": "fravega",
+      "titulo": "Aspiradora iRobot M611330 Braava Jet M6 Black",
+      "url": "https://www.fravega.com/p/aspiradora-irobot-m611330-braava-jet-m6-black-60346/",
+      "vendedor": "Frávega",
+    },
+    {
+      "condicion": null,
+      "gtin": "7798081281502",
+      "marca": "Smartlife",
+      "modelo": null,
+      "observado_en": "2026-11-12T06:00:00-03:00",
+      "precio_ars": 329999,
+      "ref_externa": "/p/aspiradora-robot-smartlife-con-sensor-laser-sl-rvcl050-60646/",
+      "tienda": "fravega",
+      "titulo": "Aspiradora Robot Smartlife con Sensor Láser SL-RVCL050",
+      "url": "https://www.fravega.com/p/aspiradora-robot-smartlife-con-sensor-laser-sl-rvcl050-60646/",
+      "vendedor": "Frávega",
+    },
+  ],
+  "rejected": [
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-trapeadora-negra-gadnic-v51-mapeo-inteligente-autonomia-extendida-990266122/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-gadnic-potente-succion-sensor-anti-caidas-filtro-hepa-lavable-deposito-extraible-990256555/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-overtech-ov-r10-22470679/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-xiaomi-vacuum-s40c-e101-blanco-23087648/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-electrolux-4-1-wi-fi-experience-mapeo-inteligente-y-base-autolimpieza-erb80-990277197/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-xiaomi-vacuum-h50-pro-succion-max-15000-blanco-22857131/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-inteligente-irobot-roomba-692-r692020-990303641/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-gadnic-laser-5000-pa-mopa-app-inteligente-descarga-automatica-bateria-3200-mah-120-min-de-usoaspiradora-robot-gadnic-laser-5000-pa-mopa-app-inteligente-descarga-automatica-bateria-3200-mah-120-min-de-uso-990152686/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-xiaomi-vacuum-h50-10000pa-blanco-blanco-23002423/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-trapeadora-smart-laser-suono-wifi-app-roller-brush-4-modos-programacion-horaria-990224082/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-trapeadora-blanca-gadnic-v51-mapeo-inteligente-autonomia-extendida-990266125/",
+    },
+    {
+      "reason": "third_party_seller",
+      "ref_externa": "/p/aspiradora-robot-midow-wifi-smart-trapeador-3-modos-limpieza-990229090/",
+    },
+  ],
+}
+`;
