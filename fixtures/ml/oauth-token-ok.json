@@ -1,0 +1,8 @@
+{
+  "access_token": "APP_USR-fake-access-token-0001",
+  "token_type": "Bearer",
+  "expires_in": 21600,
+  "scope": "offline_access read",
+  "user_id": 123456789,
+  "refresh_token": "TG-fake-refresh-token-0001"
+}
