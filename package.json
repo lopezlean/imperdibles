@@ -1,0 +1,57 @@
+{
+  "name": "imperdibles",
+  "version": "1.0.0",
+  "description": "Daily selection of products where Mercado Libre is at least 15% cheaper than other stores.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "imperdibles": "bin/imperdibles"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "imperdibles": "tsx src/local/cli.ts",
+    "ml:authorize": "tsx scripts/ml-authorize.ts",
+    "fixtures:record": "tsx scripts/record-fixtures.ts",
+    "verify:ml": "tsx scripts/verify-ml.ts",
+    "healthcheck": "tsx scripts/healthcheck-stores.ts",
+    "verify:telegram": "tsx scripts/verify-telegram-file-id.ts",
+    "card:preview": "tsx scripts/card-preview.ts",
+    "telegram:set-webhook": "tsx scripts/set-webhook.ts",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply imperdibles --local",
+    "db:migrate:remote": "wrangler d1 migrations apply imperdibles --remote"
+  },
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.12.4",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "workerd"
+    ]
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "cheerio": "^1.2.0",
+    "dotenv": "^18.0.10",
+    "satori": "^0.63.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261110.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.6",
+    "better-sqlite3": "^13.0.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.160.0"
+  }
+}

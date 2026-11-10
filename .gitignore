@@ -1,2 +1,9 @@
 spike/.env
 spike/.token
+node_modules/
+.env
+.dev.vars
+var/
+.wrangler/
+.atl/
+.superpowers/

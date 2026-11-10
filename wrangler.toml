@@ -1,0 +1,9 @@
+name = "imperdibles"
+main = "src/worker/index.ts"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "imperdibles"
+database_id = ""
+migrations_dir = "migrations"
