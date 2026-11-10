@@ -18,3 +18,15 @@ WORKER_BASE_URL=
 ```
 
 `ML_REDIRECT_URI` takes the value `https://imperdibles.ar`.
+
+## Owner step: create the D1 database
+
+`wrangler.toml` holds the placeholder `REPLACE_WITH_D1_DATABASE_ID`. Run once, then paste the printed `database_id` into `wrangler.toml` and into `D1_DATABASE_ID`:
+
+```
+pnpm wrangler login
+pnpm wrangler d1 create imperdibles
+pnpm db:migrate:remote
+```
+
+Expected: wrangler reports `0001_initial.sql` and `0002_seed.sql` applied.
