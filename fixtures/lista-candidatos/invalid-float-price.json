@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "corrida_id": "2026-11-10-aspiradoras-robot-060000",
+  "fecha": "2026-11-10",
+  "categoria": "aspiradoras-robot",
+  "umbral_pct": 15,
+  "modelos_comparados": 9,
+  "candidatos": [
+    {
+      "candidato_id": "2026-11-10-aspiradoras-robot-060000:SMARTLIFE:RVCL050",
+      "modelo_id": "SMARTLIFE:RVCL050",
+      "marca": "Smartlife",
+      "titulo": "Smartlife RVCL050, mapeo láser",
+      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100001-F.jpg",
+      "ml": {
+        "tienda": "ml",
+        "titulo_listado": "Smartlife RVCL050, mapeo láser",
+        "url": "https://www.mercadolibre.com.ar/p/MLA45100001",
+        "precio_ars": 329999.5,
+        "observado_en": "2026-11-10T06:12:00-03:00",
+        "ref_externa": "MLA2100000001",
+        "vendedor": "Tienda oficial",
+        "ml_product_id": "MLA45100001",
+        "ml_seller_id": "100000001"
+      },
+      "otras": [
+        {
+          "tienda": "fravega",
+          "titulo_listado": "Smartlife RVCL050, mapeo láser",
+          "url": "https://www.fravega.com/p/smartlife-rvcl050-mapeo-laser",
+          "precio_ars": 329999,
+          "observado_en": "2026-11-10T06:14:00-03:00",
+          "ref_externa": "RVCL050",
+          "vendedor": null
+        }
+      ],
+      "diferencia_ars": 65300,
+      "diferencia_pct": 19.78793875132955,
+      "confianza": "alta",
+      "regla_emparejado": "marca_codigo_variante"
+    },
+    {
+      "candidato_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:S40C",
+      "modelo_id": "XIAOMI:S40C",
+      "marca": "Xiaomi",
+      "titulo": "Xiaomi Robot Vacuum S40C",
+      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100002-F.jpg",
+      "ml": {
+        "tienda": "ml",
+        "titulo_listado": "Xiaomi Robot Vacuum S40C",
+        "url": "https://www.mercadolibre.com.ar/p/MLA45100002",
+        "precio_ars": 329999,
+        "observado_en": "2026-11-10T06:12:00-03:00",
+        "ref_externa": "MLA2100000002",
+        "vendedor": "Tienda oficial",
+        "ml_product_id": "MLA45100002",
+        "ml_seller_id": "100000002"
+      },
+      "otras": [
+        {
+          "tienda": "fravega",
+          "titulo_listado": "Xiaomi Robot Vacuum S40C",
+          "url": "https://www.fravega.com/p/xiaomi-robot-vacuum-s40c",
+          "precio_ars": 399999,
+          "observado_en": "2026-11-10T06:14:00-03:00",
+          "ref_externa": "XIA-S40C",
+          "vendedor": null
+        }
+      ],
+      "diferencia_ars": 70000,
+      "diferencia_pct": 17.500043750109374,
+      "confianza": "alta",
+      "regla_emparejado": "marca_codigo_variante"
+    },
+    {
+      "candidato_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:H50PRO",
+      "modelo_id": "XIAOMI:H50PRO",
+      "marca": "Xiaomi",
+      "titulo": "Xiaomi Robot Vacuum H50 Pro",
+      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100003-F.jpg",
+      "ml": {
+        "tienda": "ml",
+        "titulo_listado": "Xiaomi Robot Vacuum H50 Pro",
+        "url": "https://www.mercadolibre.com.ar/p/MLA45100003",
+        "precio_ars": 994899,
+        "observado_en": "2026-11-10T06:12:00-03:00",
+        "ref_externa": "MLA2100000003",
+        "vendedor": "Tienda oficial",
+        "ml_product_id": "MLA45100003",
+        "ml_seller_id": "100000003"
+      },
+      "otras": [
+        {
+          "tienda": "fravega",
+          "titulo_listado": "Xiaomi Robot Vacuum H50 Pro",
+          "url": "https://www.fravega.com/p/xiaomi-robot-vacuum-h50-pro",
+          "precio_ars": 1199999,
+          "observado_en": "2026-11-10T06:14:00-03:00",
+          "ref_externa": "XIA-H50PRO",
+          "vendedor": null
+        }
+      ],
+      "diferencia_ars": 205100,
+      "diferencia_pct": 17.09168090973409,
+      "confianza": "alta",
+      "regla_emparejado": "marca_codigo_variante"
+    },
+    {
+      "candidato_id": "2026-11-10-aspiradoras-robot-060000:ELECTROLUX:ERB80",
+      "modelo_id": "ELECTROLUX:ERB80",
+      "marca": "Electrolux",
+      "titulo": "Electrolux ERB80, base de autolimpieza",
+      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100004-F.jpg",
+      "ml": {
+        "tienda": "ml",
+        "titulo_listado": "Electrolux ERB80, base de autolimpieza",
+        "url": "https://www.mercadolibre.com.ar/p/MLA45100004",
+        "precio_ars": 569000,
+        "observado_en": "2026-11-10T06:12:00-03:00",
+        "ref_externa": "MLA2100000004",
+        "vendedor": "Tienda oficial",
+        "ml_product_id": "MLA45100004",
+        "ml_seller_id": "100000004"
+      },
+      "otras": [
+        {
+          "tienda": "fravega",
+          "titulo_listado": "Electrolux ERB80, base de autolimpieza",
+          "url": "https://www.fravega.com/p/electrolux-erb80-base-de-autolimpieza",
+          "precio_ars": 669899,
+          "observado_en": "2026-11-10T06:14:00-03:00",
+          "ref_externa": "ELX-ERB80",
+          "vendedor": null
+        }
+      ],
+      "diferencia_ars": 100899,
+      "diferencia_pct": 15.06182275238506,
+      "confianza": "alta",
+      "regla_emparejado": "marca_codigo_variante"
+    }
+  ]
+}
