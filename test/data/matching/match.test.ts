@@ -269,3 +269,28 @@ describe("fix round 1: bundle vs bare unit (finding 6)", () => {
     expect(hasBundleWords("Electrolux ERB80")).toBe(false);
   });
 });
+
+describe("fix round 2: variant, suffix and brand guards on GTIN matches", () => {
+  const g = "6941812700000";
+  it("lowers a shared GTIN when one title carries a variant word (T30 vs T30 Omni)", () => {
+    const m = matchListings(
+      ml({ titulo: "Ecovacs Deebot T30", marca: "Ecovacs", gtin: g }, 329999),
+      other({ titulo: "Ecovacs Deebot T30 Omni", gtin: g }, 329999),
+    );
+    expect(m).toMatchObject({ confianza: "dudosa", regla: "gtin" });
+  });
+  it("lowers a shared GTIN when the brand appears only in one title (Xiaomi vs Roborock)", () => {
+    const m = matchListings(
+      ml({ titulo: "Xiaomi S40C", marca: "Xiaomi", gtin: g }, 329999),
+      other({ titulo: "Roborock S40C", marca: null, gtin: g }, 329999),
+    );
+    expect(m).toMatchObject({ confianza: "dudosa", regla: "gtin", motivo: "marca_conflicto" });
+  });
+  it("control: same GTIN with the brand repeated in the other title stays alta", () => {
+    const m = matchListings(
+      ml({ titulo: "Xiaomi Robot Vacuum S40C", marca: "Xiaomi", gtin: g }, 329999),
+      other({ titulo: "Aspiradora Robot Xiaomi Robot Vacuum S40C Negra", gtin: g }, 329999),
+    );
+    expect(m).toMatchObject({ confianza: "alta", regla: "gtin" });
+  });
+});

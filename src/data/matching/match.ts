@@ -103,7 +103,12 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
     // Cross-check: a shared GTIN must not contradict brand or model code.
     const brandMl = ml.marca ? normalizeBrand(ml.marca) : null;
     const brandOther = other.marca ? normalizeBrand(other.marca) : null;
-    if (brandMl !== null && brandOther !== null && brandMl !== brandOther) {
+    // One brand missing: the known brand must appear in the other title, but only when that title has a
+    // model code (a bare generic title proves nothing either way).
+    const titleOnlyConflict =
+      (brandMl !== null && brandOther === null && codesOther.length > 0 && !brandsEqual(ml, other)) ||
+      (brandOther !== null && brandMl === null && codesMl.length > 0 && !brandsEqual(ml, other));
+    if ((brandMl !== null && brandOther !== null && brandMl !== brandOther) || titleOnlyConflict) {
       lower("marca_conflicto", { marca_ml: brandMl, marca_otra: brandOther });
     } else if (codesMl.length > 0 && codesOther.length > 0 && !codesMl.some((c) => codesOther.includes(c))) {
       lower("codigo_conflicto", { codigos_ml: codesMl, codigos_otra: codesOther });
@@ -127,12 +132,14 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
 
   if (hasBundleWords(ml.titulo) !== hasBundleWords(other.titulo)) lower("bundle");
 
-  if (match.regla !== "gtin") {
-    const sufML = extractCodeSuffixWords(ml.titulo);
-    const sufOther = extractCodeSuffixWords(other.titulo);
-    const diff = [...sufML.filter((w) => !sufOther.includes(w)), ...sufOther.filter((w) => !sufML.includes(w))];
-    if (diff.length > 0) lower("sufijo_modelo", { sufijos: diff });
+  if (match.regla === "gtin" && !sameList(variantsMl, variantsOther)) {
+    lower("variante", { variantes_ml: variantsMl, variantes_otra: variantsOther });
   }
+
+  const sufML = extractCodeSuffixWords(ml.titulo);
+  const sufOther = extractCodeSuffixWords(other.titulo);
+  const diff = [...sufML.filter((w) => !sufOther.includes(w)), ...sufOther.filter((w) => !sufML.includes(w))];
+  if (diff.length > 0) lower("sufijo_modelo", { sufijos: diff });
 
   const pa = ml.precio_ars;
   const pb = other.precio_ars;
