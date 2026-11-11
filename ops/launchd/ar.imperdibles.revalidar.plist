@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Revalidation at 10:45 and at :45 of every hour from 11 to 19 ART. With nothing chosen it reads nothing.
+  StartCalendarInterval uses the Mac's local time: the owner's Mac must be set to America/Argentina/Buenos_Aires.
+  If the repository lives elsewhere, change the three absolute paths below.
+  Do not install before docs/verification/data.md records V6 Store terms.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ar.imperdibles.revalidar</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/lopezlean/development/html/imperdibles/bin/imperdibles</string>
+    <string>revalidar</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/lopezlean/development/html/imperdibles</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>10</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>14</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>45</integer></dict>
+  </array>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/Users/lopezlean/development/html/imperdibles/var/launchd-revalidar.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/lopezlean/development/html/imperdibles/var/launchd-revalidar.log</string>
+</dict>
+</plist>

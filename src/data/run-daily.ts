@@ -8,6 +8,8 @@ import { NetworkError, createBudgetedHttp, type BudgetedHttp } from "./http.js";
 import { MlAuthError, createTokenProvider } from "./ml/auth.js";
 import { MlPermissionError, createMlCatalog } from "./ml/catalog.js";
 import { runPipeline } from "./pipeline.js";
+import { runRevalidate } from "./revalidate.js";
+import { createScrubber } from "./scrub.js";
 import {
   findRunOfDay,
   finishRun,
@@ -35,6 +37,7 @@ export type RunDeps = {
 
 export const USAGE = `Uso:
   imperdibles correr [--forzar]   Corre la recolección del día y guarda los candidatos.
+  imperdibles revalidar           Vuelve a leer los precios de los candidatos elegidos antes de publicar.
   imperdibles --help              Muestra esta ayuda.
 `;
 
@@ -66,26 +69,7 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
       throw error;
     }
   };
-  // Every secret this process holds: env values (unset ones are skipped) and the stored ML token pair.
-  const held = new Set<string>();
-  const hold = (value: string | null | undefined) => {
-    if (value) held.add(value);
-  };
-  for (const value of [deps.env.mlClientSecret, deps.env.cfApiToken, deps.env.telegramBotToken, deps.env.publishNowSecret]) hold(value);
-  const holdStoredTokens = async (): Promise<void> => {
-    try {
-      const rows = await db.all<{ access_token: string; refresh_token: string }>("SELECT access_token, refresh_token FROM tokens_ml WHERE id = 1");
-      hold(rows[0]?.access_token);
-      hold(rows[0]?.refresh_token);
-    } catch {
-      // D1 unreachable: the values already held still apply.
-    }
-  };
-  const scrub = (text: string): string =>
-    [...held]
-      .sort((x, y) => y.length - x.length)
-      .reduce((acc, secret) => acc.split(secret).join("[redacted]"), text)
-      .replace(/\/bot\d+:[A-Za-z0-9_-]+/g, "/bot[redacted]");
+  const { holdStoredTokens, scrub } = createScrubber(db, deps.env);
   const notify = async (alert: OwnerAlert): Promise<void> => {
     try {
       await hooks.notifyOwner(alert);
@@ -200,15 +184,25 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
   }
 }
 
-export async function main(argv: string[], deps: RunDeps): Promise<number> {
+export type Command = { name: "correr"; force: boolean } | { name: "revalidar" } | { name: "help" };
+
+/** The one place that decides what argv means; `cli.ts` uses it to skip the environment for help and unknown input. */
+export function parseCommand(argv: string[]): Command | null {
   const [command, ...flags] = argv;
-  if (command === "--help" || command === "-h") {
+  if (command === "--help" || command === "-h") return { name: "help" };
+  if (command === "correr" && flags.every((f) => f === "--forzar")) return { name: "correr", force: flags.includes("--forzar") };
+  if (command === "revalidar" && flags.length === 0) return { name: "revalidar" };
+  return null;
+}
+
+export async function main(argv: string[], deps: RunDeps): Promise<number> {
+  const command = parseCommand(argv);
+  if (command?.name === "help") {
     deps.stdout(USAGE);
     return 0;
   }
-  if (command === "correr" && flags.every((f) => f === "--forzar")) {
-    return (await runDaily(deps, { force: flags.includes("--forzar") })).exitCode;
-  }
+  if (command?.name === "correr") return (await runDaily(deps, { force: command.force })).exitCode;
+  if (command?.name === "revalidar") return runRevalidate(deps);
   deps.stderr(USAGE);
   return 2;
 }

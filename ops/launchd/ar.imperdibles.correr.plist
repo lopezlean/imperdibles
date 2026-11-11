@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Daily collection at 06:00 ART.
+  StartCalendarInterval uses the Mac's local time: the owner's Mac must be set to America/Argentina/Buenos_Aires.
+  If the repository lives elsewhere, change the three absolute paths below.
+  Do not install before docs/verification/data.md records V6 Store terms.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ar.imperdibles.correr</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/lopezlean/development/html/imperdibles/bin/imperdibles</string>
+    <string>correr</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/lopezlean/development/html/imperdibles</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>6</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/Users/lopezlean/development/html/imperdibles/var/launchd-correr.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/lopezlean/development/html/imperdibles/var/launchd-correr.log</string>
+</dict>
+</plist>

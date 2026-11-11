@@ -1,7 +1,7 @@
 import "dotenv/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { USAGE, main } from "../data/run-daily.js";
+import { USAGE, main, parseCommand } from "../data/run-daily.js";
 import { createD1HttpClient } from "../shared/db/d1-http-client.js";
 import { DATA_ENV_KEYS, MissingEnvError, loadLocalEnv } from "../shared/env.js";
 import { createOutputHooks } from "./output-hooks.js";
@@ -11,10 +11,10 @@ const argv = process.argv.slice(2);
 
 async function run(): Promise<number> {
   // Help and unknown commands never touch the environment or the network.
-  if (argv[0] !== "correr") {
-    const help = argv[0] === "--help" || argv[0] === "-h";
-    (help ? process.stdout : process.stderr).write(USAGE);
-    return help ? 0 : 2;
+  const command = parseCommand(argv);
+  if (command === null || command.name === "help") {
+    (command === null ? process.stderr : process.stdout).write(USAGE);
+    return command === null ? 2 : 0;
   }
   let env;
   try {
