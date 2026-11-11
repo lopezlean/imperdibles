@@ -48,3 +48,7 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 - Check: owner confirms whether the affiliate program terms allow catalog photos.
 - Result: PENDING OWNER.
 - Default: placeholder only ("Foto del producto"); `imagen_url` is ignored.
+
+## V1 price label
+
+- V1 price label: PENDING OWNER. `PRICE_LABEL` in `src/output/copy.ts` is `"lista"` until `docs/verification/data.md` V1 is recorded; switch it there.
