@@ -2,9 +2,27 @@ import type { SqlClient } from "../../shared/db/sql-client.js";
 import type { LocalEnv } from "../../shared/env.js";
 
 export class MlAuthError extends Error {
-  constructor(public reason: "not_authorized" | "refresh_failed") {
-    super(`Mercado Libre authorization error: ${reason}`);
+  /** `detail` carries only the HTTP status and Mercado Libre's error code/message, never token or secret values. */
+  constructor(
+    public reason: "not_authorized" | "refresh_failed",
+    public detail?: string,
+  ) {
+    super(`Mercado Libre authorization error: ${reason}${detail ? ` (${detail})` : ""}`);
   }
+}
+
+/** Reads Mercado Libre's `error` and `message` fields from a failed token response. */
+async function describeFailure(res: Response): Promise<string> {
+  let error = "";
+  let message = "";
+  try {
+    const body = (await res.json()) as { error?: unknown; message?: unknown };
+    if (typeof body.error === "string") error = body.error;
+    if (typeof body.message === "string") message = body.message.slice(0, 200);
+  } catch {
+    // Non-JSON body: the status alone is reported.
+  }
+  return [`HTTP ${res.status}`, error, message].filter(Boolean).join(": ");
 }
 
 type AuthDeps = { db: SqlClient; fetch: typeof fetch; env: LocalEnv; now: () => Date };
@@ -43,18 +61,24 @@ async function requestAndStore(deps: AuthDeps, params: Record<string, string>, f
       }).toString(),
     });
   } catch {
-    throw new MlAuthError("refresh_failed");
+    throw new MlAuthError("refresh_failed", "network error");
   }
-  if (!res.ok) throw new MlAuthError("refresh_failed");
+  if (!res.ok) throw new MlAuthError("refresh_failed", await describeFailure(res));
   let body: { access_token?: unknown; refresh_token?: unknown; expires_in?: unknown };
   try {
     body = (await res.json()) as typeof body;
   } catch {
-    throw new MlAuthError("refresh_failed");
+    throw new MlAuthError("refresh_failed", `HTTP ${res.status}: response is not JSON`);
   }
   const refresh = typeof body.refresh_token === "string" && body.refresh_token ? body.refresh_token : fallbackRefresh;
-  if (typeof body.access_token !== "string" || !body.access_token || typeof body.expires_in !== "number" || !refresh) {
-    throw new MlAuthError("refresh_failed");
+  if (typeof body.access_token !== "string" || !body.access_token || typeof body.expires_in !== "number") {
+    throw new MlAuthError("refresh_failed", `HTTP ${res.status}: response has no access_token or expires_in`);
+  }
+  if (!refresh) {
+    throw new MlAuthError(
+      "refresh_failed",
+      "response has no refresh_token; enable the offline_access scope in the Mercado Libre app",
+    );
   }
   const expiresAt = new Date(deps.now().getTime() + body.expires_in * 1000).toISOString();
   await deps.db.run(

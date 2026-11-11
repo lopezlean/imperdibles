@@ -142,4 +142,29 @@ describe("exchangeCode", () => {
     expect(err).toBeInstanceOf(MlAuthError);
     expect(await row(db)).toEqual([]);
   });
+
+  it("reports the HTTP status and Mercado Libre error code, never secrets", async () => {
+    const db = createSqliteClient();
+    const err = (await exchangeCode({ db, fetch: respond(invalidGrantBody, 400), env, now }, "bad").catch(
+      (e: unknown) => e,
+    )) as MlAuthError;
+    const parsed = JSON.parse(invalidGrantBody) as { error: string };
+    expect(err.detail).toContain("HTTP 400");
+    expect(err.detail).toContain(parsed.error);
+    expect(err.detail).not.toContain("fake-client-secret");
+    expect(err.detail).not.toContain("bad");
+  });
+
+  it("reports a missing refresh token on the first authorization", async () => {
+    const db = createSqliteClient();
+    const parsed = JSON.parse(okBody) as Record<string, unknown>;
+    delete parsed.refresh_token;
+    const err = (await exchangeCode({ db, fetch: respond(JSON.stringify(parsed)), env, now }, "TG-x").catch(
+      (e: unknown) => e,
+    )) as MlAuthError;
+    expect(err).toBeInstanceOf(MlAuthError);
+    expect(err.detail).toContain("refresh_token");
+    expect(err.detail).toContain("offline_access");
+    expect(await row(db)).toEqual([]);
+  });
 });

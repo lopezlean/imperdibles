@@ -123,6 +123,6 @@ try {
   }
 } catch (error) {
   // Variable names and reasons only, never token values.
-  console.error(error instanceof MlAuthError ? error.reason : error instanceof Error ? `${error.constructor.name}: ${error.message}` : "error");
+  console.error(error instanceof MlAuthError ? [error.reason, error.detail].filter(Boolean).join(": ") : error instanceof Error ? `${error.constructor.name}: ${error.message}` : "error");
   process.exitCode = 1;
 }
