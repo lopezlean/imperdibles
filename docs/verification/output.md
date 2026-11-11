@@ -18,9 +18,9 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 
 ## V-O1 Telegram file_id reuse
 
-- Status: PENDING OWNER.
+- Status: DONE 2026-11-11.
 - Check: owner creates a private test channel, adds the bot as admin, puts its id in `.env` as `TELEGRAM_CHANNEL_ID`, then runs `pnpm verify:telegram`. Expected last line: `file_id reuse: ok` (otherwise the Telegram `description` is printed).
-- Result: PENDING OWNER.
+- Result: 2026-11-11, owner ran `pnpm verify:telegram` against the private test channel: `file_id reuse: ok`.
 - Fallback named by the spec: on a rejected `file_id` the local job re-uploads the PNG (Task 10). If reuse never works, stop and ask the owner.
 
 ## V-O2 Worker CPU and D1 subrequests
@@ -54,9 +54,9 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 
 ## V-O5 Deploy and webhook
 
-- Status: PENDING OWNER.
+- Status: PARTIAL 2026-11-11 (custom domain pending).
 - Check: **Owner runs.** With `TELEGRAM_CHANNEL_ID` still pointing to the private test channel (Worker secret and `.env`), after the prerequisites above: `pnpm db:migrate:remote`, `pnpm worker:deploy`, route the custom domain `imperdibles.com.ar` to the Worker in the dashboard, then `pnpm telegram:set-webhook`. Expected last line: `Webhook was set`.
-- Result: PENDING OWNER.
+- Result: 2026-11-11, remote migrations applied; `pnpm worker:deploy` uploaded version 4af25748 with both crons; `/healthz` and `/` answer 200 on `https://imperdibles.lopezlean.workers.dev`; `pnpm telegram:set-webhook` against that workers.dev URL printed `Webhook was set`; `getWebhookInfo` shows no error and the owner's plain message got the help reply. PENDING OWNER: route `imperdibles.com.ar`, re-run `pnpm telegram:set-webhook` with `WORKER_BASE_URL=https://imperdibles.com.ar`, then set `workers_dev = false` and `preview_urls = false`.
 - Fallback: none named. If the expected line does not appear, paste the printed Telegram `description` and stop before the dry runs.
 
 ## V-O5 Dry runs
