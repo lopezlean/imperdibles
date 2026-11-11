@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildXPost } from "../../src/output/publish/messages.js";
 import { TelegramError, type TelegramClient } from "../../src/output/telegram/client.js";
 import { PUBLISH_CAP_PER_CALL, publishValidated } from "../../src/worker/publish.js";
+import type { SqlClient } from "../../src/shared/db/sql-client.js";
 import { createSqliteClient } from "../support/sqlite-client.js";
 import { seedRun } from "./support/seed.js";
 
@@ -91,8 +92,24 @@ function fakeTelegram(opts: { failChannel?: (fileId: string) => unknown; failOwn
   return { client, calls, channelPhotos: () => calls.filter((c) => c.kind === "photo" && c.chat === CHANNEL) };
 }
 
-const run = (tg: TelegramClient, afterPublish = async () => {}, now = NOW) =>
-  publishValidated({ db, telegram: tg, channelId: CHANNEL, ownerChatId: OWNER, now: () => now, afterPublish });
+const run = (tg: TelegramClient, afterPublish = async () => {}, now = NOW, client: SqlClient = db) =>
+  publishValidated({ db: client, telegram: tg, channelId: CHANNEL, ownerChatId: OWNER, now: () => now, afterPublish });
+
+/** A SqlClient that throws on the nth call (1-based) whose SQL matches `pattern`. */
+function failingDb(pattern: RegExp, nth: number): SqlClient {
+  let seen = 0;
+  const hit = (sql: string) => pattern.test(sql) && ++seen === nth;
+  return {
+    all: async (sql, params) => {
+      if (hit(sql)) throw new Error("d1 down");
+      return db.all(sql, params);
+    },
+    run: async (sql, params) => {
+      if (hit(sql)) throw new Error("d1 down");
+      return db.run(sql, params);
+    },
+  };
+}
 
 const estado = (id: string) =>
   db.all<{ estado: string; telegram_file_id: string | null }>("SELECT estado, telegram_file_id FROM candidatos WHERE id = ?", [id]).then((r) => r[0]!);
@@ -188,16 +205,47 @@ describe("publishValidated", () => {
   });
 
   it("publishes at most PUBLISH_CAP_PER_CALL candidates per call", async () => {
-    const ids = Array.from({ length: 12 }, (_, i) => `m${i}`);
+    const ids = Array.from({ length: 8 }, (_, i) => `m${i}`);
     await addRun("rc", ids);
     for (const [i, m] of ids.entries()) await addCandidate(`k${String(i).padStart(2, "0")}`, "rc", m);
     const tg = fakeTelegram();
     const report = await run(tg.client);
-    expect(PUBLISH_CAP_PER_CALL).toBe(10);
-    expect(report.published).toHaveLength(10);
-    expect(tg.channelPhotos()).toHaveLength(10);
+    expect(PUBLISH_CAP_PER_CALL).toBe(5);
+    expect(report.published).toHaveLength(5);
+    expect(tg.channelPhotos()).toHaveLength(5);
     const left = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidatos WHERE estado = 'validado'");
-    expect(left[0]!.n).toBe(2);
+    expect(left[0]!.n).toBe(3);
+  });
+
+  it("still regenerates the page, then rethrows, when a database call fails after a successful publish", async () => {
+    await addCandidate("c1", "r1", "m1");
+    await addCandidate("c2", "r1", "m2");
+    const tg = fakeTelegram();
+    const after = vi.fn(async () => {});
+    await expect(run(tg.client, after, NOW, failingDb(/SELECT c2\.id/, 2))).rejects.toThrow("d1 down");
+    expect(after).toHaveBeenCalledTimes(1);
+    expect((await estado("c1")).estado).toBe("publicado");
+    expect((await estado("c2")).estado).toBe("validado");
+  });
+
+  it("does not regenerate when the database fails before anything was published", async () => {
+    await addCandidate("c1", "r1", "m1");
+    const after = vi.fn(async () => {});
+    await expect(run(fakeTelegram().client, after, NOW, failingDb(/SELECT c2\.id/, 1))).rejects.toThrow("d1 down");
+    expect(after).not.toHaveBeenCalled();
+  });
+
+  it("alerts the owner and keeps going when the revert to validado fails", async () => {
+    await addCandidate("c1", "r1", "m1");
+    await addCandidate("c2", "r1", "m2");
+    const tg = fakeTelegram({ failChannel: (fileId) => (fileId === "file-c1" ? new TelegramError(500, "boom") : undefined) });
+    const after = vi.fn(async () => {});
+    const report = await run(tg.client, after, NOW, failingDb(/SET estado = 'validado'/, 1));
+    expect(report.published).toEqual(["c2"]);
+    expect(report.failed).toEqual(["c1"]);
+    expect(after).toHaveBeenCalledTimes(1);
+    const alerts = tg.calls.filter((c) => c.kind === "message").map((c) => c.text ?? "");
+    expect(alerts.some((t) => t.includes("Robot c1") && t.includes("publicado"))).toBe(true);
   });
 
   it("sends exactly one channel photo per candidate when run twice concurrently", async () => {
