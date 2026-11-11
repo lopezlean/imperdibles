@@ -70,18 +70,27 @@ export async function handleTelegramUpdate(deps: Deps, update: unknown): Promise
 
   const { titulo, rivals } = storedPayload(cand.payload);
   const text = typeof message.text === "string" ? message.text : "";
-  const unchanged = () => reply(`Este candidato ya está ${cand.estado}; no se cambió nada.`);
+  const unchanged = (estado = cand.estado) => reply(`Este candidato ya está ${estado}; no se cambió nada.`);
+  // The state moved (a publish) between the SELECT and the guarded UPDATE: report the fresh state.
+  const lostRace = async () => {
+    const [now] = await deps.db.all<{ estado: string }>("SELECT estado FROM candidatos WHERE id = ?", [cand.id]);
+    return unchanged(now?.estado ?? cand.estado);
+  };
 
   if (text.trim().toLowerCase() === "rechazar") {
     if (!["pendiente", "elegido", "validado"].includes(cand.estado)) return unchanged();
-    // SqlClient has no batch: pairings first, candidate last, so a failure midway is retried by the same reply.
+    // Guarded claim first: if a publish won the race, the pairings must stay untouched.
+    const claim = await deps.db.run(
+      "UPDATE candidatos SET estado = 'descartado' WHERE id = ? AND estado IN ('pendiente','elegido','validado')",
+      [cand.id],
+    );
+    if (claim.changes !== 1) return lostRace();
     for (const r of rivals) {
       await deps.db.run(
         "UPDATE emparejados SET estado = 'rechazado' WHERE modelo_id = ? AND publicacion_id IN (SELECT id FROM publicaciones_tienda WHERE tienda_id = ? AND ref_externa = ?)",
         [cand.modelo_id, r.tienda, r.ref],
       );
     }
-    await deps.db.run("UPDATE candidatos SET estado = 'descartado' WHERE id = ?", [cand.id]);
     return reply(`Descartado: ${titulo}. No se volverá a proponer.`);
   }
 
@@ -90,6 +99,10 @@ export async function handleTelegramUpdate(deps: Deps, update: unknown): Promise
     return reply(`No se guardó el enlace: ${REASON_ES[parsed.reason]}. Debe ser un único enlace https://meli.la/...`);
   }
   if (cand.estado !== "pendiente" && cand.estado !== "elegido") return unchanged();
-  await deps.db.run("UPDATE candidatos SET estado = 'elegido', enlace_afiliado = ? WHERE id = ?", [parsed.link, cand.id]);
+  const saved = await deps.db.run(
+    "UPDATE candidatos SET estado = 'elegido', enlace_afiliado = ? WHERE id = ? AND estado IN ('pendiente','elegido')",
+    [parsed.link, cand.id],
+  );
+  if (saved.changes !== 1) return lostRace();
   return reply(`Enlace guardado para ${titulo}. Se publica tras revalidar el precio.`);
 }

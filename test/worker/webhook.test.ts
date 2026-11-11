@@ -61,6 +61,22 @@ const upd = (text: string, o: { chat?: number; replyTo?: number | null; messageI
 const row = (id: string) =>
   db.all<{ estado: string; enlace_afiliado: string | null }>("SELECT estado, enlace_afiliado FROM candidatos WHERE id = ?", [id]).then((r) => r[0]!);
 
+/** A client that moves the candidate to `publicado` right before the first matching UPDATE: the publish race. */
+function racingDeps(updatePattern: RegExp) {
+  let raced = false;
+  const racing = {
+    all: db.all.bind(db),
+    run: async (sql: string, params?: (string | number | null)[]) => {
+      if (!raced && updatePattern.test(sql)) {
+        raced = true;
+        await db.run("UPDATE candidatos SET estado = 'publicado' WHERE id = 'c1'");
+      }
+      return db.run(sql, params);
+    },
+  };
+  return { db: racing, ownerChatId: OWNER, now: () => NOW };
+}
+
 beforeEach(() => {
   db = createSqliteClient();
 });
@@ -109,6 +125,23 @@ describe("handleTelegramUpdate", () => {
     const reply = await handleTelegramUpdate(deps(), upd("rechazar"));
     expect(reply?.text).toBe(`Este candidato ya está ${estado}; no se cambió nada.`);
     expect((await row("c1")).estado).toBe(estado);
+  });
+
+  it("rechazar loses the race against a publish: the row stays publicado and the pairings are untouched", async () => {
+    await candidate("c1");
+    await pairing("m-c1", "F1");
+    const reply = await handleTelegramUpdate(racingDeps(/UPDATE candidatos SET estado = 'descartado'/), upd("rechazar"));
+    expect(reply?.text).toBe("Este candidato ya está publicado; no se cambió nada.");
+    expect((await row("c1")).estado).toBe("publicado");
+    const e = await db.all<{ estado: string }>("SELECT estado FROM emparejados");
+    expect(e).toEqual([{ estado: "auto" }]);
+  });
+
+  it("a link reply loses the race against a publish: the row stays publicado and keeps no new link", async () => {
+    await candidate("c1");
+    const reply = await handleTelegramUpdate(racingDeps(/UPDATE candidatos SET estado = 'elegido'/), upd(LINK));
+    expect(reply?.text).toBe("Este candidato ya está publicado; no se cambió nada.");
+    expect(await row("c1")).toEqual({ estado: "publicado", enlace_afiliado: null });
   });
 
   it("returns null and saves nothing for another chat", async () => {
