@@ -47,3 +47,11 @@
 ## V7 Dubious pair of the 10/11 run
 
 - Status: PENDING OWNER. Owner writes the two titles of the doubtful match from the 10/11 test (used in Task 9).
+
+## V8 Reproduction of the 10/11 run
+
+- Status: PENDING OWNER. The owner has not authorized Mercado Libre yet, so no real run is recorded and `fixtures/runs/` does not exist. The pipeline is tested against a replay composed from the real Frávega listing and synthetic `-derived` ML responses (fake ids); that proves behaviour, not the real counts.
+- Owner runs: `pnpm fixtures:record run aspiradoras-robot`. It runs the collection with the configured budget under `createRecordingFetch` and then repeats the reads revalidation will make for each candidate (`getOffers` and the rival store searches), writing `fixtures/runs/<YYYY-MM-DD>-aspiradoras-robot/`. Then check `rg -il "bearer|access_token" fixtures/runs` prints nothing.
+- Then, to record here: run `pnpm vitest run test/data/pipeline.test.ts` (the test "reproduces the recorded aspiradoras-robot run" stops being skipped and writes its snapshot under `test/data/__snapshots__/`; commit it), and note the models compared and the approved candidates next to the 4 of 9 from 10/11. Prices have moved since; the spec treats 4 of 9 as a value to confirm, not an assertion.
+- Result: pending.
+- Fallback: if the recording differs a lot from 4 of 9, the owner reviews the dudosa matches and their `motivo` in the run log before changing any rule.
