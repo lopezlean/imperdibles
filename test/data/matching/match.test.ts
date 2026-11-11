@@ -306,3 +306,47 @@ describe("fix round 2: variant, suffix and brand guards on GTIN matches", () => 
     expect(m).toMatchObject({ confidence: "high", rule: "gtin" });
   });
 });
+
+// Real ML catalog results for "XIAOMI S40C" on 2026-11-11 (scripts/debug-match.ts): ML's MODEL
+// attribute holds the manufacturer code (E101) while the title holds the commercial one (S40C).
+describe("MODEL attribute and title codes are evaluated separately", () => {
+  const product = (id: string, title: string, brand: string, model: string): MlProduct => ({
+    ...ml({ title, brand, model }),
+    id,
+    url: "https://example.test/p",
+    image_url: null,
+  });
+  const fravega = other({ title: "Aspiradora Robot Trapeadora Xiaomi S40C Láser", brand: "Xiaomi", gtin: "6941812701867" }, 449999);
+  const robot = product("MLA67760111", "Xiaomi Robot Vacuum S40c Blanco", "Xiaomi", "E101");
+  const realResults = [
+    product("MLA72756157", "Cepillo principal para el robot aspirador Xiaomi S40c E101", "iA Casa", "S40c"),
+    product("MLA80844351", "Funda de cepillo principal para robot aspirador Xiaomi S40c,", "WLN", "JQHD-DXMSDJ-1"),
+    product("MLA70390266", "Funda de cepillo principal para robot aspirador Xiaomi S40c, S40 y H40, color blanco", "DecolTec", "S40C S40 H40"),
+    robot,
+    product("MLA80135764", "2 filtro de aire para chupar robo Xiaomi vacío S40c", "Xiaomi", "s40c"),
+    product("MLA68972850", "Kit de 2 cepillos laterales para robot Xiaomi S40c S30 S20+ X20 Max, color negro", "Th2i", "S40c"),
+  ];
+
+  it("matches high when the title has the single store code even if MODEL holds another code", () => {
+    expect(matchListings(robot, fravega)).toMatchObject({ confidence: "high", rule: "brand_code_variant" });
+  });
+
+  it("picks the robot from the real result list and nothing else", () => {
+    const r = pickCatalogProduct(fravega, realResults);
+    expect(r.product?.id).toBe("MLA67760111");
+  });
+
+  it("keeps a same-brand accessory with the code in MODEL below high", () => {
+    expect(matchListings(realResults[4]!, fravega)?.confidence).not.toBe("high");
+  });
+
+  it("stays doubtful when neither source has exactly one code equal to the store's", () => {
+    const multi = product("MLA1", "Xiaomi Robot S40C H40", "Xiaomi", "E101 E102");
+    expect(matchListings(multi, fravega)?.confidence).toBe("doubtful");
+  });
+
+  it("does not match when MODEL and title both name a different code", () => {
+    const h40 = product("MLA2", "Xiaomi Robot Vacuum H40", "Xiaomi", "D109");
+    expect(matchListings(h40, fravega)).toBeNull();
+  });
+});

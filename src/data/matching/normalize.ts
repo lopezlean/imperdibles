@@ -24,6 +24,8 @@ const CONDITION_WORDS: ReadonlySet<string> = new Set([
 const HARMLESS_SUFFIX_WORDS: ReadonlySet<string> = new Set([
   "NEGRO", "NEGRA", "BLANCO", "BLANCA", "GRIS", "AZUL", "ROJO", "ROJA", "VERDE", "ROSA",
   "PLATA", "PLATEADO", "PLATEADA", "DORADO", "DORADA", "BEIGE",
+  // Generic descriptors stores append after the code ("Xiaomi S40C Láser"); they never name a different model.
+  "LASER", "LIDAR", "WIFI", "ROBOT", "ASPIRADORA", "TRAPEADORA",
 ]);
 
 function stripAccents(s: string): string {

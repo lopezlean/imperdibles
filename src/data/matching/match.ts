@@ -61,12 +61,21 @@ function isForBrand(title: string, brand: string | null): boolean {
   return before.includes("PARA") || before.some((w, i) => w === "COMPATIBLE" && before[i + 1] === "CON");
 }
 
+// ML's MODEL attribute often holds the manufacturer code (e.g. E101) while the title holds the
+// commercial one (S40C), so both sources are kept apart: each is checked on its own for a high match.
+function mlCodeSources(c: Comparable): string[][] {
+  const fromModel = c.model ? extractModelCodes(c.model) : [];
+  const fromTitle = extractModelCodes(c.title);
+  return [fromModel, fromTitle].filter((codes) => codes.length > 0);
+}
+
 function mlCodes(c: Comparable): string[] {
-  if (c.model) {
-    const fromModel = extractModelCodes(c.model);
-    if (fromModel.length > 0) return fromModel;
-  }
-  return extractModelCodes(c.title);
+  return [...new Set(mlCodeSources(c).flat())];
+}
+
+/** High needs one store code equal to the single code of at least one ML source (MODEL or title). */
+function singleCodeAgrees(ml: Comparable, codesOther: string[]): boolean {
+  return codesOther.length === 1 && mlCodeSources(ml).some((codes) => codes.length === 1 && codes[0] === codesOther[0]);
 }
 
 function mlVariants(c: Comparable): string[] {
@@ -115,7 +124,7 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
     }
   } else if (brandsEqual(ml, other)) {
     const evidence = { codes_ml: codesMl, codes_other: codesOther, variants_ml: variantsMl, variants_other: variantsOther };
-    if (codesMl.length === 1 && codesOther.length === 1 && codesMl[0] === codesOther[0] && sameList(variantsMl, variantsOther)) {
+    if (singleCodeAgrees(ml, codesOther) && sameList(variantsMl, variantsOther)) {
       match = { confidence: "high", rule: "brand_code_variant", evidence };
     } else if (codesMl.some((c) => codesOther.includes(c)) || prefixOverlap(codesMl, codesOther)) {
       match = { confidence: "doubtful", rule: "partial", evidence };
