@@ -7,3 +7,4 @@ var/
 .wrangler/
 .atl/
 .superpowers/
+.DS_Store
