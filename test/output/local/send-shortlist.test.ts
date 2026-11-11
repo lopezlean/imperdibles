@@ -168,8 +168,8 @@ const env = (over: Partial<LocalEnv> = {}): LocalEnv => ({
   telegramBotToken: "123:SECRET-TOKEN",
   telegramOwnerChatId: OWNER,
   telegramChannelId: "",
-  publishNowSecret: "publish-secret",
-  workerBaseUrl: "https://worker.example",
+  publishNowSecret: "",
+  workerBaseUrl: "",
   ...over,
 });
 
@@ -187,10 +187,6 @@ describe("createOutputHooks", () => {
     expect(() => createOutputHooks({ db, env: env({ telegramOwnerChatId: "" }), now: () => new Date(), fetch })).toThrow(
       /TELEGRAM_OWNER_CHAT_ID/,
     );
-    const mk = (over: Partial<LocalEnv>) => () => createOutputHooks({ db, env: env(over), now: () => new Date(), fetch });
-    expect(mk({ workerBaseUrl: "" })).toThrow(/WORKER_BASE_URL/);
-    expect(mk({ publishNowSecret: "" })).toThrow(/PUBLISH_NOW_SECRET/);
-    expect(mk({ publishNowSecret: "" })).not.toThrow(/publish-secret/);
   });
 
   it("onCandidatesReady rejects when every candidate failed to send", async () => {
@@ -216,5 +212,29 @@ describe("createOutputHooks", () => {
     expect(bodies).toEqual([
       { chat_id: OWNER, text: "Hay que volver a autorizar Mercado Libre: pnpm ml:authorize url." },
     ]);
+  });
+
+  it("the daily path works with WORKER_BASE_URL and PUBLISH_NOW_SECRET empty", async () => {
+    const list = load("valid-2026-11-10.json");
+    const db = await setup(list);
+    const fakeFetch = (async () =>
+      new Response(JSON.stringify({ ok: true, result: { message_id: 1, photo: [{ file_id: "f" }] } }))) as unknown as typeof fetch;
+    const hooks = createOutputHooks({ db, env: env(), now: () => new Date(), fetch: fakeFetch });
+    await hooks.notifyOwner({ kind: "ml_auth_required" });
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    // defaultRender rejects until Task 4, so the error is the send failure, never an env error.
+    await expect(hooks.onCandidatesReady(list)).rejects.toThrow(/No se pudo enviar/);
+    err.mockRestore();
+  });
+
+  it("onRevalidated rejects naming the missing variables, never values", async () => {
+    const db = createSqliteClient();
+    const report = { fecha: "2026-11-10", validated: [], invalidated: [] };
+    const a = createOutputHooks({ db, env: env({ publishNowSecret: "s3cret" }), now: () => new Date(), fetch });
+    await expect(a.onRevalidated(report)).rejects.toThrow(/WORKER_BASE_URL/);
+    const msg = await a.onRevalidated(report).then(() => "", (e: Error) => e.message);
+    expect(msg).not.toContain("s3cret");
+    const b = createOutputHooks({ db, env: env({ workerBaseUrl: "https://w.example" }), now: () => new Date(), fetch });
+    await expect(b.onRevalidated(report)).rejects.toThrow(/PUBLISH_NOW_SECRET/);
   });
 });

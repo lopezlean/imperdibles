@@ -13,8 +13,6 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
   const missing = [
     env.telegramBotToken === "" ? "TELEGRAM_BOT_TOKEN" : null,
     env.telegramOwnerChatId === "" ? "TELEGRAM_OWNER_CHAT_ID" : null,
-    env.workerBaseUrl === "" ? "WORKER_BASE_URL" : null,
-    env.publishNowSecret === "" ? "PUBLISH_NOW_SECRET" : null,
   ].filter((n): n is string => n !== null);
   if (missing.length > 0) throw new Error(`Missing environment variables: ${missing.join(", ")}`);
 
@@ -28,8 +26,13 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
         throw new Error(`No se pudo enviar ninguno de los ${r.failed} candidatos de la lista de hoy.`);
       }
     },
-    onRevalidated: (report) =>
-      afterRevalidation(
+    onRevalidated: (report) => {
+      const absent = [
+        env.workerBaseUrl === "" ? "WORKER_BASE_URL" : null,
+        env.publishNowSecret === "" ? "PUBLISH_NOW_SECRET" : null,
+      ].filter((n): n is string => n !== null);
+      if (absent.length > 0) return Promise.reject(new Error(`Missing environment variables: ${absent.join(", ")}`));
+      return afterRevalidation(
         {
           db,
           telegram,
@@ -41,7 +44,8 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
           now: deps.now,
         },
         report,
-      ),
+      );
+    },
     async notifyOwner(alert) {
       await telegram.sendMessage({ chat_id: ownerChatId, text: renderOwnerAlert(alert) });
     },
