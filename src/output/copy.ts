@@ -45,8 +45,8 @@ export const IN_ML = "en Mercado Libre";
 export const DIFFERENCE = "Diferencia";
 
 /** `fechaLarga` is the long date ("10 de noviembre de 2026"). */
-export const PRICES_NOTE = (fechaLarga: string): string =>
-  `Precios de ${PRICE_LABEL} al ${fechaLarga}, sin envío ni cuotas.`;
+export const PRICES_NOTE = (fechaLarga: string, label: "lista" | "actual" = PRICE_LABEL): string =>
+  `Precios ${label === "lista" ? "de lista" : "actuales"} al ${fechaLarga}, sin envío ni cuotas.`;
 
 export const HOW_HEADING = "Cómo elegimos";
 
@@ -80,8 +80,8 @@ export const NAV = {
 export const EMPTY_PAGE = "Todavía no hay imperdibles publicados.";
 
 /** `fechaCorta` is the short date ("10/11/2026"). */
-export const CARD_FOOTER = (fechaCorta: string): string =>
-  `Mismo modelo, precio de ${PRICE_LABEL} al ${fechaCorta}`;
+export const CARD_FOOTER = (fechaCorta: string, label: "lista" | "actual" = PRICE_LABEL): string =>
+  `Mismo modelo, precio ${label === "lista" ? "de lista" : "actual"} al ${fechaCorta}`;
 
 /** `pct` is the formatted percentage ("19,7"). */
 export const PCT_BADGE = (pct: string): string => `${pct}% menos`;

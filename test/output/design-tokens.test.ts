@@ -84,6 +84,17 @@ describe("design copy", () => {
     expect(CARD_FOOTER("10/11/2026")).toBe("Mismo modelo, precio de lista al 10/11/2026");
   });
 
+  it("conjugates the price label in the note and the card footer", () => {
+    expect(PRICES_NOTE("10 de noviembre de 2026", "actual")).toBe(
+      "Precios actuales al 10 de noviembre de 2026, sin envío ni cuotas.",
+    );
+    expect(PRICES_NOTE("10 de noviembre de 2026", "lista")).toBe(
+      "Precios de lista al 10 de noviembre de 2026, sin envío ni cuotas.",
+    );
+    expect(CARD_FOOTER("10/11/2026", "actual")).toBe("Mismo modelo, precio actual al 10/11/2026");
+    expect(CARD_FOOTER("10/11/2026", "lista")).toBe("Mismo modelo, precio de lista al 10/11/2026");
+  });
+
   it("fills the price note with the long date", () => {
     expect(PRICES_NOTE("10 de noviembre de 2026")).toBe(
       "Precios de lista al 10 de noviembre de 2026, sin envío ni cuotas.",
