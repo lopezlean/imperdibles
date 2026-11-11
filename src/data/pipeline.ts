@@ -6,7 +6,7 @@ import { BudgetExhaustedError, UpstreamError } from "./http.js";
 import { buildCandidateList, type MatchedGroup } from "./filter.js";
 import { cheapestNewOffer, type MlCatalog, type MlOffer, type MlProduct } from "./ml/catalog.js";
 import { matchListings, pickCatalogProduct, type Match } from "./matching/match.js";
-import { extractModelCodes, normalizeBrand } from "./matching/normalize.js";
+import { extractModelCodes, normalizeBrand, writtenModelCode } from "./matching/normalize.js";
 import type { MatchRow, ModelRow } from "./repo.js";
 import { StoreFormatError, type Listing, type StoreAdapter } from "./types.js";
 
@@ -30,6 +30,12 @@ export type PipelineResult = {
 };
 
 type PrimaryEntry = { listing: Listing; brand: string; code: string; model_id: string };
+
+// One extra ML query when the first has no high match: the store's own spelling of the code if it differs, else the code alone.
+function fallbackQuery(listing: Listing, code: string): string {
+  const written = writtenModelCode(listing.title, code);
+  return written !== null && written.toUpperCase() !== code ? written : code;
+}
 type Rival = { listing: Listing; rule: "gtin" | "brand_code_variant" };
 
 const rivalKey = (l: Listing) => `${l.store}:${l.external_ref}`;
@@ -124,7 +130,10 @@ export async function runPipeline(
     const rows: MatchRow[] = [];
 
     // 3. Catalog product.
-    const pick = pickCatalogProduct(listing, await deps.catalog.searchProducts(term));
+    let pick = pickCatalogProduct(listing, await deps.catalog.searchProducts(term));
+    if (pick.product === null && pick.reason === "no_high") {
+      pick = pickCatalogProduct(listing, await deps.catalog.searchProducts(fallbackQuery(listing, code)));
+    }
     if (pick.product === null) {
       models.push(modelRow);
       matches.push({ model_id, store: listing.store, external_ref: listing.external_ref, match: { confidence: "doubtful", rule: "partial", evidence: {}, reason: pick.reason } });

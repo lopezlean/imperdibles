@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import type { BudgetedHttp } from "../../../src/data/http.js";
 import { UpstreamError } from "../../../src/data/http.js";
-import { createFravegaAdapter, parseFravegaListing } from "../../../src/data/stores/fravega.js";
+import { FRAVEGA_PAGES, createFravegaAdapter, fravegaSearchUrl, parseFravegaListing } from "../../../src/data/stores/fravega.js";
 import { StoreFormatError } from "../../../src/data/types.js";
 
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../fixtures/fravega");
@@ -176,7 +176,7 @@ describe("createFravegaAdapter", () => {
   function setup(res: Response, onRejected?: (t: string, r: any[]) => void) {
     const get = vi.fn(async (_u: string, _h?: Record<string, string>) => res);
     const http = { get, used: () => 0 } as unknown as BudgetedHttp;
-    const adapter = createFravegaAdapter({ http, now: () => new Date("2026-11-12T09:00:00Z"), ...(onRejected ? { onRejected } : {}) });
+    const adapter = createFravegaAdapter({ http, now: () => new Date("2026-11-12T09:00:00Z"), pages: 1, ...(onRejected ? { onRejected } : {}) });
     return { adapter, get };
   }
 
@@ -187,6 +187,18 @@ describe("createFravegaAdapter", () => {
     expect(get.mock.calls[0]![0]).toBe("https://www.fravega.com/l/?keyword=aspiradora%20robot");
     expect(listings.length).toBe(2);
     expect(listings[0]!.observed_at).toBe("2026-11-12T06:00:00-03:00");
+  });
+
+  it("pages through the store's own page parameter, five pages by default", async () => {
+    expect(fravegaSearchUrl("aspiradora robot")).toBe("https://www.fravega.com/l/?keyword=aspiradora%20robot");
+    expect(fravegaSearchUrl("aspiradora robot", 3)).toBe("https://www.fravega.com/l/?keyword=aspiradora%20robot&page=3");
+    expect(FRAVEGA_PAGES).toBe(5);
+    // Every page repeats the same listings: the adapter dedupes them and still asks for all five pages.
+    const same = new Response(html, { status: 200 });
+    const repeat = vi.fn(async () => same.clone());
+    const adapter = createFravegaAdapter({ http: { get: repeat, used: () => 0 } as unknown as BudgetedHttp, now: () => new Date("2026-11-12T09:00:00Z") });
+    expect((await adapter.search("aspiradora robot")).length).toBe(2);
+    expect(repeat.mock.calls.map((c) => (c as unknown as [string])[0])).toEqual([0, 1, 2, 3, 4].map((p) => fravegaSearchUrl("aspiradora robot", p)));
   });
 
   it("returns [] for a no-results page and does not call onRejected", async () => {

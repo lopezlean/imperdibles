@@ -7,7 +7,12 @@ const ID = "fravega";
 const ORIGIN = "https://www.fravega.com";
 const SELLER = "Frávega";
 
-export const fravegaSearchUrl = (term: string): string => `${ORIGIN}/l/?keyword=${encodeURIComponent(term)}`;
+/** Result pages read per search term; the store sorts by sales, so the first pages hold the relevant listings. */
+export const FRAVEGA_PAGES = 5;
+
+/** Page 0 is the plain search URL; later pages use the store's own 0-based `page` parameter. */
+export const fravegaSearchUrl = (term: string, page = 0): string =>
+  `${ORIGIN}/l/?keyword=${encodeURIComponent(term)}${page > 0 ? `&page=${page}` : ""}`;
 
 const formatError = (message: string) => new StoreFormatError(ID, message);
 
@@ -128,7 +133,8 @@ export function parseFravegaListing(html: string, observedAt: string): ListingPa
 export function createFravegaAdapter(deps: {
   http: BudgetedHttp;
   now: () => Date;
+  pages?: number;
   onRejected?: (store: string, rejected: Rejected[]) => void;
 }) {
-  return createStoreAdapter({ id: ID, searchUrl: fravegaSearchUrl, parse: parseFravegaListing, ...deps });
+  return createStoreAdapter({ id: ID, searchUrl: fravegaSearchUrl, parse: parseFravegaListing, ...deps, pages: deps.pages ?? FRAVEGA_PAGES });
 }

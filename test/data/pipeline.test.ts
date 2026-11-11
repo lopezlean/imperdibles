@@ -6,7 +6,7 @@ import { parseCandidateList } from "../../src/contract/candidate-list.js";
 import type { OwnerAlert } from "../../src/contract/local-hooks.js";
 import { BudgetExhaustedError, UpstreamError, createBudgetedHttp } from "../../src/data/http.js";
 import { MlAuthError, type TokenProvider } from "../../src/data/ml/auth.js";
-import { MlPermissionError, createMlCatalog, type MlCatalog } from "../../src/data/ml/catalog.js";
+import { MlPermissionError, createMlCatalog, type MlCatalog, type MlProduct } from "../../src/data/ml/catalog.js";
 import { revalidationReads, runPipeline, type PipelineDeps } from "../../src/data/pipeline.js";
 import { createReplayFetch } from "../../src/data/recording.js";
 import { createFravegaAdapter, fravegaSearchUrl } from "../../src/data/stores/fravega.js";
@@ -15,6 +15,7 @@ import { StoreFormatError, type Listing, type StoreAdapter } from "../../src/dat
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const fixture = (...parts: string[]) => path.join(ROOT, "fixtures", ...parts);
 const mlJson = (name: string): string => readFileSync(fixture("ml", name), "utf8");
+const FRAVEGA_NONE = readFileSync(fixture("fravega", "listing-no-results.html"), "utf8");
 const FRAVEGA_HTML = readFileSync(fixture("fravega", "listing-aspiradoras-robot.html"), "utf8");
 
 const ML = "https://api.mercadolibre.com";
@@ -31,12 +32,14 @@ const INPUT = { run_id: "run-1", run_date: "2026-11-10", category: CATEGORY, thr
 function composedRoutes(): Map<string, () => Response> {
   const json = (body: string) => () => new Response(body, { status: 200, headers: { "content-type": "application/json" } });
   return new Map<string, () => Response>([
+    [fravegaSearchUrl("aspiradora robot", 1), () => new Response(FRAVEGA_NONE, { status: 200, headers: { "content-type": "text/html" } })],
     [fravegaSearchUrl("aspiradora robot"), () => new Response(FRAVEGA_HTML, { status: 200, headers: { "content-type": "text/html" } })],
     [searchUrl("Philco PHRA26N"), json(mlJson("products-search-philco-phra26n-derived.json"))],
     [itemsUrl("MLA00000011"), json(mlJson("product-items-philco-derived.json"))],
     [searchUrl("Irobot M611330"), json(mlJson("products-search-irobot-m611330-derived.json"))],
     [itemsUrl("MLA00000012"), json(mlJson("product-items-irobot-derived.json"))],
     [searchUrl("Smartlife SLRVCL050"), json(mlJson("product-items-empty-derived.json"))],
+    [searchUrl("SL-RVCL050"), json(mlJson("product-items-empty-derived.json"))],
   ]);
 }
 
@@ -303,6 +306,65 @@ describe("runPipeline primary reading", () => {
   });
 });
 
+describe("runPipeline ML fallback query", () => {
+  const smartlife = (title: string) => listing({ store: "fravega", external_ref: "/s", title, brand: "Smartlife", price_ars: 100000 });
+  const mlProduct = (over: Partial<MlProduct> = {}): MlProduct => ({
+    store: "ml", id: "MLA0000009", title: "Aspiradora Robot Smartlife SL-RVCL050", brand: "Smartlife", model: "SL-RVCL050",
+    gtin: null, price_ars: null, url: "https://ml.test/p/MLA0000009", image_url: null, ...over,
+  });
+  // The fake ML catalog answers only the queries it is given; any other query returns no products.
+  function run(title: string, answers: Record<string, MlProduct[]>) {
+    const queries: string[] = [];
+    const wrapCatalog = (c: MlCatalog): MlCatalog => ({
+      ...c,
+      searchProducts: async (q) => (queries.push(q), answers[q] ?? []),
+      getOffers: async () => [],
+    });
+    const primary = fakeStore("fravega", () => [smartlife(title)]);
+    const { deps, logs } = setup({ wrapPrimary: () => primary, wrapCatalog });
+    return { queries, logs, result: runPipeline(deps, INPUT) };
+  }
+
+  it("retries once with the code as the store wrote it when the first search has no high match", async () => {
+    const { queries, result } = run("Aspiradora Robot Smartlife SL-RVCL050", { "SL-RVCL050": [mlProduct()] });
+    const r = await result;
+    expect(queries).toEqual(["Smartlife SLRVCL050", "SL-RVCL050"]);
+    expect(r.models[0]!.ml_product_id).toBe("MLA0000009");
+    expect(r.skipped).toEqual([{ model_id: "SMARTLIFE:SLRVCL050", reason: "no_new_offers" }]);
+  });
+
+  it("does not retry when the first search already matches", async () => {
+    const { queries, result } = run("Aspiradora Robot Smartlife SL-RVCL050", { "Smartlife SLRVCL050": [mlProduct()] });
+    const r = await result;
+    expect(queries).toEqual(["Smartlife SLRVCL050"]);
+    expect(r.models[0]!.ml_product_id).toBe("MLA0000009");
+  });
+
+  it("falls back to the code alone when the store wrote it the same way", async () => {
+    const { queries, result } = run("Aspiradora Robot Smartlife SLRVCL050", { SLRVCL050: [mlProduct()] });
+    const r = await result;
+    expect(queries).toEqual(["Smartlife SLRVCL050", "SLRVCL050"]);
+    expect(r.models[0]!.ml_product_id).toBe("MLA0000009");
+  });
+
+  it("makes at most one extra query and keeps the same unmatched reason when nothing matches", async () => {
+    const { queries, logs, result } = run("Aspiradora Robot Smartlife SL-RVCL050", {});
+    const r = await result;
+    expect(queries).toEqual(["Smartlife SLRVCL050", "SL-RVCL050"]);
+    expect(r.models[0]!.ml_product_id).toBeNull();
+    expect(r.matches[0]!.match).toMatchObject({ confidence: "doubtful", rule: "partial", reason: "no_high" });
+    expect(logs.filter((l) => l.event === "model_unmatched")).toEqual([{ event: "model_unmatched", data: { model_id: "SMARTLIFE:SLRVCL050", reason: "no_high" } }]);
+  });
+
+  it("does not retry after multiple_high", async () => {
+    const twin = mlProduct({ id: "MLA0000010" });
+    const { queries, result } = run("Aspiradora Robot Smartlife SL-RVCL050", { "Smartlife SLRVCL050": [mlProduct(), twin] });
+    const r = await result;
+    expect(queries).toEqual(["Smartlife SLRVCL050"]);
+    expect(r.matches[0]!.match).toMatchObject({ reason: "multiple_high" });
+  });
+});
+
 describe("revalidationReads", () => {
   it("re-reads the ML offers and each rival store for every candidate", async () => {
     const cetrogar = fakeStore("cetrogar", () => [philcoRival("cetrogar", "/a", 150000)]);
@@ -338,7 +400,7 @@ describe("recorded run", () => {
       const http = createBudgetedHttp({ fetch: createReplayFetch(dir), budget: 10_000, sleep: async () => {} });
       const deps: PipelineDeps = {
         catalog: createMlCatalog({ http, token: fakeToken }),
-        primary: createFravegaAdapter({ http, now: () => now }),
+        primary: createFravegaAdapter({ http, now: () => now, pages: 1 }),
         secondary: [],
         rejected: async () => new Set(),
         now: () => now,

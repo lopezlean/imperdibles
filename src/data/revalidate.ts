@@ -222,7 +222,7 @@ export async function runRevalidate(deps: RunDeps): Promise<number> {
     const { report, skipped } = await revalidateChosen({
       db,
       catalog: createMlCatalog({ http, token }),
-      stores: [createFravegaAdapter({ http, now: deps.now })], // Tasks 16 and 17 add Cetrogar and Musimundo
+      stores: [createFravegaAdapter({ http, now: deps.now, pages: 1 })], // Tasks 16 and 17 add Cetrogar and Musimundo
       config,
       now: deps.now,
     });

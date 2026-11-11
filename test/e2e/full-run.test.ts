@@ -61,12 +61,14 @@ function composedRoutes(listing = "listing-aspiradoras-robot.html"): Map<string,
   const html = (body: string) => () => new Response(body, { status: 200, headers: { "content-type": "text/html" } });
   return new Map<string, () => Response>([
     [fravegaSearchUrl("aspiradora robot"), html(read("fravega", listing))],
+    [fravegaSearchUrl("aspiradora robot", 1), html(read("fravega", "listing-no-results.html"))],
     [fravegaSearchUrl("Philco PHRA26N"), html(read("fravega", "listing-aspiradoras-robot.html"))],
     [searchUrl("Philco PHRA26N"), json(read("ml", "products-search-philco-phra26n-derived.json"))],
     [itemsUrl("MLA00000011"), json(read("ml", "product-items-philco-derived.json"))],
     [searchUrl("Irobot M611330"), json(read("ml", "products-search-irobot-m611330-derived.json"))],
     [itemsUrl("MLA00000012"), json(read("ml", "product-items-irobot-derived.json"))],
     [searchUrl("Smartlife SLRVCL050"), json(read("ml", "product-items-empty-derived.json"))],
+    [searchUrl("SL-RVCL050"), json(read("ml", "product-items-empty-derived.json"))],
   ]);
 }
 

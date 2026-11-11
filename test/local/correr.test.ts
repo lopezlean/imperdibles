@@ -17,6 +17,7 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const fixture = (...parts: string[]) => path.join(ROOT, "fixtures", ...parts);
 const mlJson = (name: string): string => readFileSync(fixture("ml", name), "utf8");
 const FRAVEGA_HTML = readFileSync(fixture("fravega", "listing-aspiradoras-robot.html"), "utf8");
+const FRAVEGA_NONE = readFileSync(fixture("fravega", "listing-no-results.html"), "utf8");
 const FRAVEGA_BROKEN = readFileSync(fixture("fravega", "listing-broken-derived.html"), "utf8");
 
 const ML = "https://api.mercadolibre.com";
@@ -46,12 +47,14 @@ type Routes = Map<string, () => Response>;
 function composedRoutes(): Routes {
   const json = (body: string) => () => new Response(body, { status: 200, headers: { "content-type": "application/json" } });
   return new Map<string, () => Response>([
+    [fravegaSearchUrl("aspiradora robot", 1), () => new Response(FRAVEGA_NONE, { status: 200, headers: { "content-type": "text/html" } })],
     [fravegaSearchUrl("aspiradora robot"), () => new Response(FRAVEGA_HTML, { status: 200, headers: { "content-type": "text/html" } })],
     [searchUrl("Philco PHRA26N"), json(mlJson("products-search-philco-phra26n-derived.json"))],
     [itemsUrl("MLA00000011"), json(mlJson("product-items-philco-derived.json"))],
     [searchUrl("Irobot M611330"), json(mlJson("products-search-irobot-m611330-derived.json"))],
     [itemsUrl("MLA00000012"), json(mlJson("product-items-irobot-derived.json"))],
     [searchUrl("Smartlife SLRVCL050"), json(mlJson("product-items-empty-derived.json"))],
+    [searchUrl("SL-RVCL050"), json(mlJson("product-items-empty-derived.json"))],
   ]);
 }
 
@@ -147,7 +150,7 @@ describe("imperdibles correr", () => {
     const s = setup();
     const r = await runDaily(s.deps, { force: false });
     expect(r).toEqual({ exitCode: 0, run_id: RUN_ID });
-    expect(await runRow(s.sqlite)).toMatchObject({ id: RUN_ID, run_date: "2026-11-10", category: "aspiradoras-robot", status: "ok", models_compared: 2, queries_used: 6, error: null });
+    expect(await runRow(s.sqlite)).toMatchObject({ id: RUN_ID, run_date: "2026-11-10", category: "aspiradoras-robot", status: "ok", models_compared: 2, queries_used: 8, error: null });
     const cands = await s.sqlite.all<{ status: string; run_id: string; model_id: string }>("SELECT status, run_id, model_id FROM candidates");
     expect(cands).toEqual([{ status: "pending", run_id: RUN_ID, model_id: "PHILCO:PHRA26N" }]);
     expect(s.hooks.ready).toHaveLength(1);

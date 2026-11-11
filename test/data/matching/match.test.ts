@@ -6,6 +6,7 @@ import {
   hasBundleWords,
   hasConditionWords,
   normalizeBrand,
+  writtenModelCode,
 } from "../../../src/data/matching/normalize.js";
 import { matchListings, pickCatalogProduct } from "../../../src/data/matching/match.js";
 import type { Comparable } from "../../../src/data/types.js";
@@ -94,6 +95,17 @@ describe("normalize", () => {
     expect(hasAccessoryWords("Kit de repuestos Xiaomi S40C")).toBe(true);
     expect(hasAccessoryWords("Base de autovaciado Xiaomi S40C")).toBe(true);
     expect(hasAccessoryWords("Aspiradora con base Xiaomi S40C")).toBe(false);
+  });
+});
+
+describe("writtenModelCode", () => {
+  it("returns the code with the store's punctuation", () => {
+    expect(writtenModelCode("Aspiradora Robot Smartlife Sensor Láser SL-RVCL050", "SLRVCL050")).toBe("SL-RVCL050");
+    expect(writtenModelCode("Robot (SL-RVCL050), negro", "SLRVCL050")).toBe("SL-RVCL050");
+  });
+  it("returns the plain token when there is no punctuation and null when no token matches", () => {
+    expect(writtenModelCode("Robot Philco PHRA26N", "PHRA26N")).toBe("PHRA26N");
+    expect(writtenModelCode("Robot Philco", "PHRA26N")).toBeNull();
   });
 });
 

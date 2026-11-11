@@ -84,6 +84,18 @@ export function extractModelCodes(title: string): string[] {
   return codes;
 }
 
+/**
+ * The model code as the store wrote it, original punctuation and case included ("SL-RVCL050" for the
+ * normalized "SLRVCL050"). Null when no token of the title normalizes to exactly that code.
+ */
+export function writtenModelCode(title: string, code: string): string | null {
+  for (const token of title.split(/[\s,;:()/]+/)) {
+    const written = token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+    if (written !== "" && normalizeTitle(written) === code) return written;
+  }
+  return null;
+}
+
 export function extractVariants(title: string): string[] {
   const found = new Set<string>();
   for (const raw of rawTokens(title)) {
