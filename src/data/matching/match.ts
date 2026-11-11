@@ -20,10 +20,15 @@ export type Match = {
 
 const PRICE_RATIO_LIMIT = 2.0;
 
-function normalizeGtin(g: string | null): string | null {
-  if (g === null) return null;
-  const digits = g.replace(/\D/g, "").replace(/^0+/, "");
-  return digits === "" ? null : digits;
+// ML's GTIN attribute can hold several codes ("850015249389, 6941812703670"): split on anything
+// that is not a digit, so they are never glued into one number. Leading zeros are dropped.
+function normalizeGtins(g: string | null): string[] {
+  if (g === null) return [];
+  const codes = g
+    .split(/[^0-9]+/)
+    .map((d) => d.replace(/^0+/, ""))
+    .filter((d) => d !== "");
+  return [...new Set(codes)];
 }
 
 function containsWholeWord(title: string, brand: string): boolean {
@@ -92,8 +97,8 @@ function prefixOverlap(a: string[], b: string[]): boolean {
 }
 
 export function matchListings(ml: Comparable, other: Comparable): Match | null {
-  const gtinA = normalizeGtin(ml.gtin);
-  const gtinB = normalizeGtin(other.gtin);
+  const gtinsA = normalizeGtins(ml.gtin);
+  const gtinsB = normalizeGtins(other.gtin);
   const codesMl = mlCodes(ml);
   const codesOther = extractModelCodes(other.title);
   const variantsMl = mlVariants(ml);
@@ -106,9 +111,10 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
     lowered ??= { reason, extra };
   };
 
-  if (gtinA !== null && gtinB !== null) {
-    if (gtinA !== gtinB) return null;
-    match = { confidence: "high", rule: "gtin", evidence: { gtin: gtinA } };
+  if (gtinsA.length > 0 && gtinsB.length > 0) {
+    const shared = gtinsA.find((g) => gtinsB.includes(g));
+    if (shared === undefined) return null;
+    match = { confidence: "high", rule: "gtin", evidence: { gtin: shared } };
     // Cross-check: a shared GTIN must not contradict brand or model code.
     const brandMl = ml.brand ? normalizeBrand(ml.brand) : null;
     const brandOther = other.brand ? normalizeBrand(other.brand) : null;

@@ -350,3 +350,28 @@ describe("MODEL attribute and title codes are evaluated separately", () => {
     expect(matchListings(h40, fravega)).toBeNull();
   });
 });
+
+// Real ML catalog result for "XIAOMI E10" on 2026-11-11: the GTIN attribute holds a comma-separated list.
+describe("GTIN lists", () => {
+  const fravegaE10 = other({ title: "Aspiradora Robot Trapeadora Xiaomi E10 Color Blanco", brand: "Xiaomi", gtin: "6941812703670" }, 399999);
+  const robotE10 = ml({
+    title: "Aspiradora Trapeadora Robot Xiaomi E10 Color Blanco",
+    brand: "Xiaomi",
+    model: "E10",
+    gtin: "850015249389, 6941812708477, 6941812703670, 8690101131646",
+  });
+
+  it("matches high on GTIN when the store GTIN is one of the ML list", () => {
+    expect(matchListings(robotE10, fravegaE10)).toMatchObject({ confidence: "high", rule: "gtin", evidence: { gtin: "6941812703670" } });
+  });
+
+  it("still rejects when no GTIN of the list equals the store's", () => {
+    const filter = ml({ title: "Filtro Para Aspiradora Robot Xiaomi E10", brand: "Xiaomi", model: "E10", gtin: "6941812708354, 6941812708477" });
+    expect(matchListings(filter, fravegaE10)).toBeNull();
+  });
+
+  it("ignores leading zeros inside a list", () => {
+    const padded = ml({ ...{ title: robotE10.title, brand: "Xiaomi", model: "E10" }, gtin: "00850015249389; 06941812703670" });
+    expect(matchListings(padded, fravegaE10)?.rule).toBe("gtin");
+  });
+});
