@@ -118,12 +118,12 @@ describe("Worker CPU budget (cap 8 ms median)", () => {
     expect(us).toBeLessThan(CAP_US);
   });
 
-  it("14:00 cron: publish 10 validated candidates and regenerate the pages", async () => {
+  it("14:00 cron: publish the capped 5 of 10 validated candidates and regenerate the pages", async () => {
     await resetPublish();
     await db.run("DELETE FROM paginas");
     await handleScheduled("0 14 * * *", deps);
     const done = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidatos WHERE estado = 'publicado'");
-    expect(done[0]!.n).toBe(10);
+    expect(done[0]!.n).toBe(5);
     const pages = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM paginas");
     expect(pages[0]!.n).toBeGreaterThan(0);
     const us = await medianCpuUs(resetPublish, () => handleScheduled("0 14 * * *", deps));
@@ -131,7 +131,7 @@ describe("Worker CPU budget (cap 8 ms median)", () => {
     expect(us).toBeLessThan(CAP_US);
   });
 
-  it("GET /: serves the stored page with 10 published items", async () => {
+  it("GET /: serves the stored page with 5 published items", async () => {
     const res = await handleFetch(new Request("https://imperdibles.ar/"), deps);
     expect(res.status).toBe(200);
     expect(await res.text()).toContain("Robot aspirador 0");
