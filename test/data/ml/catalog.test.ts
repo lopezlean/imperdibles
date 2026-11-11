@@ -157,6 +157,16 @@ describe("status handling", () => {
     }
   });
 
+  it("returns [] when the product has no offers (404 No winners found)", async () => {
+    const { catalog } = setup(json(404, load("status-404-no-winners.json")));
+    expect(await catalog.getOffers("MLA1")).toEqual([]);
+  });
+
+  it("keeps a 404 No winners found on the product itself as UpstreamError", async () => {
+    const { catalog } = setup(json(404, load("status-404-no-winners.json")));
+    await expect(catalog.getProduct("MLA1")).rejects.toBeInstanceOf(UpstreamError);
+  });
+
   it("throws StoreFormatError on invalid JSON", async () => {
     const { catalog } = setup(new Response("<html>", { status: 200 }));
     await expect(catalog.getProduct("MLA1")).rejects.toBeInstanceOf(StoreFormatError);

@@ -79,10 +79,23 @@ export function cheapestNewOffer(offers: MlOffer[]): MlOffer | null {
   return best;
 }
 
+const NO_WINNERS = Symbol("no-winners");
+
+/** ML answers 404 {"message": "No winners found"} on /products/{id}/items when a catalog product has no offers. */
+async function isNoWinners(res: Response): Promise<boolean> {
+  try {
+    const body = (await res.json()) as { message?: unknown };
+    return typeof body.message === "string" && /no winners found/i.test(body.message);
+  } catch {
+    return false;
+  }
+}
+
 export function createMlCatalog(deps: { http: BudgetedHttp; token: TokenProvider }): MlCatalog {
   const { http, token } = deps;
 
-  async function request(path: string): Promise<unknown> {
+  /** Returns NO_WINNERS when `allowNoWinners` is set and ML answers 404 "No winners found" (a product with no offers). */
+  async function request(path: string, allowNoWinners = false): Promise<unknown> {
     const url = `${BASE}${path}`;
     let res = await http.get(url, { Authorization: `Bearer ${await token.get()}` });
     if (res.status === 401) {
@@ -90,6 +103,7 @@ export function createMlCatalog(deps: { http: BudgetedHttp; token: TokenProvider
       if (res.status === 401) throw new MlAuthError("not_authorized");
     }
     if (res.status === 403) throw new MlPermissionError(path.split("?")[0]!);
+    if (res.status === 404 && allowNoWinners && (await isNoWinners(res))) return NO_WINNERS;
     if (!res.ok) throw new UpstreamError(res.status, url);
     try {
       return await res.json();
@@ -113,7 +127,9 @@ export function createMlCatalog(deps: { http: BudgetedHttp; token: TokenProvider
       return mapProduct(await request(`/products/${encodeURIComponent(id)}`));
     },
     async getOffers(productId) {
-      return resultsOf(await request(`/products/${encodeURIComponent(productId)}/items`)).map(mapOffer);
+      const body = await request(`/products/${encodeURIComponent(productId)}/items`, true);
+      if (body === NO_WINNERS) return [];
+      return resultsOf(body).map(mapOffer);
     },
   };
 }
