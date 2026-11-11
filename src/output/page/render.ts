@@ -149,7 +149,7 @@ a{color:${T.ink}}a:hover{color:${T.ink2}}
 <nav aria-label="Principal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; font-size: 15px; font-weight: 500">
 <a href="#hoy" style="text-decoration: none; padding: 12px 0">${e(NAV.hoy)}</a>
 <a href="#como" style="text-decoration: none; padding: 12px 0">${e(NAV.como)}</a>
-<a href="${channel}" style="text-decoration: none; padding: 10px 16px; border: 1px solid ${T.ink}; border-radius: 999px">${e(NAV.canal)}</a>
+<a href="#canal" style="text-decoration: none; padding: 10px 16px; border: 1px solid ${T.ink}; border-radius: 999px">${e(NAV.canal)}</a>
 </nav>
 </div>
 </header>

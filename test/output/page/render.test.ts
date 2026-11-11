@@ -80,9 +80,11 @@ describe("renderHomePage", () => {
     expect(html).toContain('href="https://meli.la/AbC_1?x=1&amp;y=2"');
   });
 
-  it("links the logo home and the channel twice", () => {
+  it("links the logo home, the nav pill to #canal and only the button to the channel", () => {
     expect(html).toContain('<a href="/"');
-    expect(html.match(/href="https:\/\/t\.me\/imperdibles_ar\?x=1&amp;y=2"/g)).toHaveLength(2);
+    expect(html).toMatch(/<a href="#canal"[^>]*>Canal de Telegram<\/a>/);
+    expect(html.match(/href="https:\/\/t\.me\/imperdibles_ar\?x=1&amp;y=2"/g)).toHaveLength(1);
+    expect(html).toMatch(/<a href="https:\/\/t\.me\/imperdibles_ar\?x=1&amp;y=2"[^>]*>[\s\S]*?Abrir el canal<\/a>/);
   });
 
   it("formats the threshold", () => {

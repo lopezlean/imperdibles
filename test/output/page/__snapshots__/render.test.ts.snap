@@ -22,7 +22,7 @@ a{color:#0E1116}a:hover{color:#3A4350}
 <nav aria-label="Principal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; font-size: 15px; font-weight: 500">
 <a href="#hoy" style="text-decoration: none; padding: 12px 0">Hoy</a>
 <a href="#como" style="text-decoration: none; padding: 12px 0">Cómo elegimos</a>
-<a href="https://t.me/imperdibles_ar?x=1&amp;y=2" style="text-decoration: none; padding: 10px 16px; border: 1px solid #0E1116; border-radius: 999px">Canal de Telegram</a>
+<a href="#canal" style="text-decoration: none; padding: 10px 16px; border: 1px solid #0E1116; border-radius: 999px">Canal de Telegram</a>
 </nav>
 </div>
 </header>
