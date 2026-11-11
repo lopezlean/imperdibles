@@ -56,7 +56,6 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
   let persistedEstado: "ok" | "parcial" | null = null;
   let http: BudgetedHttp | null = null;
   let networkDown = false;
-  let accessToken: string | null = null;
 
   // Only used for the token refresh, to tell "offline" apart from "authorization revoked".
   const trackedFetch: typeof fetch = async (input, init) => {
@@ -67,11 +66,26 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
       throw error;
     }
   };
+  // Every secret this process holds: env values (unset ones are skipped) and the stored ML token pair.
+  const held = new Set<string>();
+  const hold = (value: string | null | undefined) => {
+    if (value) held.add(value);
+  };
+  for (const value of [deps.env.mlClientSecret, deps.env.cfApiToken, deps.env.telegramBotToken, deps.env.publishNowSecret]) hold(value);
+  const holdStoredTokens = async (): Promise<void> => {
+    try {
+      const rows = await db.all<{ access_token: string; refresh_token: string }>("SELECT access_token, refresh_token FROM tokens_ml WHERE id = 1");
+      hold(rows[0]?.access_token);
+      hold(rows[0]?.refresh_token);
+    } catch {
+      // D1 unreachable: the values already held still apply.
+    }
+  };
   const scrub = (text: string): string =>
-    [deps.env.mlClientSecret, deps.env.cfApiToken, accessToken].reduce<string>(
-      (acc, secret) => (secret ? acc.split(secret).join("[redacted]") : acc),
-      text,
-    );
+    [...held]
+      .sort((x, y) => y.length - x.length)
+      .reduce((acc, secret) => acc.split(secret).join("[redacted]"), text)
+      .replace(/\/bot\d+:[A-Za-z0-9_-]+/g, "/bot[redacted]");
   const notify = async (alert: OwnerAlert): Promise<void> => {
     try {
       await hooks.notifyOwner(alert);
@@ -88,7 +102,8 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     }
 
     const token = createTokenProvider({ db, fetch: trackedFetch, env: deps.env, now: deps.now });
-    accessToken = await token.get();
+    await token.get();
+    await holdStoredTokens();
     const config = await loadConfig(db);
     const category = config.categorias[0]; // Task 15 replaces this with rotation
     if (category === undefined) throw new Error("config key categorias has no categories");
@@ -146,6 +161,7 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     );
     return { exitCode: 0, corrida_id: runId };
   } catch (error) {
+    await holdStoredTokens();
     const message = scrub(error instanceof Error ? error.message : String(error));
     const offline = networkDown || error instanceof NetworkError;
 

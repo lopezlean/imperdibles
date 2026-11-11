@@ -26,7 +26,7 @@ const itemsUrl = (id: string) => `${ML}/products/${id}/items`;
 
 const NOW = new Date("2026-11-10T09:00:00Z"); // 06:00 ART
 const RUN_ID = "2026-11-10-aspiradoras-robot-060000";
-const SECRETS = { token: "tok-SECRET-access", clientSecret: "client-SECRET-value", cfToken: "cf-SECRET-token" };
+const SECRETS = { token: "tok-SECRET-access", clientSecret: "client-SECRET-value", cfToken: "cf-SECRET-token", refresh: "refresh-SECRET-value", telegram: "987654:TG-SECRET-bot-token", publishNow: "publish-SECRET-now" };
 
 const ENV: LocalEnv = {
   mlAppId: "app-id",
@@ -35,10 +35,10 @@ const ENV: LocalEnv = {
   cfAccountId: "acct",
   cfApiToken: SECRETS.cfToken,
   d1DatabaseId: "db",
-  telegramBotToken: "",
+  telegramBotToken: SECRETS.telegram,
   telegramOwnerChatId: "",
   telegramChannelId: "",
-  publishNowSecret: "",
+  publishNowSecret: SECRETS.publishNow,
   workerBaseUrl: "",
 };
 
@@ -68,7 +68,7 @@ function fakeHooks(): Hooks {
 }
 
 function addToken(db: ReturnType<typeof createSqliteClient>, expiraEn: string) {
-  db.raw.prepare("INSERT INTO tokens_ml (id, access_token, refresh_token, expira_en) VALUES (1, ?, 'refresh-SECRET', ?)").run(SECRETS.token, expiraEn);
+  db.raw.prepare("INSERT INTO tokens_ml (id, access_token, refresh_token, expira_en) VALUES (1, ?, ?, ?)").run(SECRETS.token, SECRETS.refresh, expiraEn);
 }
 
 /** Wraps a client so that chosen writes fail with D1Unavailable once the run has started. */
@@ -312,11 +312,45 @@ describe("imperdibles correr", () => {
     expect(s.hooks.alerts).toEqual([{ kind: "ml_permission_denied", path: "/products/search" }]);
   });
 
-  it("never writes tokens or secrets to the run log, stdout or stderr", async () => {
-    const s = setup({ wrapDb: (db) => flakyDb(db, (sql) => sql.includes("INTO candidatos")) });
-    await runDaily(s.deps, { force: false });
-    const everything = [readFileSync(s.logPath, "utf8"), s.out.join(""), s.err.join("")].join("\n");
-    for (const secret of Object.values(SECRETS)) expect(everything).not.toContain(secret);
+  describe("secret scrubbing", () => {
+    const leaky = `boom ${Object.values(SECRETS).join(" | ")} https://api.telegram.org/bot111222:ABC-def_ghi/sendMessage`;
+    const check = (s: Setup) => {
+      const everything = [readFileSync(s.logPath, "utf8"), s.out.join(""), s.err.join(""), JSON.stringify(s.hooks.alerts)].join("\n");
+      for (const secret of Object.values(SECRETS)) expect(everything).not.toContain(secret);
+      expect(everything).not.toContain("111222:ABC-def_ghi");
+      expect(everything).toContain("boom");
+    };
+
+    it("from a failing persistence write", async () => {
+      const s = setup({
+        wrapDb: (db) => ({ all: (q, p) => db.all(q, p), run: async (q, p) => { if (q.includes("INTO candidatos")) throw new Error(leaky); return db.run(q, p); } }),
+      });
+      expect((await runDaily(s.deps, { force: false })).exitCode).toBe(1);
+      check(s);
+    });
+
+    it("from a failing onCandidatesReady", async () => {
+      const s = setup();
+      s.hooks.onCandidatesReady = async () => { throw new Error(leaky); };
+      expect((await runDaily(s.deps, { force: false })).exitCode).toBe(1);
+      check(s);
+    });
+
+    it("from a failing notifyOwner", async () => {
+      const s = setup({ routes: new Map([[fravegaSearchUrl("aspiradora robot"), () => new Response(FRAVEGA_BROKEN, { status: 200 })]]) });
+      s.hooks.notifyOwner = async (a) => { s.hooks.alerts.push(a); throw new Error(leaky); };
+      expect((await runDaily(s.deps, { force: false })).exitCode).toBe(1);
+      check(s);
+    });
+
+    it("redacts Telegram URLs even when the env does not hold the token, and runs without those variables", async () => {
+      const s = setup();
+      s.deps.env = { ...ENV, telegramBotToken: "", publishNowSecret: "" };
+      s.hooks.onCandidatesReady = async () => { throw new Error("fail https://api.telegram.org/bot555:XYZ_abc-1/sendPhoto"); };
+      expect((await runDaily(s.deps, { force: false })).exitCode).toBe(1);
+      expect(readFileSync(s.logPath, "utf8")).not.toContain("555:XYZ_abc-1");
+      expect(readFileSync(s.logPath, "utf8")).toContain("fail");
+    });
   });
 
   it("does not let a failing notifyOwner hide the exit code", async () => {
