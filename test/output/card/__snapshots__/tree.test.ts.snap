@@ -21,7 +21,7 @@ exports[`buildCardTree > one rival 1`] = `
                   },
                   {
                     "props": {
-                      "children": ".ar",
+                      "children": ".com.ar",
                       "style": {
                         "color": "#C2410C",
                         "display": "flex",
@@ -354,7 +354,7 @@ exports[`buildCardTree > three rivals 1`] = `
                   },
                   {
                     "props": {
-                      "children": ".ar",
+                      "children": ".com.ar",
                       "style": {
                         "color": "#C2410C",
                         "display": "flex",

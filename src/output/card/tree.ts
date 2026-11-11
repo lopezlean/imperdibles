@@ -74,7 +74,7 @@ export function buildCardTree(c: Candidate, opts: { run_date: string }): CardNod
     node(
       "div",
       flex({ flexDirection: "row", fontFamily: "Space Grotesk", fontWeight: 700, fontSize: 30, letterSpacing: "-0.02em", color: TOKENS.ink }),
-      [node("span", { display: "flex" }, "imperdibles"), node("span", { display: "flex", color: TOKENS.accent }, ".ar")],
+      [node("span", { display: "flex" }, "imperdibles"), node("span", { display: "flex", color: TOKENS.accent }, ".com.ar")],
       { "data-role": "logo" },
     ),
     node(

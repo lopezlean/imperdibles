@@ -18,7 +18,7 @@ a{color:#0E1116}a:hover{color:#3A4350}
 
 <header style="background: #FFFFFF; border-bottom: 1px solid #DDE1E7">
 <div style="max-width: 1120px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
-<a href="/" style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -0.02em; text-decoration: none; color: #0E1116">imperdibles<span style="color: #C2410C">.ar</span></a>
+<a href="/" style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -0.02em; text-decoration: none; color: #0E1116">imperdibles<span style="color: #C2410C">.com.ar</span></a>
 <nav aria-label="Principal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; font-size: 15px; font-weight: 500">
 <a href="#hoy" style="text-decoration: none; padding: 12px 0">Hoy</a>
 <a href="#como" style="text-decoration: none; padding: 12px 0">Cómo elegimos</a>

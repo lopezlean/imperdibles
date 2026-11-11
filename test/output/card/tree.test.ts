@@ -122,7 +122,7 @@ describe("buildCardTree", () => {
       });
     }
     const logo = byRole(tree3, "logo")[0]!;
-    const accent = kids(logo).find((k): k is CardNode => typeof k !== "string" && textOf(k) === ".ar")!;
+    const accent = kids(logo).find((k): k is CardNode => typeof k !== "string" && textOf(k) === ".com.ar")!;
     expect(accent.props.style?.color).toBe(TOKENS.accent);
     expect(rootStyle(tree3).background).toBe(TOKENS.bg);
     expect(textOf(tree3)).toContain("Foto del producto");

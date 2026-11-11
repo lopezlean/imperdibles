@@ -145,7 +145,7 @@ a{color:${T.ink}}a:hover{color:${T.ink2}}
 
 <header style="background: ${T.surface}; border-bottom: 1px solid ${T.line}">
 <div style="max-width: 1120px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
-<a href="/" style="${GROTESK}; font-size: 24px; letter-spacing: -0.02em; text-decoration: none; color: ${T.ink}">imperdibles<span style="color: ${T.accent}">.ar</span></a>
+<a href="/" style="${GROTESK}; font-size: 24px; letter-spacing: -0.02em; text-decoration: none; color: ${T.ink}">imperdibles<span style="color: ${T.accent}">.com.ar</span></a>
 <nav aria-label="Principal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; font-size: 15px; font-weight: 500">
 <a href="#hoy" style="text-decoration: none; padding: 12px 0">${e(NAV.hoy)}</a>
 <a href="#como" style="text-decoration: none; padding: 12px 0">${e(NAV.como)}</a>
