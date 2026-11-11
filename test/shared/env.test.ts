@@ -5,8 +5,8 @@ const full = {
   ML_APP_ID: "app-id-value",
   ML_CLIENT_SECRET: "secret-value",
   ML_REDIRECT_URI: "https://imperdibles.com.ar",
-  CLOUDFLARE_ACCOUNT_ID: "acc-value",
-  CLOUDFLARE_API_TOKEN: "token-value",
+  D1_ACCOUNT_ID: "acc-value",
+  D1_API_TOKEN: "token-value",
   D1_DATABASE_ID: "db-value",
   TELEGRAM_BOT_TOKEN: "tg-value",
   TELEGRAM_OWNER_CHAT_ID: "owner-value",
@@ -21,6 +21,19 @@ describe("loadLocalEnv", () => {
     expect(env.mlAppId).toBe("app-id-value");
     expect(env.d1DatabaseId).toBe("db-value");
     expect(env.workerBaseUrl).toBe("https://w.example");
+  });
+
+  it("never reads Wrangler's own CLOUDFLARE_* variables (they would override wrangler login on deploy)", () => {
+    const { D1_ACCOUNT_ID: _a, D1_API_TOKEN: _b, ...rest } = full;
+    const err = (() => {
+      try {
+        loadLocalEnv({ ...rest, CLOUDFLARE_ACCOUNT_ID: "x", CLOUDFLARE_API_TOKEN: "y" });
+      } catch (e) {
+        return e;
+      }
+    })() as MissingEnvError;
+    expect(err).toBeInstanceOf(MissingEnvError);
+    expect(err.names).toEqual(["D1_ACCOUNT_ID", "D1_API_TOKEN"]);
   });
 
   it("lists missing names only, never values", () => {
@@ -48,8 +61,8 @@ describe("loadLocalEnv", () => {
         ML_APP_ID: "a",
         ML_CLIENT_SECRET: "b",
         ML_REDIRECT_URI: "c",
-        CLOUDFLARE_ACCOUNT_ID: "d",
-        CLOUDFLARE_API_TOKEN: "e",
+        D1_ACCOUNT_ID: "d",
+        D1_API_TOKEN: "e",
         D1_DATABASE_ID: "f",
       },
       DATA_ENV_KEYS,

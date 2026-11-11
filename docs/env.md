@@ -6,8 +6,8 @@ Writing `.env.example` was denied by the machine's permission settings, so the v
 ML_APP_ID=
 ML_CLIENT_SECRET=
 ML_REDIRECT_URI=
-CLOUDFLARE_ACCOUNT_ID=
-CLOUDFLARE_API_TOKEN=
+D1_ACCOUNT_ID=
+D1_API_TOKEN=
 D1_DATABASE_ID=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_OWNER_CHAT_ID=
@@ -18,6 +18,8 @@ WORKER_BASE_URL=
 ```
 
 `ML_REDIRECT_URI` takes the value `https://imperdibles.com.ar`.
+
+`D1_ACCOUNT_ID` and `D1_API_TOKEN` are used by the local job to reach D1 over the REST API. The token needs only `Account → D1 → Edit`. They are deliberately not named `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`: Wrangler reads those from `.env` and would use the D1-only token instead of `wrangler login`, so `wrangler deploy` would fail with "No access to the specified service".
 
 ## Owner step: create the D1 database
 
