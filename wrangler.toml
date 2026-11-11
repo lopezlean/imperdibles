@@ -5,7 +5,7 @@ compatibility_date = "2026-11-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "imperdibles"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "bef2b34f-9908-486e-bbf8-b85331c9a9f8"
 migrations_dir = "migrations"
 
 [vars]
