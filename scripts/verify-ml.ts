@@ -39,20 +39,33 @@ try {
       const limitHeaders = [...res.headers].filter(([n]) => /ratelimit|retry/i.test(n)).map(([n, v]) => `${n}: ${v}`);
       console.log(`GET ${path.split("?")[0]} -> HTTP ${res.status}`);
       console.log(`  headers ratelimit/retry: ${limitHeaders.length ? limitHeaders.join("; ") : "none"}`);
-      return res.ok ? ((await res.json()) as unknown) : undefined;
+      if (!res.ok) {
+        // Mercado Libre error bodies carry only an error code and message, no credentials.
+        console.log(`  body: ${(await res.text()).slice(0, 300)}`);
+        return undefined;
+      }
+      return (await res.json()) as unknown;
     };
     const search = (await get(`/products/search?site_id=MLA&status=active&q=${encodeURIComponent(query)}`)) as
       | { results?: { id?: string }[] }
       | undefined;
-    const first = search?.results?.[0]?.id;
-    if (!first) {
+    // Catalog search relevance is poor and many products have no active offers (404 on /items),
+    // so try the first few results until one returns offers.
+    const ids = (search?.results ?? []).map((r) => r.id).filter((id): id is string => typeof id === "string").slice(0, 5);
+    let list: unknown[] = [];
+    for (const id of ids) {
+      await get(`/products/${id}`);
+      const items = (await get(`/products/${id}/items`)) as { results?: unknown[] } | unknown[] | undefined;
+      list = Array.isArray(items) ? items : (items?.results ?? []);
+      if (list.length > 0) {
+        console.log(`using product ${id}`);
+        break;
+      }
+    }
+    if (ids.length === 0) {
       console.error("no product found, nothing else to check");
       process.exitCode = 1;
     } else {
-      await get(`/products/${first}`);
-      const items = await get(`/products/${first}/items`);
-      const offers = (items as { results?: unknown[] } | unknown[] | undefined);
-      const list = Array.isArray(offers) ? offers : (offers?.results ?? []);
       const names = fieldNames(list);
       console.log(`offer count: ${list.length}`);
       console.log(`offer fields: ${[...names].sort().join(", ") || "none"}`);
@@ -64,6 +77,6 @@ try {
   }
 } catch (error) {
   // Only the reason or the variable names are printed, never token values.
-  console.error(error instanceof MlAuthError ? error.reason : error instanceof Error ? `${error.constructor.name}: ${error.message}` : "error");
+  console.error(error instanceof MlAuthError ? [error.reason, error.detail].filter(Boolean).join(": ") : error instanceof Error ? `${error.constructor.name}: ${error.message}` : "error");
   process.exitCode = 1;
 }
