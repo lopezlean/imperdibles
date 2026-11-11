@@ -159,6 +159,18 @@ describe("imperdibles correr", () => {
     expect(logLines(s.logPath)).toEqual([{ corrida_id: RUN_ID, fecha: "2026-11-10", estado: "ok", error: null, at: "2026-11-10T06:00:00-03:00" }]);
   });
 
+  it("runs the category of the ART day and stores it in corridas.categoria", async () => {
+    const s = setup({ now: new Date("2026-11-11T09:00:00Z"), tokenExpiry: "2026-11-12T00:00:00.000Z" });
+    const categorias = [
+      { id: "aspiradoras-robot", nombre: "Aspiradoras robot", terminos: ["aspiradora robot"] },
+      { id: "test-rotation", nombre: "Test rotation", terminos: ["aspiradora robot"] },
+    ];
+    await s.sqlite.run("UPDATE config SET valor = ? WHERE clave = 'categorias'", [JSON.stringify(categorias)]);
+    const r = await runDaily(s.deps, { force: false });
+    expect(r.corrida_id).toBe("2026-11-11-test-rotation-060000");
+    expect(await runRow(s.sqlite)).toMatchObject({ fecha: "2026-11-11", categoria: "test-rotation" });
+  });
+
   it("calls onCandidatesReady with an empty list and ends ok when nothing passes", async () => {
     const s = setup();
     await s.sqlite.run("UPDATE config SET valor = '90' WHERE clave = 'umbral_pct'");

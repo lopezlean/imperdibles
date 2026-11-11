@@ -7,6 +7,7 @@ import { artDate, artIso } from "../shared/time.js";
 import { NetworkError, createBudgetedHttp, type BudgetedHttp } from "./http.js";
 import { MlAuthError, createTokenProvider } from "./ml/auth.js";
 import { MlPermissionError, createMlCatalog } from "./ml/catalog.js";
+import { categoryOfDay } from "./category.js";
 import { runPipeline } from "./pipeline.js";
 import { runRevalidate } from "./revalidate.js";
 import { createScrubber } from "./scrub.js";
@@ -89,8 +90,7 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     await token.get();
     await holdStoredTokens();
     const config = await loadConfig(db);
-    const category = config.categorias[0]; // Task 15 replaces this with rotation
-    if (category === undefined) throw new Error("config key categorias has no categories");
+    const category = categoryOfDay(config.categorias, fecha);
 
     const startedAt = deps.now();
     corrida_id = `${fecha}-${category.id}-${artIso(startedAt).slice(11, 19).replaceAll(":", "")}`;
