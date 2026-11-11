@@ -29,9 +29,9 @@ describe("worker /healthz", () => {
     expect(res.status).toBe(404);
   });
 
-  it("answers 404 for non-GET on /healthz", async () => {
+  it("answers 405 for non-GET on /healthz", async () => {
     const res = await handleFetch(new Request("https://imperdibles.ar/healthz", { method: "POST" }), makeDeps());
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(405);
   });
 });
 

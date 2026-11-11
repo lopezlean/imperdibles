@@ -10,3 +10,6 @@ migrations_dir = "migrations"
 
 [vars]
 TELEGRAM_CHANNEL_URL = "https://t.me/REPLACE_WITH_CHANNEL"
+
+[triggers]
+crons = ["30 10 * * *", "0 14 * * *"]
