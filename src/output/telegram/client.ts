@@ -21,7 +21,7 @@ export class TelegramError extends Error {
 }
 
 export function isInvalidFileId(e: unknown): boolean {
-  return e instanceof TelegramError && /file identifier/i.test(e.description);
+  return e instanceof TelegramError && /file identifier|file_id/i.test(e.description);
 }
 
 type ApiResponse = {

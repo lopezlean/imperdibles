@@ -67,6 +67,10 @@ describe("telegram client", () => {
     expect(e.message).not.toContain(TOKEN);
   });
 
+  it("recognises the 'Wrong file_id' wording too", () => {
+    expect(isInvalidFileId(new TelegramError(400, "sendPhoto: Bad Request: wrong file_id or the file is temporarily unavailable"))).toBe(true);
+  });
+
   it("maps 429 to TelegramError and isInvalidFileId is false", async () => {
     const { f } = fake(fx("too-many-requests"), 429);
     const c = createTelegramClient({ token: TOKEN, fetch: f });
