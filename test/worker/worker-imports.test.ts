@@ -9,13 +9,14 @@ const runtime = split(importClosure("src/worker/index.ts", { runtimeOnly: true }
 const rel = (p: string) => files.some((f) => f.includes(`/${p}`));
 
 describe("Worker import closure", () => {
-  // TODO(Task 13): add "src/output/page/render" and "src/output/html" once the page exists.
   it.each([
     "src/output/format.ts",
     "src/output/copy.ts",
     "src/output/affiliate-link.ts",
     "src/output/telegram/client.ts",
     "src/output/publish/messages.ts",
+    "src/output/page/render.ts",
+    "src/output/html.ts",
     "src/shared/",
     "src/contract/",
   ])("reaches %s", (p) => {
@@ -24,7 +25,6 @@ describe("Worker import closure", () => {
 
   it("reachability check fails for a module that is not reached", () => {
     expect(rel("src/output/card/render.ts")).toBe(false);
-    expect(rel("src/output/page/render.ts")).toBe(false);
   });
 
   it("reaches no forbidden package, node: module or card renderer", () => {

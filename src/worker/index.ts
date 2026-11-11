@@ -4,6 +4,7 @@ import { safeEqual } from "./auth.js";
 import type { WorkerDeps } from "./deps.js";
 import type { Env } from "./env.js";
 import { checkMissingRun } from "./missing-run.js";
+import { regeneratePages, servePage } from "./page-store.js";
 import { publishValidated } from "./publish.js";
 import { handleTelegramUpdate } from "./webhook.js";
 
@@ -11,8 +12,15 @@ import { handleTelegramUpdate } from "./webhook.js";
 const CRON_MISSING_RUN = "30 10 * * *";
 const CRON_PUBLISH = "0 14 * * *";
 
-// TODO(Task 13): regeneratePages. Single place so wiring the page changes one line.
-const afterPublish = async (): Promise<void> => {};
+// Single place that regenerates the page after a publication. A page failure is logged, never propagated:
+// the posts are already out and publishValidated must still report them.
+const afterPublish = async (deps: WorkerDeps): Promise<void> => {
+  try {
+    await regeneratePages({ db: deps.db, now: deps.now, channelUrl: deps.env.TELEGRAM_CHANNEL_URL });
+  } catch (e) {
+    console.error("regeneratePages failed", e);
+  }
+};
 
 const telegramFor = (deps: WorkerDeps): TelegramClient =>
   deps.telegram ?? createTelegramClient({ token: deps.env.TELEGRAM_BOT_TOKEN, fetch });
@@ -28,7 +36,7 @@ function runPublish(deps: WorkerDeps) {
     channelId: deps.env.TELEGRAM_CHANNEL_ID,
     ownerChatId: deps.env.TELEGRAM_OWNER_CHAT_ID,
     now: deps.now,
-    afterPublish,
+    afterPublish: () => afterPublish(deps),
   });
 }
 
@@ -57,9 +65,17 @@ async function handlePublishNow(req: Request, deps: WorkerDeps): Promise<Respons
   return json(await runPublish(deps));
 }
 
+async function serveHome(req: Request, deps: WorkerDeps): Promise<Response> {
+  const res = await servePage({ db: deps.db, now: deps.now, channelUrl: deps.env.TELEGRAM_CHANNEL_URL });
+  return req.method === "HEAD" ? new Response(null, { status: res.status, headers: res.headers }) : res;
+}
+
 export async function handleFetch(req: Request, deps: WorkerDeps): Promise<Response> {
   const { pathname } = new URL(req.url);
   switch (pathname) {
+    case "/":
+      if (req.method !== "GET" && req.method !== "HEAD") return status(405, "method not allowed");
+      return serveHome(req, deps);
     case "/healthz":
       if (req.method !== "GET") return status(405, "method not allowed");
       await deps.db.all("SELECT 1");
