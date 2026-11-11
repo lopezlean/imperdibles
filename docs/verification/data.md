@@ -69,3 +69,31 @@
 - A second `pnpm imperdibles correr` the same day must print `Ya hay una corrida de hoy (<id>). Para repetirla: imperdibles correr --forzar` and exit 2 (also confirms `run_date` uses the ART date).
 - Result: pending.
 - Fallback: if one run writes more than a fraction of 100.000 rows, reduce `presupuesto_consultas` or the categories read per day.
+
+## V10 Jumbo (VTEX catalog API)
+
+- Date: 2026-11-11
+- Checked: `https://www.jumbo.com.ar/robots.txt` (the API path `/api/catalog_system/pub/products/search` is not listed; Jumbo only disallows `/Busca/`) and one live GET, `https://www.jumbo.com.ar/api/catalog_system/pub/products/search?ft=aspiradora%20robot&_from=0&_to=49` (HTTP 200, no session, 22 products), trimmed to `fixtures/jumbo/search-aspiradora-robot-derived.json`.
+- Result: JSON array; each product has `productName`, `brand`, `link`, and `items[].ean` plus `items[].sellers[].{sellerId, sellerName, commertialOffer.{Price, ListPrice, AvailableQuantity}}`. Own offers are `sellerId` "1" ("Jumbo Argentina IO"); the rule is own seller and `AvailableQuantity > 0`. 21 of the 22 products were out of stock that day. `productReference` is an internal code, not a model code, so it is not used.
+- Derived fixture edit: one product's seller was changed to a made-up third party to exercise the seller rule.
+- Terms of service: PENDING OWNER.
+- Note: the API is not explicitly sanctioned by the store (it is simply not disallowed), so keep the request rate low: 5 pages at most per search, usually one, under the shared query budget.
+
+## V11 Easy (VTEX catalog API)
+
+- Date: 2026-11-11
+- Checked: `https://www.easy.com.ar/robots.txt` (the API path is not listed; Easy disallows `/*?map=category*` and `/*?initialMap=*`) and one live GET of the same search URL on `www.easy.com.ar` (HTTP 200, no session, 4 products), trimmed to `fixtures/easy/search-aspiradora-robot-derived.json`.
+- Result: same VTEX shape as V10; own offers are `sellerId` "1" ("EASY"). All 4 products were in stock.
+- Derived fixture edits: one product's stock set to 0 and one product's seller changed to a made-up third party.
+- Terms of service: PENDING OWNER.
+- Note: the API is not explicitly sanctioned by the store, so keep the request rate low.
+
+## V12 Coppel (VTEX catalog API)
+
+- Date: 2026-11-11
+- Checked: `https://www.coppel.com.ar/robots.txt` (the API path is not listed; Coppel disallows `/busca/*`, `/buscapagina/*`, `/booster?_q` and `/?map=`) and one live GET of the same search URL on `www.coppel.com.ar` (HTTP 200, no session, 17 products), trimmed to `fixtures/coppel/search-aspiradora-robot-derived.json`.
+- Result: same VTEX shape as V10; own offers are `sellerId` "1" ("Coppel S.A."). All 17 products were out of stock that day. `ean` is often empty or junk (an internal 6-digit code); such values are read as missing and matching falls back to brand and model code from the title.
+- Derived fixture edits: stock set to 3 on the empty-EAN and the junk-EAN products (none were in stock) and one product's seller changed to a made-up third party.
+- Terms of service: PENDING OWNER.
+- Note: the API is not explicitly sanctioned by the store, so keep the request rate low.
+- Owner action for V10 to V12: apply `migrations/0003_seed_vtex_stores.sql` to the remote D1 (it enables the three stores; `UPDATE stores SET enabled = 0 WHERE id = '<store>'` turns one off).

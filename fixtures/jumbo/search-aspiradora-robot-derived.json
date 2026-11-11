@@ -1,0 +1,106 @@
+[
+  {
+    "productId": "353765",
+    "productName": "Aspiradora Robot Atar21c1pi Atma",
+    "brand": "ATMA",
+    "productReference": "61310106026",
+    "linkText": "aspiradora-robot-atar21c1pi-atma",
+    "link": "https://www.jumbo.com.ar/aspiradora-robot-atar21c1pi-atma/p",
+    "items": [
+      {
+        "itemId": "352397",
+        "name": "Aspiradora Robot Atar21c1pi Atma",
+        "ean": "7798192369120",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Jumbo Argentina IO",
+            "commertialOffer": {
+              "Price": 439999,
+              "ListPrice": 36363554,
+              "AvailableQuantity": 1
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "3084644",
+    "productName": "Aspiradora Robot Laser Electrolux",
+    "brand": "ELECTROLUX",
+    "productReference": "61310116054",
+    "linkText": "aspiradora-robot-laser-electrolux",
+    "link": "https://www.jumbo.com.ar/aspiradora-robot-laser-electrolux/p",
+    "items": [
+      {
+        "itemId": "3083874",
+        "name": "Aspiradora Robot Laser Electrolux",
+        "ean": "7909569501665",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Jumbo Argentina IO",
+            "commertialOffer": {
+              "Price": 633332,
+              "ListPrice": 52341488,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "418856",
+    "productName": "Trapeadora Aspiradora Robot  Tr-01 Maverick",
+    "brand": "MAVERICK",
+    "productReference": "61310171001",
+    "linkText": "trapeadora-aspiradora-robot-tr-01-maverick",
+    "link": "https://www.jumbo.com.ar/trapeadora-aspiradora-robot-tr-01-maverick/p",
+    "items": [
+      {
+        "itemId": "414105",
+        "name": "Trapeadora Aspiradora Robot  Tr-01 Maverick",
+        "ean": "652217701197",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Jumbo Argentina IO",
+            "commertialOffer": {
+              "Price": 349000,
+              "ListPrice": 28842975,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "406881",
+    "productName": "Aspiradora Robot Giroscópica Smart Trapeadora",
+    "brand": "MIDEA",
+    "productReference": "61310141005",
+    "linkText": "aspiradora-robot-giroscopica-smart-trapeadora-2",
+    "link": "https://www.jumbo.com.ar/aspiradora-robot-giroscopica-smart-trapeadora-2/p",
+    "items": [
+      {
+        "itemId": "403223",
+        "name": "Aspiradora Robot Giroscópica Smart Trapeadora",
+        "ean": "7797087508064",
+        "sellers": [
+          {
+            "sellerId": "2",
+            "sellerName": "Tercero Derivado S.A.",
+            "commertialOffer": {
+              "Price": 670999,
+              "ListPrice": 55454463,
+              "AvailableQuantity": 5
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

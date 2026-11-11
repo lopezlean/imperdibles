@@ -1,0 +1,128 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`coppel fixture > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "brand": "ELECTROLUX",
+      "external_ref": "/erb10-aspirador-robot-141356/p",
+      "gtin": null,
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 299999,
+      "seller": "Coppel S.A.",
+      "store": "coppel",
+      "title": "Aspiradora robot Electrolux ERB10",
+      "url": "https://www.coppel.com.ar/erb10-aspirador-robot-141356/p",
+    },
+    {
+      "brand": "WINCO",
+      "external_ref": "/aspiradora-robot-winco-w503-128449/p",
+      "gtin": null,
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 49999,
+      "seller": "Coppel S.A.",
+      "store": "coppel",
+      "title": "Aspiradora Robot Winco W503",
+      "url": "https://www.coppel.com.ar/aspiradora-robot-winco-w503-128449/p",
+    },
+  ],
+  "rejected": [
+    {
+      "external_ref": "/aspiradora-robot-winco-w300-127485/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-quisur-b12-141951/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-daewoo-dw-5000ar-128171/p",
+      "reason": "third_party_seller",
+    },
+  ],
+  "scanned": 5,
+}
+`;
+
+exports[`easy fixture > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "brand": "Karcher",
+      "external_ref": "/aspiradora-karcher-robot-rcv1/p",
+      "gtin": "7891374302028",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 288995,
+      "seller": "EASY",
+      "store": "easy",
+      "title": "Aspiradora Robot 0.31 L Blanca RCV 1 Karcher",
+      "url": "https://www.easy.com.ar/aspiradora-karcher-robot-rcv1/p",
+    },
+    {
+      "brand": "Yelmo",
+      "external_ref": "/aspiradora-robot-yelmo-as-7070/p",
+      "gtin": "7790368297237",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 274995,
+      "seller": "EASY",
+      "store": "easy",
+      "title": "Aspiradora Robot 2600 Mah 300 Ml Azul AS-7070 Yelmo",
+      "url": "https://www.easy.com.ar/aspiradora-robot-yelmo-as-7070/p",
+    },
+  ],
+  "rejected": [
+    {
+      "external_ref": "/aspiradora-robot-klauben/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-ultracomb-as-6061/p",
+      "reason": "third_party_seller",
+    },
+  ],
+  "scanned": 4,
+}
+`;
+
+exports[`jumbo fixture > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "brand": "ATMA",
+      "external_ref": "/aspiradora-robot-atar21c1pi-atma/p",
+      "gtin": "7798192369120",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 439999,
+      "seller": "Jumbo Argentina IO",
+      "store": "jumbo",
+      "title": "Aspiradora Robot Atar21c1pi Atma",
+      "url": "https://www.jumbo.com.ar/aspiradora-robot-atar21c1pi-atma/p",
+    },
+  ],
+  "rejected": [
+    {
+      "external_ref": "/aspiradora-robot-laser-electrolux/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/trapeadora-aspiradora-robot-tr-01-maverick/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-giroscopica-smart-trapeadora-2/p",
+      "reason": "third_party_seller",
+    },
+  ],
+  "scanned": 4,
+}
+`;

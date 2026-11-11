@@ -1,0 +1,132 @@
+[
+  {
+    "productId": "1167",
+    "productName": "Aspiradora Robot Winco W300",
+    "brand": "WINCO",
+    "productReference": "127485",
+    "linkText": "aspiradora-robot-winco-w300-127485",
+    "link": "https://www.coppel.com.ar/aspiradora-robot-winco-w300-127485/p",
+    "items": [
+      {
+        "itemId": "1290",
+        "name": "Aspiradora Robot Winco W300",
+        "ean": "4511413404164",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Coppel S.A.",
+            "commertialOffer": {
+              "Price": 26499,
+              "ListPrice": 26499,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "22684",
+    "productName": "Aspiradora robot Electrolux ERB10",
+    "brand": "ELECTROLUX",
+    "productReference": "141356",
+    "linkText": "erb10-aspirador-robot-141356",
+    "link": "https://www.coppel.com.ar/erb10-aspirador-robot-141356/p",
+    "items": [
+      {
+        "itemId": "63352",
+        "name": "Aspiradora robot Electrolux ERB10",
+        "ean": "",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Coppel S.A.",
+            "commertialOffer": {
+              "Price": 299999,
+              "ListPrice": 299999,
+              "AvailableQuantity": 3
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1485",
+    "productName": "Aspiradora Robot Winco W503",
+    "brand": "WINCO",
+    "productReference": "128449",
+    "linkText": "aspiradora-robot-winco-w503-128449",
+    "link": "https://www.coppel.com.ar/aspiradora-robot-winco-w503-128449/p",
+    "items": [
+      {
+        "itemId": "1739",
+        "name": "Aspiradora Robot Winco W503",
+        "ean": "128449",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Coppel S.A.",
+            "commertialOffer": {
+              "Price": 49999,
+              "ListPrice": 49999,
+              "AvailableQuantity": 3
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "25376",
+    "productName": "Aspiradora Robot Quisur B12",
+    "brand": "Quisur",
+    "productReference": "141951",
+    "linkText": "aspiradora-robot-quisur-b12-141951",
+    "link": "https://www.coppel.com.ar/aspiradora-robot-quisur-b12-141951/p",
+    "items": [
+      {
+        "itemId": "71015",
+        "name": "Aspiradora Robot Quisur B12",
+        "ean": "",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Coppel S.A.",
+            "commertialOffer": {
+              "Price": 102999,
+              "ListPrice": 102999,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1422",
+    "productName": "Aspiradora Robot Daewoo Dw 5000ar",
+    "brand": "DAEWOO",
+    "productReference": "128171",
+    "linkText": "aspiradora-robot-daewoo-dw-5000ar-128171",
+    "link": "https://www.coppel.com.ar/aspiradora-robot-daewoo-dw-5000ar-128171/p",
+    "items": [
+      {
+        "itemId": "1648",
+        "name": "Aspiradora Robot Daewoo Dw 5000ar",
+        "ean": "731199781400",
+        "sellers": [
+          {
+            "sellerId": "2",
+            "sellerName": "Tercero Derivado S.A.",
+            "commertialOffer": {
+              "Price": 37999,
+              "ListPrice": 49999,
+              "AvailableQuantity": 5
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

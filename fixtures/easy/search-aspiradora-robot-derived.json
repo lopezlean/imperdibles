@@ -1,0 +1,106 @@
+[
+  {
+    "productId": "1476278",
+    "productName": "Aspiradora Robot 0.31 L Blanca RCV 1 Karcher",
+    "brand": "Karcher",
+    "productReference": "1476278",
+    "linkText": "aspiradora-karcher-robot-rcv1",
+    "link": "https://www.easy.com.ar/aspiradora-karcher-robot-rcv1/p",
+    "items": [
+      {
+        "itemId": "1476278",
+        "name": "Aspiradora Robot 0.31 L Blanca RCV 1 Karcher",
+        "ean": "7891374302028",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "EASY",
+            "commertialOffer": {
+              "Price": 288995,
+              "ListPrice": 288995,
+              "AvailableQuantity": 10
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1377289",
+    "productName": "Aspiradora Robot 2600 Mah 300 Ml Azul AS-7070 Yelmo",
+    "brand": "Yelmo",
+    "productReference": "1377289",
+    "linkText": "aspiradora-robot-yelmo-as-7070",
+    "link": "https://www.easy.com.ar/aspiradora-robot-yelmo-as-7070/p",
+    "items": [
+      {
+        "itemId": "1377289",
+        "name": "Aspiradora Robot 2600 Mah 300 Ml Azul AS-7070 Yelmo",
+        "ean": "7790368297237",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "EASY",
+            "commertialOffer": {
+              "Price": 274995,
+              "ListPrice": 274995,
+              "AvailableQuantity": 100
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1493712",
+    "productName": "Aspiradora Robot 40.5 W 350 Ml Negra KL-ASPRB Klauben",
+    "brand": "Klauben",
+    "productReference": "1493712",
+    "linkText": "aspiradora-robot-klauben",
+    "link": "https://www.easy.com.ar/aspiradora-robot-klauben/p",
+    "items": [
+      {
+        "itemId": "1493712",
+        "name": "Aspiradora Robot 40.5 W 350 Ml Negra KL-ASPRB Klauben",
+        "ean": "7800155627694",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "EASY",
+            "commertialOffer": {
+              "Price": 138600,
+              "ListPrice": 198000,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1438513",
+    "productName": "Aspiradora Robot 120 W 0,65 L Gris AS-6061 Ultracomb",
+    "brand": "Ultracomb",
+    "productReference": "1438513",
+    "linkText": "aspiradora-robot-ultracomb-as-6061",
+    "link": "https://www.easy.com.ar/aspiradora-robot-ultracomb-as-6061/p",
+    "items": [
+      {
+        "itemId": "1438513",
+        "name": "Aspiradora Robot 120 W 0,65 L Gris AS-6061 Ultracomb",
+        "ean": "7790368297220",
+        "sellers": [
+          {
+            "sellerId": "2",
+            "sellerName": "Tercero Derivado S.A.",
+            "commertialOffer": {
+              "Price": 229995,
+              "ListPrice": 229995,
+              "AvailableQuantity": 5
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

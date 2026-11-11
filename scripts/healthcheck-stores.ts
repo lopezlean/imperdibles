@@ -1,14 +1,23 @@
 import { createBudgetedHttp } from "../src/data/http.js";
 import { STORE_HEADERS, type ListingParse } from "../src/data/stores/common.js";
+import { coppelSearchUrl, parseCoppelListing } from "../src/data/stores/coppel.js";
+import { easySearchUrl, parseEasyListing } from "../src/data/stores/easy.js";
 import { fravegaSearchUrl, parseFravegaListing } from "../src/data/stores/fravega.js";
+import { jumboSearchUrl, parseJumboListing } from "../src/data/stores/jumbo.js";
+import { VTEX_HEADERS } from "../src/data/stores/vtex.js";
 import { StoreFormatError } from "../src/data/types.js";
 import { artIso } from "../src/shared/time.js";
 
 const TERM = "aspiradora robot";
 
-type Store = { id: string; searchUrl: (term: string) => string; parse: (html: string, at: string) => ListingParse };
-// Enabled stores; Cetrogar and Musimundo are added with their adapters.
-const STORES: Store[] = [{ id: "fravega", searchUrl: fravegaSearchUrl, parse: parseFravegaListing }];
+type Store = { id: string; searchUrl: (term: string) => string; parse: (body: string, at: string) => ListingParse; headers: Record<string, string> };
+// One request per store: the first page of the search, which is all the format check needs.
+const STORES: Store[] = [
+  { id: "fravega", searchUrl: fravegaSearchUrl, parse: parseFravegaListing, headers: STORE_HEADERS },
+  { id: "jumbo", searchUrl: jumboSearchUrl, parse: parseJumboListing, headers: VTEX_HEADERS },
+  { id: "easy", searchUrl: easySearchUrl, parse: parseEasyListing, headers: VTEX_HEADERS },
+  { id: "coppel", searchUrl: coppelSearchUrl, parse: parseCoppelListing, headers: VTEX_HEADERS },
+];
 
 const http = createBudgetedHttp({ fetch, budget: STORES.length, sleep: (ms) => new Promise((r) => setTimeout(r, ms)) });
 let failed = false;
@@ -16,7 +25,7 @@ let failed = false;
 for (const store of STORES) {
   const url = store.searchUrl(TERM);
   try {
-    const res = await http.get(url, STORE_HEADERS);
+    const res = await http.get(url, store.headers);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const { listings, rejected } = store.parse(await res.text(), artIso(new Date()));
     const reasons = new Map<string, number>();

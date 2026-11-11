@@ -22,6 +22,7 @@ import {
   upsertModels,
 } from "./repo.js";
 import { createFravegaAdapter } from "./stores/fravega.js";
+import { enabledSecondaryStores } from "./stores/index.js";
 import { StoreFormatError } from "./types.js";
 
 export type RunDeps = {
@@ -98,15 +99,13 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     started = true;
 
     http = createBudgetedHttp({ fetch: deps.fetch, budget: config.query_budget, sleep: deps.sleep });
+    const onRejected = (store: string, rejected: { reason: string }[]) =>
+      deps.stderr(`[seller_rejected] ${JSON.stringify({ store, count: rejected.length })}\n`);
     const result = await runPipeline(
       {
         catalog: createMlCatalog({ http, token }),
-        primary: createFravegaAdapter({
-          http,
-          now: deps.now,
-          onRejected: (store, rejected) => deps.stderr(`[seller_rejected] ${JSON.stringify({ store, count: rejected.length })}\n`),
-        }),
-        secondary: [], // Tasks 16 and 17 add Cetrogar and Musimundo
+        primary: createFravegaAdapter({ http, now: deps.now, onRejected }),
+        secondary: await enabledSecondaryStores(db, { http, now: deps.now, onRejected }),
         rejected: (modelId) => rejectedRefs(db, modelId),
         now: deps.now,
         log: (event, data) => deps.stderr(`[${event}] ${JSON.stringify(data)}\n`),

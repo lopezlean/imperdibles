@@ -82,6 +82,9 @@ describe("copy", () => {
   it("maps store ids to names with id fallback", () => {
     expect(storeName("ml")).toBe("Mercado Libre");
     expect(storeName("fravega")).toBe("Frávega");
+    expect(storeName("jumbo")).toBe("Jumbo");
+    expect(storeName("easy")).toBe("Easy");
+    expect(storeName("coppel")).toBe("Coppel");
     expect(storeName("tienda-nueva")).toBe("tienda-nueva");
   });
   it("carries the spec-fixed legends", () => {

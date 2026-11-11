@@ -3,8 +3,9 @@ import { BudgetExhaustedError, UpstreamError } from "../http.js";
 import type { Listing, StoreAdapter } from "../types.js";
 import { artIso } from "../../shared/time.js";
 
-export type Rejected = { external_ref: string; reason: "third_party_seller" | "unknown_seller" | "bad_price" };
-export type ListingParse = { listings: Listing[]; rejected: Rejected[] };
+export type Rejected = { external_ref: string; reason: "third_party_seller" | "unknown_seller" | "bad_price" | "out_of_stock" };
+/** `scanned` is how many raw items the page held, accepted or not; only stores that page by a fixed size need it. */
+export type ListingParse = { listings: Listing[]; rejected: Rejected[]; scanned?: number };
 
 const PESOS = /^\$?\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:,\d+)?$/;
 
@@ -26,7 +27,8 @@ export const STORE_HEADERS = {
  * `searchUrl` takes a 0-based page; page 0 must be the plain search URL. Up to `pages` pages are read
  * (default 1), deduped by external ref. Paging stops at the first page without any article (accepted or
  * rejected), and, past the first page, when the budget runs out or the store errors: the pages already
- * read are returned. Failures on page 0 propagate.
+ * read are returned. Failures on page 0 propagate. With `pageSize`, paging also stops after a page that
+ * scanned fewer items than that (its own listings are kept). `headers` replaces the HTML defaults.
  */
 export function createStoreAdapter(cfg: {
   id: string;
@@ -35,6 +37,8 @@ export function createStoreAdapter(cfg: {
   http: BudgetedHttp;
   now: () => Date;
   pages?: number;
+  pageSize?: number;
+  headers?: Record<string, string>;
   onRejected?: (store: string, rejected: Rejected[]) => void;
 }): StoreAdapter {
   const pages = Math.max(1, cfg.pages ?? 1);
@@ -46,17 +50,18 @@ export function createStoreAdapter(cfg: {
         const url = cfg.searchUrl(term, page);
         let html: string;
         try {
-          const res = await cfg.http.get(url, STORE_HEADERS);
+          const res = await cfg.http.get(url, cfg.headers ?? STORE_HEADERS);
           if (!res.ok) throw new UpstreamError(res.status, url);
           html = await res.text();
         } catch (error) {
           if (page > 0 && (error instanceof BudgetExhaustedError || error instanceof UpstreamError)) break;
           throw error;
         }
-        const { listings, rejected } = cfg.parse(html, artIso(cfg.now()));
+        const { listings, rejected, scanned } = cfg.parse(html, artIso(cfg.now()));
         if (rejected.length > 0) cfg.onRejected?.(cfg.id, rejected);
         if (listings.length === 0 && rejected.length === 0) break;
         for (const l of listings) if (!found.has(l.external_ref)) found.set(l.external_ref, l);
+        if (cfg.pageSize !== undefined && (scanned ?? 0) < cfg.pageSize) break;
       }
       return [...found.values()];
     },

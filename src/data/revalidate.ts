@@ -12,6 +12,7 @@ import { saveObservations } from "./repo.js";
 import type { RunDeps } from "./run-daily.js";
 import { createScrubber } from "./scrub.js";
 import { createFravegaAdapter } from "./stores/fravega.js";
+import { enabledSecondaryStores } from "./stores/index.js";
 import { StoreFormatError, type Listing, type StoreAdapter } from "./types.js";
 
 /** A validated candidate older than this is read again. */
@@ -222,7 +223,7 @@ export async function runRevalidate(deps: RunDeps): Promise<number> {
     const { report, skipped } = await revalidateChosen({
       db,
       catalog: createMlCatalog({ http, token }),
-      stores: [createFravegaAdapter({ http, now: deps.now, pages: 1 })], // Tasks 16 and 17 add Cetrogar and Musimundo
+      stores: [createFravegaAdapter({ http, now: deps.now, pages: 1 }), ...(await enabledSecondaryStores(db, { http, now: deps.now, pages: 1 }))],
       config,
       now: deps.now,
     });

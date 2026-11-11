@@ -4,6 +4,9 @@
 export const STORE_NAMES: Record<string, string> = {
   ml: "Mercado Libre",
   fravega: "Frávega",
+  jumbo: "Jumbo",
+  easy: "Easy",
+  coppel: "Coppel",
   cetrogar: "Cetrogar",
   musimundo: "Musimundo",
 };

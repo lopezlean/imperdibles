@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { CandidateList } from "../../src/contract/candidate-list.js";
 import type { LocalOutputHooks, OwnerAlert } from "../../src/contract/local-hooks.js";
 import { fravegaSearchUrl } from "../../src/data/stores/fravega.js";
+import { jumboSearchUrl } from "../../src/data/stores/jumbo.js";
 import { runDaily, main, USAGE, type RunDeps } from "../../src/data/run-daily.js";
 import { appendRunLog } from "../../src/local/run-log.js";
 import { D1Unavailable, type SqlClient, type SqlValue } from "../../src/shared/db/sql-client.js";
@@ -112,6 +113,8 @@ function setup(
   } = {},
 ): Setup {
   const sqlite = opts.sqlite ?? createSqliteClient();
+  // These tests replay a Frávega-only world; the VTEX stores seeded by 0003 have their own tests.
+  if (!opts.sqlite) sqlite.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel')");
   if (opts.tokenExpiry !== null && !opts.sqlite) addToken(sqlite, opts.tokenExpiry ?? "2026-11-11T00:00:00.000Z");
   const routes = opts.routes ?? composedRoutes();
   const fetched: string[] = [];
@@ -160,6 +163,28 @@ describe("imperdibles correr", () => {
     expect(await count(s.sqlite, "price_observations")).toBeGreaterThan(0);
     expect(await count(s.sqlite, "matches")).toBeGreaterThan(0);
     expect(logLines(s.logPath)).toEqual([{ run_id: RUN_ID, run_date: "2026-11-10", status: "ok", error: null, at: "2026-11-10T06:00:00-03:00" }]);
+  });
+
+  it("reads every enabled VTEX store for each model and records its prices", async () => {
+    const sqlite = createSqliteClient(); // jumbo, easy and coppel stay enabled as seeded by 0003
+    addToken(sqlite, "2026-11-11T00:00:00.000Z");
+    const routes = composedRoutes();
+    const jumbo = JSON.stringify([
+      {
+        productName: "Aspiradora Robot Philco PHRA26N", brand: "Philco", link: "https://www.jumbo.com.ar/philco-phra26n/p",
+        items: [{ ean: "7796962017233", sellers: [{ sellerId: "1", sellerName: "Jumbo", commertialOffer: { Price: 150000, ListPrice: 150000, AvailableQuantity: 2 } }] }],
+      },
+    ]);
+    const empty = () => new Response("[]", { status: 200 });
+    for (const host of ["jumbo", "easy", "coppel"]) {
+      for (const term of ["Philco%20PHRA26N", "Irobot%20M611330"]) routes.set(`https://www.${host}.com.ar/api/catalog_system/pub/products/search?ft=${term}&_from=0&_to=49`, empty);
+    }
+    routes.set(jumboSearchUrl("Philco PHRA26N"), () => new Response(jumbo, { status: 206 }));
+    const s = setup({ sqlite, routes });
+    expect((await runDaily(s.deps, { force: false })).exitCode).toBe(0);
+    expect(s.fetched).toContain(jumboSearchUrl("Philco PHRA26N"));
+    const stores = await s.sqlite.all<{ store_id: string }>("SELECT DISTINCT store_id FROM store_listings ORDER BY store_id");
+    expect(stores.map((r) => r.store_id)).toContain("jumbo");
   });
 
   it("runs the category of the ART day and stores it in runs.category", async () => {

@@ -593,6 +593,8 @@ function composedRoutes(): Routes {
 type Hooks = LocalOutputHooks & { reports: RevalidationReport[]; alerts: OwnerAlert[] };
 function setup(opts: { routes?: Routes; fetchImpl?: typeof fetch } = {}) {
   const sqlite = createSqliteClient();
+  // These tests replay a Frávega-only world; the VTEX stores seeded by 0003 have their own tests.
+  sqlite.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel')");
   sqlite.raw.prepare("INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, '2026-11-12T00:00:00.000Z')").run(SECRETS.token, SECRETS.refresh);
   const routes = opts.routes ?? composedRoutes();
   const fetched: string[] = [];

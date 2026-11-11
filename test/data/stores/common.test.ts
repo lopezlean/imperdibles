@@ -164,3 +164,49 @@ describe("createStoreAdapter", () => {
     });
   });
 });
+
+describe("createStoreAdapter pageSize and headers", () => {
+  const at = (ref: string) => ({
+    store: "t", title: "x", brand: null, model: null, gtin: null, price_ars: 10,
+    external_ref: ref, url: `https://t.test${ref}`, seller: "T", item_condition: null, observed_at: "",
+  });
+  function build(scanned: number[], extra: { pageSize?: number; headers?: Record<string, string> } = {}) {
+    const get = vi.fn(async (_url: string, _h?: Record<string, string>) => new Response(String(get.mock.calls.length - 1), { status: 200 }));
+    const adapter = createStoreAdapter({
+      id: "t", searchUrl: (_t, page) => `https://t.test/?page=${page}`,
+      parse: (html) => {
+        const n = scanned[Number(html)] ?? 0;
+        return { listings: n > 0 ? [at(`/p${html}`)] : [], rejected: [], scanned: n };
+      },
+      http: { get, used: () => 0 } as unknown as BudgetedHttp, now: () => new Date(), pages: 5, ...extra,
+    });
+    return { adapter, get };
+  }
+
+  it("stops after a page that scanned fewer items than pageSize, keeping its listings", async () => {
+    const { adapter, get } = build([50, 12, 50], { pageSize: 50 });
+    expect((await adapter.search("x")).map((l) => l.external_ref)).toEqual(["/p0", "/p1"]);
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps paging while pages are full", async () => {
+    const { adapter, get } = build([50, 50, 50, 50, 50, 50], { pageSize: 50 });
+    expect(await adapter.search("x")).toHaveLength(5);
+    expect(get).toHaveBeenCalledTimes(5);
+  });
+
+  it("ignores scanned when no pageSize is set", async () => {
+    const { adapter, get } = build([1, 1, 1, 1, 1], {});
+    expect(await adapter.search("x")).toHaveLength(5);
+    expect(get).toHaveBeenCalledTimes(5);
+  });
+
+  it("sends the configured headers instead of the HTML defaults", async () => {
+    const custom = build([1], { headers: { Accept: "application/json" } });
+    await custom.adapter.search("x");
+    expect(custom.get.mock.calls[0]![1]).toEqual({ Accept: "application/json" });
+    const dflt = build([1]);
+    await dflt.adapter.search("x");
+    expect(dflt.get.mock.calls[0]![1]).toMatchObject({ Accept: "text/html" });
+  });
+});
