@@ -11,7 +11,7 @@ export const fravegaSearchUrl = (term: string): string => `${ORIGIN}/l/?keyword=
 
 const formatError = (message: string) => new StoreFormatError(ID, message);
 
-type Enrichment = { gtin: string | null; marca: string | null };
+type Enrichment = { gtin: string | null; brand: string | null };
 
 /**
  * GTIN and brand come only from the embedded Next.js JSON, joined to an article by product slug.
@@ -37,11 +37,11 @@ function readEnrichment(html: string): Map<string, Enrichment> {
       const name = (obj.brand as { name?: unknown } | null)?.name;
       const entry: Enrichment = {
         gtin: typeof number === "string" && /^\d{8,14}$/.test(number) ? number : null,
-        marca: typeof name === "string" && name.trim() !== "" ? name.trim() : null,
+        brand: typeof name === "string" && name.trim() !== "" ? name.trim() : null,
       };
       const previous = found.get(obj.slug);
       if (previous === undefined) found.set(obj.slug, entry);
-      else if (previous === "ambiguous" || previous.gtin !== entry.gtin || previous.marca !== entry.marca) {
+      else if (previous === "ambiguous" || previous.gtin !== entry.gtin || previous.brand !== entry.brand) {
         found.set(obj.slug, "ambiguous");
       }
     }
@@ -100,23 +100,23 @@ export function parseFravegaListing(html: string, observedAt: string): ListingPa
       .map((text) => text.slice("Vendido por".length).trim());
     const seller = sellers.length === 1 && sellers[0] !== "" ? sellers[0]! : null;
 
-    if (seller === null) rejected.push({ ref_externa: ref, reason: "unknown_seller" });
-    else if (seller.normalize("NFC") !== SELLER) rejected.push({ ref_externa: ref, reason: "third_party_seller" });
-    else if (price === null) rejected.push({ ref_externa: ref, reason: "bad_price" });
+    if (seller === null) rejected.push({ external_ref: ref, reason: "unknown_seller" });
+    else if (seller.normalize("NFC") !== SELLER) rejected.push({ external_ref: ref, reason: "third_party_seller" });
+    else if (price === null) rejected.push({ external_ref: ref, reason: "bad_price" });
     else {
       const extra = enrichment.get(productSlug(ref));
       listings.push({
-        tienda: ID,
-        titulo: title,
-        marca: extra?.marca ?? null,
-        modelo: null,
+        store: ID,
+        title: title,
+        brand: extra?.brand ?? null,
+        model: null,
         gtin: extra?.gtin ?? null,
-        precio_ars: price,
-        ref_externa: ref,
+        price_ars: price,
+        external_ref: ref,
         url: `${ORIGIN}${ref}`,
-        vendedor: SELLER,
-        condicion: null,
-        observado_en: observedAt,
+        seller: SELLER,
+        item_condition: null,
+        observed_at: observedAt,
       });
     }
   }
@@ -128,7 +128,7 @@ export function parseFravegaListing(html: string, observedAt: string): ListingPa
 export function createFravegaAdapter(deps: {
   http: BudgetedHttp;
   now: () => Date;
-  onRejected?: (tienda: string, rejected: Rejected[]) => void;
+  onRejected?: (store: string, rejected: Rejected[]) => void;
 }) {
   return createStoreAdapter({ id: ID, searchUrl: fravegaSearchUrl, parse: parseFravegaListing, ...deps });
 }

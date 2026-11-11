@@ -21,7 +21,7 @@ export function createScrubber(db: SqlClient, env: LocalEnv): Scrubber {
     hold,
     async holdStoredTokens() {
       try {
-        const rows = await db.all<{ access_token: string; refresh_token: string }>("SELECT access_token, refresh_token FROM tokens_ml WHERE id = 1");
+        const rows = await db.all<{ access_token: string; refresh_token: string }>("SELECT access_token, refresh_token FROM ml_tokens WHERE id = 1");
         hold(rows[0]?.access_token);
         hold(rows[0]?.refresh_token);
       } catch {

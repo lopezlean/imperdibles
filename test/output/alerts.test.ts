@@ -3,22 +3,22 @@ import { renderOwnerAlert } from "../../src/output/alerts.js";
 
 describe("renderOwnerAlert", () => {
   it("run_failed", () => {
-    expect(renderOwnerAlert({ kind: "run_failed", corrida_id: null, reason: "boom" })).toBe(
+    expect(renderOwnerAlert({ kind: "run_failed", run_id: null, reason: "boom" })).toBe(
       "La corrida de hoy falló: boom. No se publicó nada.",
     );
   });
   it("run_failed truncates a huge reason under the Telegram limit", () => {
-    const t = renderOwnerAlert({ kind: "run_failed", corrida_id: "c", reason: "y".repeat(5000) });
+    const t = renderOwnerAlert({ kind: "run_failed", run_id: "c", reason: "y".repeat(5000) });
     expect(t.length).toBeLessThanOrEqual(4096);
     expect(t).toContain("…");
   });
   it("run_partial", () => {
-    expect(renderOwnerAlert({ kind: "run_partial", corrida_id: "c", skipped_models: 3, reason: "r" })).toBe(
+    expect(renderOwnerAlert({ kind: "run_partial", run_id: "c", skipped_models: 3, reason: "r" })).toBe(
       "La corrida de hoy quedó incompleta: 3 modelos sin leer.",
     );
   });
   it("store_format_error uses the store name", () => {
-    expect(renderOwnerAlert({ kind: "store_format_error", tienda: "fravega" })).toBe(
+    expect(renderOwnerAlert({ kind: "store_format_error", store: "fravega" })).toBe(
       "Cambió el formato de Frávega; no se usaron sus datos hoy.",
     );
   });

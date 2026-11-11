@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { categoryOfDay } from "../../src/data/category.js";
 import type { Category } from "../../src/shared/config.js";
 
-const c = (id: string): Category => ({ id, nombre: id, terminos: [id] });
+const c = (id: string): Category => ({ id, name: id, terms: [id] });
 
 describe("categoryOfDay", () => {
   const cats = [c("aspiradoras-robot"), c("freidoras-de-aire"), c("smart-tv")];

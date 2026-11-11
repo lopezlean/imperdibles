@@ -3,7 +3,7 @@ import { UpstreamError } from "../http.js";
 import type { Listing, StoreAdapter } from "../types.js";
 import { artIso } from "../../shared/time.js";
 
-export type Rejected = { ref_externa: string; reason: "third_party_seller" | "unknown_seller" | "bad_price" };
+export type Rejected = { external_ref: string; reason: "third_party_seller" | "unknown_seller" | "bad_price" };
 export type ListingParse = { listings: Listing[]; rejected: Rejected[] };
 
 const PESOS = /^\$?\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:,\d+)?$/;
@@ -28,7 +28,7 @@ export function createStoreAdapter(cfg: {
   parse: (html: string, observedAt: string) => ListingParse;
   http: BudgetedHttp;
   now: () => Date;
-  onRejected?: (tienda: string, rejected: Rejected[]) => void;
+  onRejected?: (store: string, rejected: Rejected[]) => void;
 }): StoreAdapter {
   return {
     id: cfg.id,

@@ -12,10 +12,10 @@ import {
 } from "./normalize.js";
 
 export type Match = {
-  confianza: "alta" | "dudosa";
-  regla: "gtin" | "marca_codigo_variante" | "parcial";
-  evidencia: Record<string, unknown>;
-  motivo?: string;
+  confidence: "high" | "doubtful";
+  rule: "gtin" | "brand_code_variant" | "partial";
+  evidence: Record<string, unknown>;
+  reason?: string;
 };
 
 const PRICE_RATIO_LIMIT = 2.0;
@@ -33,19 +33,19 @@ function containsWholeWord(title: string, brand: string): boolean {
   return ` ${words} `.includes(` ${needle} `);
 }
 
-// Brand equality: both marca set -> compare; one null -> the other's brand must appear as a whole word
+// Brand equality: both brand set -> compare; one null -> the other's brand must appear as a whole word
 // in the null side's title; both null -> unknown, so not equal.
 function brandsEqual(a: Comparable, b: Comparable): boolean {
-  const ba = a.marca ? normalizeBrand(a.marca) : null;
-  const bb = b.marca ? normalizeBrand(b.marca) : null;
+  const ba = a.brand ? normalizeBrand(a.brand) : null;
+  const bb = b.brand ? normalizeBrand(b.brand) : null;
   if (ba !== null && bb !== null) return ba === bb;
-  if (ba !== null) return containsWholeWord(b.titulo, ba);
-  if (bb !== null) return containsWholeWord(a.titulo, bb);
+  if (ba !== null) return containsWholeWord(b.title, ba);
+  if (bb !== null) return containsWholeWord(a.title, bb);
   return false;
 }
 
 function brandOf(a: Comparable, b: Comparable): string | null {
-  const m = a.marca ?? b.marca;
+  const m = a.brand ?? b.brand;
   return m ? normalizeBrand(m) : null;
 }
 
@@ -62,15 +62,15 @@ function isForBrand(title: string, brand: string | null): boolean {
 }
 
 function mlCodes(c: Comparable): string[] {
-  if (c.modelo) {
-    const fromModel = extractModelCodes(c.modelo);
+  if (c.model) {
+    const fromModel = extractModelCodes(c.model);
     if (fromModel.length > 0) return fromModel;
   }
-  return extractModelCodes(c.titulo);
+  return extractModelCodes(c.title);
 }
 
 function mlVariants(c: Comparable): string[] {
-  const set = new Set([...extractVariants(c.titulo), ...(c.modelo ? extractVariants(c.modelo) : [])]);
+  const set = new Set([...extractVariants(c.title), ...(c.model ? extractVariants(c.model) : [])]);
   return [...set].sort();
 }
 
@@ -86,84 +86,84 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
   const gtinA = normalizeGtin(ml.gtin);
   const gtinB = normalizeGtin(other.gtin);
   const codesMl = mlCodes(ml);
-  const codesOther = extractModelCodes(other.titulo);
+  const codesOther = extractModelCodes(other.title);
   const variantsMl = mlVariants(ml);
-  const variantsOther = extractVariants(other.titulo);
+  const variantsOther = extractVariants(other.title);
 
   let match: Match | null = null;
-  // First applicable reason to lower to dudosa; guards never raise confidence.
-  let lowered: { motivo: string; extra: Record<string, unknown> } | null = null;
-  const lower = (motivo: string, extra: Record<string, unknown> = {}) => {
-    lowered ??= { motivo, extra };
+  // First applicable reason to lower to doubtful; guards never raise confidence.
+  let lowered: { reason: string; extra: Record<string, unknown> } | null = null;
+  const lower = (reason: string, extra: Record<string, unknown> = {}) => {
+    lowered ??= { reason, extra };
   };
 
   if (gtinA !== null && gtinB !== null) {
     if (gtinA !== gtinB) return null;
-    match = { confianza: "alta", regla: "gtin", evidencia: { gtin: gtinA } };
+    match = { confidence: "high", rule: "gtin", evidence: { gtin: gtinA } };
     // Cross-check: a shared GTIN must not contradict brand or model code.
-    const brandMl = ml.marca ? normalizeBrand(ml.marca) : null;
-    const brandOther = other.marca ? normalizeBrand(other.marca) : null;
+    const brandMl = ml.brand ? normalizeBrand(ml.brand) : null;
+    const brandOther = other.brand ? normalizeBrand(other.brand) : null;
     // One brand missing: the known brand must appear in the other title, but only when that title has a
     // model code (a bare generic title proves nothing either way).
     const titleOnlyConflict =
       (brandMl !== null && brandOther === null && codesOther.length > 0 && !brandsEqual(ml, other)) ||
       (brandOther !== null && brandMl === null && codesMl.length > 0 && !brandsEqual(ml, other));
     if ((brandMl !== null && brandOther !== null && brandMl !== brandOther) || titleOnlyConflict) {
-      lower("marca_conflicto", { marca_ml: brandMl, marca_otra: brandOther });
+      lower("brand_conflict", { brand_ml: brandMl, brand_other: brandOther });
     } else if (codesMl.length > 0 && codesOther.length > 0 && !codesMl.some((c) => codesOther.includes(c))) {
-      lower("codigo_conflicto", { codigos_ml: codesMl, codigos_otra: codesOther });
+      lower("code_conflict", { codes_ml: codesMl, codes_other: codesOther });
     }
   } else if (brandsEqual(ml, other)) {
-    const evidencia = { codigos_ml: codesMl, codigos_otra: codesOther, variantes_ml: variantsMl, variantes_otra: variantsOther };
+    const evidence = { codes_ml: codesMl, codes_other: codesOther, variants_ml: variantsMl, variants_other: variantsOther };
     if (codesMl.length === 1 && codesOther.length === 1 && codesMl[0] === codesOther[0] && sameList(variantsMl, variantsOther)) {
-      match = { confianza: "alta", regla: "marca_codigo_variante", evidencia };
+      match = { confidence: "high", rule: "brand_code_variant", evidence };
     } else if (codesMl.some((c) => codesOther.includes(c)) || prefixOverlap(codesMl, codesOther)) {
-      match = { confianza: "dudosa", regla: "parcial", evidencia };
+      match = { confidence: "doubtful", rule: "partial", evidence };
     }
   }
   if (match === null) return null;
 
-  // Guards only ever lower a match to dudosa.
-  const accML = hasAccessoryWords(ml.titulo) || isForBrand(ml.titulo, brandOf(ml, other));
-  const accOther = hasAccessoryWords(other.titulo) || isForBrand(other.titulo, brandOf(ml, other));
-  if (accML || accOther) lower("accesorio", { accesorio_en: accML && accOther ? "ambas" : accML ? "ml" : "otra" });
+  // Guards only ever lower a match to doubtful.
+  const accML = hasAccessoryWords(ml.title) || isForBrand(ml.title, brandOf(ml, other));
+  const accOther = hasAccessoryWords(other.title) || isForBrand(other.title, brandOf(ml, other));
+  if (accML || accOther) lower("accessory", { accessory_in: accML && accOther ? "both" : accML ? "ml" : "other" });
 
-  if (hasConditionWords(ml.titulo) || hasConditionWords(other.titulo)) lower("condicion");
+  if (hasConditionWords(ml.title) || hasConditionWords(other.title)) lower("condition");
 
-  if (hasBundleWords(ml.titulo) !== hasBundleWords(other.titulo)) lower("bundle");
+  if (hasBundleWords(ml.title) !== hasBundleWords(other.title)) lower("bundle");
 
-  if (match.regla === "gtin" && !sameList(variantsMl, variantsOther)) {
-    lower("variante", { variantes_ml: variantsMl, variantes_otra: variantsOther });
+  if (match.rule === "gtin" && !sameList(variantsMl, variantsOther)) {
+    lower("variant", { variants_ml: variantsMl, variants_other: variantsOther });
   }
 
-  const sufML = extractCodeSuffixWords(ml.titulo);
-  const sufOther = extractCodeSuffixWords(other.titulo);
+  const sufML = extractCodeSuffixWords(ml.title);
+  const sufOther = extractCodeSuffixWords(other.title);
   const diff = [...sufML.filter((w) => !sufOther.includes(w)), ...sufOther.filter((w) => !sufML.includes(w))];
-  if (diff.length > 0) lower("sufijo_modelo", { sufijos: diff });
+  if (diff.length > 0) lower("model_suffix", { suffixes: diff });
 
-  const pa = ml.precio_ars;
-  const pb = other.precio_ars;
+  const pa = ml.price_ars;
+  const pb = other.price_ars;
   if (pa !== null && pb !== null) {
     const lo = Math.min(pa, pb);
     const hi = Math.max(pa, pb);
-    if (lo <= 0 || hi / lo > PRICE_RATIO_LIMIT) lower("cociente_precio", { precio_ml: pa, precio_otra: pb });
+    if (lo <= 0 || hi / lo > PRICE_RATIO_LIMIT) lower("price_ratio", { price_ml: pa, price_other: pb });
   }
 
   if (lowered === null) return match;
-  const { motivo, extra } = lowered as { motivo: string; extra: Record<string, unknown> };
-  return { ...match, confianza: "dudosa", motivo, evidencia: { ...match.evidencia, ...extra } };
+  const { reason, extra } = lowered as { reason: string; extra: Record<string, unknown> };
+  return { ...match, confidence: "doubtful", reason, evidence: { ...match.evidence, ...extra } };
 }
 
 export function pickCatalogProduct(
   store: Comparable,
   results: MlProduct[],
-): { product: MlProduct; match: Match } | { product: null; reason: "no_alta" | "multiple_alta" } {
-  const altas: { product: MlProduct; match: Match }[] = [];
+): { product: MlProduct; match: Match } | { product: null; reason: "no_high" | "multiple_high" } {
+  const highs: { product: MlProduct; match: Match }[] = [];
   for (const product of results) {
     const match = matchListings(product, store);
-    if (match?.confianza === "alta") altas.push({ product, match });
+    if (match?.confidence === "high") highs.push({ product, match });
   }
-  if (altas.length === 0) return { product: null, reason: "no_alta" };
-  if (altas.length > 1) return { product: null, reason: "multiple_alta" };
-  return altas[0]!;
+  if (highs.length === 0) return { product: null, reason: "no_high" };
+  if (highs.length > 1) return { product: null, reason: "multiple_high" };
+  return highs[0]!;
 }

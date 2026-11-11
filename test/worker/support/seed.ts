@@ -1,20 +1,20 @@
 import type { SqlClient } from "../../../src/shared/db/sql-client.js";
 
-/** Inserts the corridas row and the modelos rows that candidatos foreign keys need. */
+/** Inserts the runs row and the models rows that candidates foreign keys need. */
 export async function seedRun(
   db: SqlClient,
-  o: { fecha: string; modeloIds?: string[]; corridaId?: string },
-): Promise<{ corridaId: string }> {
-  const corridaId = o.corridaId ?? `corrida-${o.fecha}`;
+  o: { run_date: string; modelIds?: string[]; runId?: string },
+): Promise<{ runId: string }> {
+  const runId = o.runId ?? `run-${o.run_date}`;
   await db.run(
-    "INSERT INTO corridas (id, fecha, categoria, estado, iniciada_en) VALUES (?, ?, 'aspiradoras-robot', 'ok', ?)",
-    [corridaId, o.fecha, `${o.fecha}T06:00:00-03:00`],
+    "INSERT INTO runs (id, run_date, category, status, started_at) VALUES (?, ?, 'aspiradoras-robot', 'ok', ?)",
+    [runId, o.run_date, `${o.run_date}T06:00:00-03:00`],
   );
-  for (const id of o.modeloIds ?? []) {
+  for (const id of o.modelIds ?? []) {
     await db.run(
-      "INSERT OR IGNORE INTO modelos (id, categoria, marca, codigo_modelo, clave, titulo, creado_en) VALUES (?, 'aspiradoras-robot', 'Fake', ?, ?, 'Fake', ?)",
-      [id, id, id, `${o.fecha}T06:00:00-03:00`],
+      "INSERT OR IGNORE INTO models (id, category, brand, model_code, model_key, title, created_at) VALUES (?, 'aspiradoras-robot', 'Fake', ?, ?, 'Fake', ?)",
+      [id, id, id, `${o.run_date}T06:00:00-03:00`],
     );
   }
-  return { corridaId };
+  return { runId };
 }

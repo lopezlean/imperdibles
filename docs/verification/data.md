@@ -20,7 +20,7 @@
 ## V2 ML rate limits
 
 - Status: PENDING OWNER. Headers containing `ratelimit` or `retry` are printed by `pnpm verify:ml "xiaomi s40c"`.
-- If no headers appear, keep `presupuesto_consultas` at 150. If any 429 appeared while recording, owner lowers it to 100: `pnpm wrangler d1 execute imperdibles --remote --command "UPDATE config SET valor='100' WHERE clave='presupuesto_consultas'"`.
+- If no headers appear, keep `query_budget` at 150. If any 429 appeared while recording, owner lowers it to 100: `pnpm wrangler d1 execute imperdibles --remote --command "UPDATE config SET value='100' WHERE name='query_budget'"`.
 
 ## V3 Refresh token single use
 
@@ -60,8 +60,8 @@
 
 - Status: PENDING OWNER. The owner has not run `imperdibles correr` against the real D1 yet, so the rows written per run (for the 100.000 rows/day D1 free quota) are unmeasured.
 - Owner runs: `pnpm imperdibles correr` once. Expected: exit 0, the stub hook line in stderr (or the shortlist on Telegram once output Task 6 is merged).
-- Then check the run: `pnpm wrangler d1 execute imperdibles --remote --command "SELECT id, estado, modelos_comparados, consultas_usadas FROM corridas ORDER BY iniciada_en DESC LIMIT 1"`.
-- Then count the rows written by that run (`<id>` from the previous query): `pnpm wrangler d1 execute imperdibles --remote --command "SELECT (SELECT COUNT(*) FROM observaciones_precio WHERE corrida_id = '<id>') AS observaciones, (SELECT COUNT(*) FROM candidatos WHERE corrida_id = '<id>') AS candidatos, (SELECT COUNT(*) FROM modelos) AS modelos, (SELECT COUNT(*) FROM emparejados) AS emparejados, (SELECT COUNT(*) FROM publicaciones_tienda) AS publicaciones"`. Rows written per run are about observaciones + candidatos + 1 (corridas) plus the upserts to publicaciones_tienda, modelos and emparejados; record the totals and compare with 100.000.
-- A second `pnpm imperdibles correr` the same day must print `Ya hay una corrida de hoy (<id>). Para repetirla: imperdibles correr --forzar` and exit 2 (also confirms `fecha` uses the ART date).
+- Then check the run: `pnpm wrangler d1 execute imperdibles --remote --command "SELECT id, status, models_compared, queries_used FROM runs ORDER BY started_at DESC LIMIT 1"`.
+- Then count the rows written by that run (`<id>` from the previous query): `pnpm wrangler d1 execute imperdibles --remote --command "SELECT (SELECT COUNT(*) FROM price_observations WHERE run_id = '<id>') AS observations, (SELECT COUNT(*) FROM candidates WHERE run_id = '<id>') AS candidates, (SELECT COUNT(*) FROM models) AS models, (SELECT COUNT(*) FROM matches) AS matches, (SELECT COUNT(*) FROM store_listings) AS listings"`. Rows written per run are about observations + candidates + 1 (runs) plus the upserts to store_listings, models and matches; record the totals and compare with 100.000.
+- A second `pnpm imperdibles correr` the same day must print `Ya hay una corrida de hoy (<id>). Para repetirla: imperdibles correr --forzar` and exit 2 (also confirms `run_date` uses the ART date).
 - Result: pending.
 - Fallback: if one run writes more than a fraction of 100.000 rows, reduce `presupuesto_consultas` or the categories read per day.

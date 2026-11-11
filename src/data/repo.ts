@@ -5,25 +5,25 @@ import type { Listing } from "./types.js";
 
 export type ModelRow = {
   id: string;
-  categoria: string;
-  marca: string;
-  codigo_modelo: string;
+  category: string;
+  brand: string;
+  model_code: string;
   gtin: string | null;
   ml_product_id: string | null;
-  titulo: string;
-  imagen_url: string | null;
+  title: string;
+  image_url: string | null;
 };
 
-export type MatchRow = { modelo_id: string; tienda: string; ref_externa: string; match: Match };
+export type MatchRow = { model_id: string; store: string; external_ref: string; match: Match };
 
-/** Opens a run. It stays 'fallida' until finishRun says otherwise. */
+/** Opens a run. It stays 'failed' until finishRun says otherwise. */
 export async function startRun(
   db: SqlClient,
-  run: { id: string; fecha: string; categoria: string; iniciada_en: string },
+  run: { id: string; run_date: string; category: string; started_at: string },
 ): Promise<void> {
   await db.run(
-    "INSERT INTO corridas (id, fecha, categoria, estado, iniciada_en) VALUES (?, ?, ?, 'fallida', ?)",
-    [run.id, run.fecha, run.categoria, run.iniciada_en],
+    "INSERT INTO runs (id, run_date, category, status, started_at) VALUES (?, ?, ?, 'failed', ?)",
+    [run.id, run.run_date, run.category, run.started_at],
   );
 }
 
@@ -31,147 +31,147 @@ export async function finishRun(
   db: SqlClient,
   id: string,
   r: {
-    estado: "ok" | "parcial" | "fallida";
-    modelos_comparados: number;
-    consultas_usadas: number;
+    status: "ok" | "partial" | "failed";
+    models_compared: number;
+    queries_used: number;
     error: string | null;
-    terminada_en: string;
+    finished_at: string;
   },
 ): Promise<void> {
   await db.run(
-    "UPDATE corridas SET estado = ?, modelos_comparados = ?, consultas_usadas = ?, error = ?, terminada_en = ? WHERE id = ?",
-    [r.estado, r.modelos_comparados, r.consultas_usadas, r.error, r.terminada_en, id],
+    "UPDATE runs SET status = ?, models_compared = ?, queries_used = ?, error = ?, finished_at = ? WHERE id = ?",
+    [r.status, r.models_compared, r.queries_used, r.error, r.finished_at, id],
   );
 }
 
-/** Latest finished (ok or parcial) run of an ART date; fallida or still-open runs never count. */
+/** Latest finished (ok or partial) run of an ART date; failed or still-open runs never count. */
 export async function findRunOfDay(
   db: SqlClient,
-  fecha: string,
-): Promise<{ id: string; estado: "ok" | "parcial" } | null> {
-  const rows = await db.all<{ id: string; estado: "ok" | "parcial" }>(
-    "SELECT id, estado FROM corridas WHERE fecha = ? AND estado IN ('ok', 'parcial') ORDER BY iniciada_en DESC, rowid DESC LIMIT 1",
-    [fecha],
+  run_date: string,
+): Promise<{ id: string; status: "ok" | "partial" } | null> {
+  const rows = await db.all<{ id: string; status: "ok" | "partial" }>(
+    "SELECT id, status FROM runs WHERE run_date = ? AND status IN ('ok', 'partial') ORDER BY started_at DESC, rowid DESC LIMIT 1",
+    [run_date],
   );
   return rows[0] ?? null;
 }
 
 /** Every price read is kept: upsert the listing, then append one observation per listing. */
-export async function saveObservations(db: SqlClient, corridaId: string, listings: Listing[]): Promise<void> {
+export async function saveObservations(db: SqlClient, runId: string, listings: Listing[]): Promise<void> {
   if (listings.length === 0) return;
   const json = JSON.stringify(
     listings.map((l) => ({
-      tienda: l.tienda,
-      ref: l.ref_externa,
-      titulo: l.titulo,
+      store: l.store,
+      ref: l.external_ref,
+      title: l.title,
       url: l.url,
-      vendedor: l.vendedor,
-      condicion: l.condicion,
-      precio: l.precio_ars,
-      en: l.observado_en,
+      seller: l.seller,
+      item_condition: l.item_condition,
+      price: l.price_ars,
+      en: l.observed_at,
     })),
   );
   await db.run(
-    `INSERT INTO publicaciones_tienda (tienda_id, ref_externa, titulo, url, vendedor, condicion, primera_vez, ultima_vez)
-     SELECT json_extract(value, '$.tienda'), json_extract(value, '$.ref'), json_extract(value, '$.titulo'),
-            json_extract(value, '$.url'), json_extract(value, '$.vendedor'), json_extract(value, '$.condicion'),
+    `INSERT INTO store_listings (store_id, external_ref, title, url, seller, item_condition, first_seen_at, last_seen_at)
+     SELECT json_extract(value, '$.store'), json_extract(value, '$.ref'), json_extract(value, '$.title'),
+            json_extract(value, '$.url'), json_extract(value, '$.seller'), json_extract(value, '$.item_condition'),
             json_extract(value, '$.en'), json_extract(value, '$.en')
      FROM json_each(?) WHERE true
-     ON CONFLICT (tienda_id, ref_externa) DO UPDATE SET
-       titulo = excluded.titulo, url = excluded.url, vendedor = excluded.vendedor,
-       condicion = excluded.condicion, ultima_vez = excluded.ultima_vez`,
+     ON CONFLICT (store_id, external_ref) DO UPDATE SET
+       title = excluded.title, url = excluded.url, seller = excluded.seller,
+       item_condition = excluded.item_condition, last_seen_at = excluded.last_seen_at`,
     [json],
   );
   await db.run(
-    `INSERT INTO observaciones_precio (publicacion_id, precio_ars, observado_en, corrida_id)
-     SELECT p.id, json_extract(j.value, '$.precio'), json_extract(j.value, '$.en'), ?
+    `INSERT INTO price_observations (listing_id, price_ars, observed_at, run_id)
+     SELECT p.id, json_extract(j.value, '$.price'), json_extract(j.value, '$.en'), ?
      FROM json_each(?) j
-     JOIN publicaciones_tienda p
-       ON p.tienda_id = json_extract(j.value, '$.tienda') AND p.ref_externa = json_extract(j.value, '$.ref')`,
-    [corridaId, json],
+     JOIN store_listings p
+       ON p.store_id = json_extract(j.value, '$.store') AND p.external_ref = json_extract(j.value, '$.ref')`,
+    [runId, json],
   );
 }
 
 export async function upsertModels(db: SqlClient, models: ModelRow[], now: string): Promise<void> {
   if (models.length === 0) return;
   await db.run(
-    `INSERT INTO modelos (id, categoria, marca, codigo_modelo, clave, gtin, ml_product_id, titulo, imagen_url, creado_en)
-     SELECT json_extract(value, '$.id'), json_extract(value, '$.categoria'), json_extract(value, '$.marca'),
-            json_extract(value, '$.codigo_modelo'), json_extract(value, '$.id'), json_extract(value, '$.gtin'),
-            json_extract(value, '$.ml_product_id'), json_extract(value, '$.titulo'),
-            json_extract(value, '$.imagen_url'), ?
+    `INSERT INTO models (id, category, brand, model_code, model_key, gtin, ml_product_id, title, image_url, created_at)
+     SELECT json_extract(value, '$.id'), json_extract(value, '$.category'), json_extract(value, '$.brand'),
+            json_extract(value, '$.model_code'), json_extract(value, '$.id'), json_extract(value, '$.gtin'),
+            json_extract(value, '$.ml_product_id'), json_extract(value, '$.title'),
+            json_extract(value, '$.image_url'), ?
      FROM json_each(?) WHERE true
      ON CONFLICT (id) DO UPDATE SET
-       categoria = excluded.categoria, marca = excluded.marca, codigo_modelo = excluded.codigo_modelo,
-       gtin = excluded.gtin, ml_product_id = excluded.ml_product_id, titulo = excluded.titulo,
-       imagen_url = excluded.imagen_url`,
+       category = excluded.category, brand = excluded.brand, model_code = excluded.model_code,
+       gtin = excluded.gtin, ml_product_id = excluded.ml_product_id, title = excluded.title,
+       image_url = excluded.image_url`,
     [now, JSON.stringify(models)],
   );
 }
 
-/** Pairs are keyed by (modelo, publicacion); a 'rechazado' pair is never touched. */
+/** Pairs are keyed by (model, publicacion); a 'rejected' pair is never touched. */
 export async function saveMatches(db: SqlClient, rows: MatchRow[], now: string): Promise<void> {
   if (rows.length === 0) return;
   const json = JSON.stringify(
     rows.map((r) => ({
-      modelo_id: r.modelo_id,
-      tienda: r.tienda,
-      ref: r.ref_externa,
-      confianza: r.match.confianza,
-      regla: r.match.regla,
-      evidencia: JSON.stringify(
-        r.match.motivo === undefined ? r.match.evidencia : { ...r.match.evidencia, motivo: r.match.motivo },
+      model_id: r.model_id,
+      store: r.store,
+      ref: r.external_ref,
+      confidence: r.match.confidence,
+      rule: r.match.rule,
+      evidence: JSON.stringify(
+        r.match.reason === undefined ? r.match.evidence : { ...r.match.evidence, reason: r.match.reason },
       ),
     })),
   );
   await db.run(
-    `INSERT INTO emparejados (modelo_id, publicacion_id, confianza, regla, evidencia, estado, creado_en)
-     SELECT json_extract(j.value, '$.modelo_id'), p.id, json_extract(j.value, '$.confianza'),
-            json_extract(j.value, '$.regla'), json_extract(j.value, '$.evidencia'), 'auto', ?
+    `INSERT INTO matches (model_id, listing_id, confidence, rule, evidence, status, created_at)
+     SELECT json_extract(j.value, '$.model_id'), p.id, json_extract(j.value, '$.confidence'),
+            json_extract(j.value, '$.rule'), json_extract(j.value, '$.evidence'), 'auto', ?
      FROM json_each(?) j
-     JOIN publicaciones_tienda p
-       ON p.tienda_id = json_extract(j.value, '$.tienda') AND p.ref_externa = json_extract(j.value, '$.ref')
+     JOIN store_listings p
+       ON p.store_id = json_extract(j.value, '$.store') AND p.external_ref = json_extract(j.value, '$.ref')
      WHERE true
-     ON CONFLICT (modelo_id, publicacion_id) DO UPDATE SET
-       confianza = excluded.confianza, regla = excluded.regla, evidencia = excluded.evidencia
-     WHERE emparejados.estado <> 'rechazado'`,
+     ON CONFLICT (model_id, listing_id) DO UPDATE SET
+       confidence = excluded.confidence, rule = excluded.rule, evidence = excluded.evidence
+     WHERE matches.status <> 'rejected'`,
     [now, json],
   );
 }
 
-/** "<tienda>:<ref_externa>" of every listing the owner rejected for this model. */
-export async function rejectedRefs(db: SqlClient, modeloId: string): Promise<Set<string>> {
-  const rows = await db.all<{ tienda_id: string; ref_externa: string }>(
-    `SELECT p.tienda_id, p.ref_externa FROM emparejados e
-     JOIN publicaciones_tienda p ON p.id = e.publicacion_id
-     WHERE e.modelo_id = ? AND e.estado = 'rechazado'`,
-    [modeloId],
+/** "<store>:<external_ref>" of every listing the owner rejected for this model. */
+export async function rejectedRefs(db: SqlClient, modelId: string): Promise<Set<string>> {
+  const rows = await db.all<{ store_id: string; external_ref: string }>(
+    `SELECT p.store_id, p.external_ref FROM matches e
+     JOIN store_listings p ON p.id = e.listing_id
+     WHERE e.model_id = ? AND e.status = 'rejected'`,
+    [modelId],
   );
-  return new Set(rows.map((r) => `${r.tienda_id}:${r.ref_externa}`));
+  return new Set(rows.map((r) => `${r.store_id}:${r.external_ref}`));
 }
 
 /** One statement: every candidate is inserted or none (duplicate id or unknown model fails it whole). */
 export async function saveCandidates(db: SqlClient, list: CandidateList): Promise<void> {
-  if (list.candidatos.length === 0) return;
+  if (list.candidates.length === 0) return;
   await db.run(
-    `INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado)
-     SELECT json_extract(value, '$.candidato_id'), ?, json_extract(value, '$.modelo_id'), json_extract(value, '$'), 'pendiente'
+    `INSERT INTO candidates (id, run_id, model_id, payload, status)
+     SELECT json_extract(value, '$.candidate_id'), ?, json_extract(value, '$.model_id'), json_extract(value, '$'), 'pending'
      FROM json_each(?)`,
-    [list.corrida_id, JSON.stringify(list.candidatos)],
+    [list.run_id, JSON.stringify(list.candidates)],
   );
 }
 
 /** Observations of a listing between two ART dates (YYYY-MM-DD), both inclusive, oldest first. */
 export async function priceHistory(
   db: SqlClient,
-  publicacionId: number,
+  listingId: number,
   from: string,
   to: string,
-): Promise<{ precio_ars: number; observado_en: string; corrida_id: string }[]> {
+): Promise<{ price_ars: number; observed_at: string; run_id: string }[]> {
   return db.all(
-    `SELECT precio_ars, observado_en, corrida_id FROM observaciones_precio
-     WHERE publicacion_id = ? AND substr(observado_en, 1, 10) BETWEEN substr(?, 1, 10) AND substr(?, 1, 10)
-     ORDER BY observado_en, id`,
-    [publicacionId, from, to],
+    `SELECT price_ars, observed_at, run_id FROM price_observations
+     WHERE listing_id = ? AND substr(observed_at, 1, 10) BETWEEN substr(?, 1, 10) AND substr(?, 1, 10)
+     ORDER BY observed_at, id`,
+    [listingId, from, to],
   );
 }

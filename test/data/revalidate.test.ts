@@ -25,75 +25,75 @@ const MIN = 60_000;
 
 type Db = ReturnType<typeof createSqliteClient>;
 
-function candidate(over: { id?: string; modelo?: string; ml?: number; rivals?: [string, string, number][] } = {}): Candidate {
-  const modelo = over.modelo ?? "FAKE:AAA111";
+function candidate(over: { id?: string; model?: string; ml?: number; rivals?: [string, string, number][] } = {}): Candidate {
+  const model = over.model ?? "FAKE:AAA111";
   const ml = over.ml ?? 100000;
   const rivals = over.rivals ?? [["fravega", "/p/fake-aaa111-1", 150000]];
   return candidateSchema.parse({
-    candidato_id: over.id ?? `${RUN}:${modelo}`,
-    modelo_id: modelo,
-    marca: "Fake",
-    titulo: "Aspiradora Robot Fake AAA111",
-    imagen_url: null,
+    candidate_id: over.id ?? `${RUN}:${model}`,
+    model_id: model,
+    brand: "Fake",
+    title: "Aspiradora Robot Fake AAA111",
+    image_url: null,
     ml: {
-      tienda: "ml",
-      titulo_listado: "Aspiradora Robot Fake AAA111",
+      store: "ml",
+      listing_title: "Aspiradora Robot Fake AAA111",
       url: "https://www.mercadolibre.com.ar/p/MLA00000099",
-      precio_ars: ml,
-      observado_en: "2026-11-10T06:00:00-03:00",
-      ref_externa: "MLA90000990",
-      vendedor: "3001",
+      price_ars: ml,
+      observed_at: "2026-11-10T06:00:00-03:00",
+      external_ref: "MLA90000990",
+      seller: "3001",
       ml_product_id: "MLA00000099",
       ml_seller_id: "3001",
     },
-    otras: rivals.map(([tienda, ref, precio]) => ({
-      tienda,
-      titulo_listado: "Robot Fake AAA111",
+    others: rivals.map(([store, ref, price]) => ({
+      store,
+      listing_title: "Robot Fake AAA111",
       url: `https://example.test${ref}`,
-      precio_ars: precio,
-      observado_en: "2026-11-10T06:00:00-03:00",
-      ref_externa: ref,
-      vendedor: "Frávega",
+      price_ars: price,
+      observed_at: "2026-11-10T06:00:00-03:00",
+      external_ref: ref,
+      seller: "Frávega",
     })),
-    diferencia_ars: [...rivals].sort((a, b) => a[2] - b[2])[0]![2] - ml,
-    diferencia_pct: (([...rivals].sort((a, b) => a[2] - b[2])[0]![2] - ml) * 100) / [...rivals].sort((a, b) => a[2] - b[2])[0]![2],
-    confianza: "alta",
-    regla_emparejado: "gtin",
+    difference_ars: [...rivals].sort((a, b) => a[2] - b[2])[0]![2] - ml,
+    difference_pct: (([...rivals].sort((a, b) => a[2] - b[2])[0]![2] - ml) * 100) / [...rivals].sort((a, b) => a[2] - b[2])[0]![2],
+    confidence: "high",
+    match_rule: "gtin",
   });
 }
 
-async function seedRun(db: Db, id: string, fecha: string) {
-  await db.run("INSERT INTO corridas (id, fecha, categoria, estado, iniciada_en) VALUES (?, ?, 'aspiradoras-robot', 'ok', ?)", [id, fecha, `${fecha}T06:00:00-03:00`]);
+async function seedRun(db: Db, id: string, run_date: string) {
+  await db.run("INSERT INTO runs (id, run_date, category, status, started_at) VALUES (?, ?, 'aspiradoras-robot', 'ok', ?)", [id, run_date, `${run_date}T06:00:00-03:00`]);
 }
 
 async function seedModel(db: Db, id = "FAKE:AAA111", code = "AAA111") {
-  await db.run("INSERT INTO modelos (id, categoria, marca, codigo_modelo, clave, ml_product_id, titulo, creado_en) VALUES (?, 'aspiradoras-robot', 'Fake', ?, ?, 'MLA00000099', 'Fake', '2026-11-10T06:00:00-03:00')", [id, code, id]);
+  await db.run("INSERT INTO models (id, category, brand, model_code, model_key, ml_product_id, title, created_at) VALUES (?, 'aspiradoras-robot', 'Fake', ?, ?, 'MLA00000099', 'Fake', '2026-11-10T06:00:00-03:00')", [id, code, id]);
 }
 
 async function seedCandidate(
   db: Db,
   c: Candidate,
-  o: { estado?: string; corrida?: string; validado_en?: string | null; telegram_file_id?: string | null; enlace?: string | null } = {},
+  o: { status?: string; run?: string; validated_at?: string | null; telegram_file_id?: string | null; enlace?: string | null } = {},
 ) {
   await db.run(
-    "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, enlace_afiliado, telegram_file_id, validado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    [c.candidato_id, o.corrida ?? RUN, c.modelo_id, JSON.stringify(c), o.estado ?? "elegido", o.enlace ?? null, o.telegram_file_id ?? null, o.validado_en ?? null],
+    "INSERT INTO candidates (id, run_id, model_id, payload, status, affiliate_link, telegram_file_id, validated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [c.candidate_id, o.run ?? RUN, c.model_id, JSON.stringify(c), o.status ?? "chosen", o.enlace ?? null, o.telegram_file_id ?? null, o.validated_at ?? null],
   );
 }
 
-const offer = (precio_ars: number, condicion = "new", item_id = "MLA90000990"): MlOffer => ({ item_id, seller_id: "3001", precio_ars, condicion });
-const listing = (tienda: string, ref: string, precio_ars: number): Listing => ({
-  tienda,
-  titulo: "Robot Fake AAA111",
-  marca: "Fake",
-  modelo: "AAA111",
+const offer = (price_ars: number, item_condition = "new", item_id = "MLA90000990"): MlOffer => ({ item_id, seller_id: "3001", price_ars, item_condition });
+const listing = (store: string, ref: string, price_ars: number): Listing => ({
+  store,
+  title: "Robot Fake AAA111",
+  brand: "Fake",
+  model: "AAA111",
   gtin: null,
-  precio_ars,
-  ref_externa: ref,
+  price_ars,
+  external_ref: ref,
   url: `https://example.test${ref}`,
-  vendedor: "Frávega",
-  condicion: null,
-  observado_en: "2026-11-10T10:45:00-03:00",
+  seller: "Frávega",
+  item_condition: null,
+  observed_at: "2026-11-10T10:45:00-03:00",
 });
 
 type Reads = { offers: string[]; searches: { store: string; term: string }[] };
@@ -140,8 +140,8 @@ async function setupDb(): Promise<Db> {
 }
 
 const stateOf = (db: Db, id: string) =>
-  db.all<{ estado: string; validado_en: string | null; telegram_file_id: string | null; payload: string; enlace_afiliado: string | null }>(
-    "SELECT estado, validado_en, telegram_file_id, payload, enlace_afiliado FROM candidatos WHERE id = ?",
+  db.all<{ status: string; validated_at: string | null; telegram_file_id: string | null; payload: string; affiliate_link: string | null }>(
+    "SELECT status, validated_at, telegram_file_id, payload, affiliate_link FROM candidates WHERE id = ?",
     [id],
   ).then((r) => r[0]!);
 
@@ -160,16 +160,16 @@ async function revalidate(db: Db, f: ReturnType<typeof fakes>) {
 }
 
 describe("revalidateChosen", () => {
-  it("validates a chosen candidate that still passes and stamps validado_en", async () => {
+  it("validates a chosen candidate that still passes and stamps validated_at", async () => {
     const db = await setupDb();
     const c = candidate();
     await seedCandidate(db, c);
     const report = await revalidate(db, okReads());
-    expect(report).toEqual({ fecha: "2026-11-10", validated: [c.candidato_id], invalidated: [] });
-    expect(await stateOf(db, c.candidato_id)).toMatchObject({ estado: "validado", validado_en: "2026-11-10T10:45:00-03:00" });
+    expect(report).toEqual({ run_date: "2026-11-10", validated: [c.candidate_id], invalidated: [] });
+    expect(await stateOf(db, c.candidate_id)).toMatchObject({ status: "validated", validated_at: "2026-11-10T10:45:00-03:00" });
   });
 
-  it("reads the model with '<marca> <codigo_modelo>' in every rival store", async () => {
+  it("reads the model with '<brand> <model_code>' in every rival store", async () => {
     const db = await setupDb();
     await seedCandidate(db, candidate());
     const f = okReads();
@@ -184,8 +184,8 @@ describe("revalidateChosen", () => {
     await seedCandidate(db, c);
     const report = await revalidate(db, okReads(110000)); // 9.09% cheaper, threshold is 15
     expect(report.validated).toEqual([]);
-    expect(report.invalidated).toEqual([{ candidato_id: c.candidato_id, titulo: c.titulo, reason: "below_threshold" }]);
-    expect((await stateOf(db, c.candidato_id)).estado).toBe("invalidado");
+    expect(report.invalidated).toEqual([{ candidate_id: c.candidate_id, title: c.title, reason: "below_threshold" }]);
+    expect((await stateOf(db, c.candidate_id)).status).toBe("invalidated");
   });
 
   it("invalidates below_threshold when the ML price rose", async () => {
@@ -202,11 +202,11 @@ describe("revalidateChosen", () => {
     await seedCandidate(db, c);
     const f = fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { fravega: { [FAKE_MODEL_TERM]: [] } } });
     const report = await revalidate(db, f);
-    expect(report.invalidated).toEqual([{ candidato_id: c.candidato_id, titulo: c.titulo, reason: "offer_missing" }]);
-    expect((await stateOf(db, c.candidato_id)).estado).toBe("invalidado");
+    expect(report.invalidated).toEqual([{ candidate_id: c.candidate_id, title: c.title, reason: "offer_missing" }]);
+    expect((await stateOf(db, c.candidate_id)).status).toBe("invalidated");
   });
 
-  it("invalidates offer_missing when the search returns other listings but not the same ref_externa", async () => {
+  it("invalidates offer_missing when the search returns other listings but not the same external_ref", async () => {
     const db = await setupDb();
     const c = candidate();
     await seedCandidate(db, c);
@@ -222,7 +222,7 @@ describe("revalidateChosen", () => {
     expect((await revalidate(db, f)).invalidated.map((i) => i.reason)).toEqual(["offer_missing"]);
   });
 
-  const untouched = async (db: Db, c: Candidate, before: Awaited<ReturnType<typeof stateOf>>) => expect(await stateOf(db, c.candidato_id)).toEqual(before);
+  const untouched = async (db: Db, c: Candidate, before: Awaited<ReturnType<typeof stateOf>>) => expect(await stateOf(db, c.candidate_id)).toEqual(before);
 
   it.each([
     ["a network failure reading ML", fakes({ offers: { MLA00000099: new NetworkError("fetch failed") }, stores: { fravega: { [FAKE_MODEL_TERM]: [listing("fravega", "/p/fake-aaa111-1", 150000)] } } })],
@@ -234,33 +234,33 @@ describe("revalidateChosen", () => {
     const db = await setupDb();
     const c = candidate();
     await seedCandidate(db, c, { telegram_file_id: "AgACfile" });
-    const before = await stateOf(db, c.candidato_id);
+    const before = await stateOf(db, c.candidate_id);
     const { report, skipped } = await revalidateAll(db, f);
-    expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
-    expect(skipped).toMatchObject([{ candidato_id: c.candidato_id, titulo: c.titulo, tienda: null }]);
+    expect(report).toEqual({ run_date: "2026-11-10", validated: [], invalidated: [] });
+    expect(skipped).toMatchObject([{ candidate_id: c.candidate_id, title: c.title, store: null }]);
     expect(skipped[0]!.reason).not.toBe("");
     await untouched(db, c, before);
-    expect(before).toMatchObject({ estado: "elegido", validado_en: null, telegram_file_id: "AgACfile" });
+    expect(before).toMatchObject({ status: "chosen", validated_at: null, telegram_file_id: "AgACfile" });
   });
 
   it("leaves the candidate untouched and names the store on a StoreFormatError", async () => {
     const db = await setupDb();
     const c = candidate();
     await seedCandidate(db, c);
-    const before = await stateOf(db, c.candidato_id);
+    const before = await stateOf(db, c.candidate_id);
     const f = fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { fravega: { [FAKE_MODEL_TERM]: new StoreFormatError("fravega", "layout changed") } } });
     const { report, skipped } = await revalidateAll(db, f);
     expect(report.invalidated).toEqual([]);
-    expect(skipped).toMatchObject([{ candidato_id: c.candidato_id, tienda: "fravega" }]);
+    expect(skipped).toMatchObject([{ candidate_id: c.candidate_id, store: "fravega" }]);
     await untouched(db, c, before);
   });
 
   it("does not validate on the remaining rival when another rival store fails to read", async () => {
     const db = await setupDb();
-    await db.run("INSERT INTO tiendas (id, nombre) VALUES ('cetrogar', 'Cetrogar')");
+    await db.run("INSERT INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
     const c = candidate({ rivals: [["fravega", "/p/fake-aaa111-1", 150000], ["cetrogar", "/p/fake-aaa111-c", 160000]] });
     await seedCandidate(db, c);
-    const before = await stateOf(db, c.candidato_id);
+    const before = await stateOf(db, c.candidate_id);
     const f = fakes({
       offers: { MLA00000099: [offer(100000)] },
       stores: {
@@ -269,21 +269,21 @@ describe("revalidateChosen", () => {
       },
     });
     const { report, skipped } = await revalidateAll(db, f);
-    expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
+    expect(report).toEqual({ run_date: "2026-11-10", validated: [], invalidated: [] });
     expect(skipped).toHaveLength(1);
     await untouched(db, c, before);
   });
 
-  it("keeps the old validado_en of a previously validated candidate whose re-read failed", async () => {
+  it("keeps the old validated_at of a previously validated candidate whose re-read failed", async () => {
     const db = await setupDb();
     const c = candidate();
-    await seedCandidate(db, c, { estado: "validado", validado_en: "2026-11-10T09:00:00-03:00", telegram_file_id: "AgACfile" });
-    const before = await stateOf(db, c.candidato_id);
+    await seedCandidate(db, c, { status: "validated", validated_at: "2026-11-10T09:00:00-03:00", telegram_file_id: "AgACfile" });
+    const before = await stateOf(db, c.candidate_id);
     const f = fakes({ offers: { MLA00000099: new NetworkError("fetch failed") }, stores: { fravega: {} } });
     const { skipped } = await revalidateAll(db, f);
     expect(skipped).toHaveLength(1);
     await untouched(db, c, before);
-    expect(before).toMatchObject({ estado: "validado", validado_en: "2026-11-10T09:00:00-03:00" });
+    expect(before).toMatchObject({ status: "validated", validated_at: "2026-11-10T09:00:00-03:00" });
   });
 
   it("still invalidates a candidate whose ML offer is confirmed gone even if a rival store fails", async () => {
@@ -300,18 +300,18 @@ describe("revalidateChosen", () => {
     const db = await setupDb();
     await seedModel(db, "FAKE:BBB222", "BBB222");
     const good = candidate();
-    const bad = candidate({ modelo: "FAKE:BBB222", rivals: [["fravega", "/p/fake-bbb222-1", 150000]] });
+    const bad = candidate({ model: "FAKE:BBB222", rivals: [["fravega", "/p/fake-bbb222-1", 150000]] });
     await seedCandidate(db, good);
     await seedCandidate(db, bad);
-    const beforeBad = await stateOf(db, bad.candidato_id);
+    const beforeBad = await stateOf(db, bad.candidate_id);
     const f = fakes({
       offers: { MLA00000099: [offer(100000)] },
       stores: { fravega: { "Fake AAA111": [listing("fravega", "/p/fake-aaa111-1", 150000)], "Fake BBB222": new UpstreamError(500, "x") } },
     });
     const { report, skipped } = await revalidateAll(db, f);
-    expect(report).toEqual({ fecha: "2026-11-10", validated: [good.candidato_id], invalidated: [] });
-    expect(skipped.map((k) => k.candidato_id)).toEqual([bad.candidato_id]);
-    expect((await stateOf(db, good.candidato_id)).estado).toBe("validado");
+    expect(report).toEqual({ run_date: "2026-11-10", validated: [good.candidate_id], invalidated: [] });
+    expect(skipped.map((k) => k.candidate_id)).toEqual([bad.candidate_id]);
+    expect((await stateOf(db, good.candidate_id)).status).toBe("validated");
     await untouched(db, bad, beforeBad);
   });
 
@@ -320,7 +320,7 @@ describe("revalidateChosen", () => {
     await seedCandidate(db, candidate());
     const f = fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { fravega: { [FAKE_MODEL_TERM]: new UpstreamError(503, "x") } } });
     await revalidateAll(db, f);
-    const n = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM observaciones_precio WHERE corrida_id = ?", [RUN]);
+    const n = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM price_observations WHERE run_id = ?", [RUN]);
     expect(n[0]!.n).toBe(1);
   });
 
@@ -330,7 +330,7 @@ describe("revalidateChosen", () => {
     await seedCandidate(db, c);
     const f = fakes({ offers: { MLA00000099: new MlAuthError("not_authorized") }, stores: { fravega: {} } });
     await expect(revalidate(db, f)).rejects.toBeInstanceOf(MlAuthError);
-    expect((await stateOf(db, c.candidato_id)).estado).toBe("elegido");
+    expect((await stateOf(db, c.candidate_id)).status).toBe("chosen");
   });
 
   it("rewrites payload prices and clears telegram_file_id when a price changed but still passes", async () => {
@@ -338,14 +338,14 @@ describe("revalidateChosen", () => {
     const c = candidate();
     await seedCandidate(db, c, { telegram_file_id: "AgACfile" });
     const report = await revalidate(db, okReads(140000, 100000));
-    expect(report.validated).toEqual([c.candidato_id]);
-    const row = await stateOf(db, c.candidato_id);
-    expect(row).toMatchObject({ estado: "validado", telegram_file_id: null });
+    expect(report.validated).toEqual([c.candidate_id]);
+    const row = await stateOf(db, c.candidate_id);
+    expect(row).toMatchObject({ status: "validated", telegram_file_id: null });
     const payload = JSON.parse(row.payload) as Candidate;
-    expect(payload.otras[0]).toMatchObject({ precio_ars: 140000, observado_en: "2026-11-10T10:45:00-03:00" });
-    expect(payload.ml).toMatchObject({ precio_ars: 100000, observado_en: "2026-11-10T10:45:00-03:00" });
-    expect(payload.diferencia_ars).toBe(40000);
-    expect(payload.diferencia_pct).toBeCloseTo((40000 * 100) / 140000, 10);
+    expect(payload.others[0]).toMatchObject({ price_ars: 140000, observed_at: "2026-11-10T10:45:00-03:00" });
+    expect(payload.ml).toMatchObject({ price_ars: 100000, observed_at: "2026-11-10T10:45:00-03:00" });
+    expect(payload.difference_ars).toBe(40000);
+    expect(payload.difference_pct).toBeCloseTo((40000 * 100) / 140000, 10);
   });
 
   it("clears telegram_file_id when the ML price changed", async () => {
@@ -353,9 +353,9 @@ describe("revalidateChosen", () => {
     const c = candidate();
     await seedCandidate(db, c, { telegram_file_id: "AgACfile" });
     await revalidate(db, okReads(150000, 95000));
-    const row = await stateOf(db, c.candidato_id);
+    const row = await stateOf(db, c.candidate_id);
     expect(row.telegram_file_id).toBeNull();
-    expect((JSON.parse(row.payload) as Candidate).ml.precio_ars).toBe(95000);
+    expect((JSON.parse(row.payload) as Candidate).ml.price_ars).toBe(95000);
   });
 
   it("keeps telegram_file_id when no price changed", async () => {
@@ -363,14 +363,14 @@ describe("revalidateChosen", () => {
     const c = candidate();
     await seedCandidate(db, c, { telegram_file_id: "AgACfile" });
     await revalidate(db, okReads());
-    const row = await stateOf(db, c.candidato_id);
-    expect(row).toMatchObject({ estado: "validado", telegram_file_id: "AgACfile" });
-    expect((JSON.parse(row.payload) as Candidate).otras[0]!.observado_en).toBe("2026-11-10T10:45:00-03:00");
+    const row = await stateOf(db, c.candidate_id);
+    expect(row).toMatchObject({ status: "validated", telegram_file_id: "AgACfile" });
+    expect((JSON.parse(row.payload) as Candidate).others[0]!.observed_at).toBe("2026-11-10T10:45:00-03:00");
   });
 
   it("drops a missing rival, keeps the other and clears telegram_file_id because the shown list changed", async () => {
     const db = await setupDb();
-    await db.run("INSERT INTO tiendas (id, nombre) VALUES ('cetrogar', 'Cetrogar')");
+    await db.run("INSERT INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
     const c = candidate({ rivals: [["fravega", "/p/fake-aaa111-1", 150000], ["cetrogar", "/p/fake-aaa111-c", 160000]] });
     await seedCandidate(db, c, { telegram_file_id: "AgACfile" });
     const f = fakes({
@@ -378,17 +378,17 @@ describe("revalidateChosen", () => {
       stores: { fravega: { [FAKE_MODEL_TERM]: [] }, cetrogar: { [FAKE_MODEL_TERM]: [listing("cetrogar", "/p/fake-aaa111-c", 160000)] } },
     });
     const report = await revalidate(db, f);
-    expect(report.validated).toEqual([c.candidato_id]);
-    const row = await stateOf(db, c.candidato_id);
+    expect(report.validated).toEqual([c.candidate_id]);
+    const row = await stateOf(db, c.candidate_id);
     const payload = JSON.parse(row.payload) as Candidate;
-    expect(payload.otras.map((o) => o.tienda)).toEqual(["cetrogar"]);
-    expect(payload.diferencia_ars).toBe(60000);
+    expect(payload.others.map((o) => o.store)).toEqual(["cetrogar"]);
+    expect(payload.difference_ars).toBe(60000);
     expect(row.telegram_file_id).toBeNull();
   });
 
   it("revalidates when the cheapest rival changes to another store, keeping rivals sorted", async () => {
     const db = await setupDb();
-    await db.run("INSERT INTO tiendas (id, nombre) VALUES ('cetrogar', 'Cetrogar')");
+    await db.run("INSERT INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
     const c = candidate({ rivals: [["fravega", "/p/fake-aaa111-1", 150000], ["cetrogar", "/p/fake-aaa111-c", 160000]] });
     await seedCandidate(db, c);
     const f = fakes({
@@ -399,48 +399,48 @@ describe("revalidateChosen", () => {
       },
     });
     await revalidate(db, f);
-    const payload = JSON.parse((await stateOf(db, c.candidato_id)).payload) as Candidate;
-    expect(payload.otras.map((o) => [o.tienda, o.precio_ars])).toEqual([["cetrogar", 155000], ["fravega", 170000]]);
-    expect(payload.diferencia_ars).toBe(55000);
+    const payload = JSON.parse((await stateOf(db, c.candidate_id)).payload) as Candidate;
+    expect(payload.others.map((o) => [o.store, o.price_ars])).toEqual([["cetrogar", 155000], ["fravega", 170000]]);
+    expect(payload.difference_ars).toBe(55000);
   });
 
-  it("revalidates validado older than 30 minutes and ignores fresher ones", async () => {
+  it("revalidates validated older than 30 minutes and ignores fresher ones", async () => {
     const db = await setupDb();
     await seedModel(db, "FAKE:BBB222", "BBB222");
     await seedModel(db, "FAKE:CCC333", "CCC333");
-    const old = candidate({ modelo: "FAKE:AAA111" });
-    const fresh = candidate({ modelo: "FAKE:BBB222" });
-    const edge = candidate({ modelo: "FAKE:CCC333" });
-    await seedCandidate(db, old, { estado: "validado", validado_en: "2026-11-10T10:10:00-03:00" }); // 35 min
-    await seedCandidate(db, fresh, { estado: "validado", validado_en: "2026-11-10T10:16:00-03:00" }); // 29 min
-    await seedCandidate(db, edge, { estado: "validado", validado_en: "2026-11-10T10:15:00-03:00" }); // exactly 30 min: not older
+    const old = candidate({ model: "FAKE:AAA111" });
+    const fresh = candidate({ model: "FAKE:BBB222" });
+    const edge = candidate({ model: "FAKE:CCC333" });
+    await seedCandidate(db, old, { status: "validated", validated_at: "2026-11-10T10:10:00-03:00" }); // 35 min
+    await seedCandidate(db, fresh, { status: "validated", validated_at: "2026-11-10T10:16:00-03:00" }); // 29 min
+    await seedCandidate(db, edge, { status: "validated", validated_at: "2026-11-10T10:15:00-03:00" }); // exactly 30 min: not older
     const f = okReads();
     const report = await revalidate(db, f);
-    expect(report.validated).toEqual([old.candidato_id]);
-    expect((await stateOf(db, old.candidato_id)).validado_en).toBe("2026-11-10T10:45:00-03:00");
-    expect((await stateOf(db, fresh.candidato_id)).validado_en).toBe("2026-11-10T10:16:00-03:00");
-    expect((await stateOf(db, edge.candidato_id)).validado_en).toBe("2026-11-10T10:15:00-03:00");
+    expect(report.validated).toEqual([old.candidate_id]);
+    expect((await stateOf(db, old.candidate_id)).validated_at).toBe("2026-11-10T10:45:00-03:00");
+    expect((await stateOf(db, fresh.candidate_id)).validated_at).toBe("2026-11-10T10:16:00-03:00");
+    expect((await stateOf(db, edge.candidate_id)).validated_at).toBe("2026-11-10T10:15:00-03:00");
     expect(f.reads.offers).toHaveLength(1);
   });
 
-  it("can invalidate a validado older than 30 minutes", async () => {
+  it("can invalidate a validated candidate older than 30 minutes", async () => {
     const db = await setupDb();
     const c = candidate();
-    await seedCandidate(db, c, { estado: "validado", validado_en: "2026-11-10T09:00:00-03:00" });
+    await seedCandidate(db, c, { status: "validated", validated_at: "2026-11-10T09:00:00-03:00" });
     const report = await revalidate(db, okReads(110000));
     expect(report.invalidated.map((i) => i.reason)).toEqual(["below_threshold"]);
   });
 
   it("ignores candidates in any other state", async () => {
     const db = await setupDb();
-    const states = ["pendiente", "descartado", "publicado", "invalidado"];
-    for (const [i, estado] of states.entries()) {
+    const states = ["pending", "discarded", "published", "invalidated"];
+    for (const [i, status] of states.entries()) {
       await seedModel(db, `FAKE:S${i}`, `S${i}`);
-      await seedCandidate(db, candidate({ modelo: `FAKE:S${i}` }), { estado });
+      await seedCandidate(db, candidate({ model: `FAKE:S${i}` }), { status });
     }
     const f = okReads();
     const report = await revalidate(db, f);
-    expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
+    expect(report).toEqual({ run_date: "2026-11-10", validated: [], invalidated: [] });
     expect(f.reads.offers).toEqual([]);
     expect(f.reads.searches).toEqual([]);
   });
@@ -449,12 +449,12 @@ describe("revalidateChosen", () => {
     const db = await setupDb();
     await seedRun(db, OLD_RUN, "2026-11-09");
     const stale = candidate({ id: `${OLD_RUN}:FAKE:AAA111` });
-    await seedCandidate(db, stale, { corrida: OLD_RUN });
+    await seedCandidate(db, stale, { run: OLD_RUN });
     const f = okReads();
     const report = await revalidate(db, f);
-    expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
+    expect(report).toEqual({ run_date: "2026-11-10", validated: [], invalidated: [] });
     expect(f.reads.offers).toEqual([]);
-    expect((await stateOf(db, stale.candidato_id)).estado).toBe("elegido");
+    expect((await stateOf(db, stale.candidate_id)).status).toBe("chosen");
   });
 
   it("uses the ART day near midnight UTC", async () => {
@@ -462,7 +462,7 @@ describe("revalidateChosen", () => {
     await seedCandidate(db, candidate());
     const f = okReads();
     const { report } = await revalidateChosen({ db, catalog: f.catalog, stores: f.stores, config: await config(db), now: () => new Date("2026-11-11T01:30:00Z") });
-    expect(report.fecha).toBe("2026-11-10");
+    expect(report.run_date).toBe("2026-11-10");
     expect(report.validated).toHaveLength(1);
   });
 
@@ -471,19 +471,19 @@ describe("revalidateChosen", () => {
     const c = candidate();
     await seedCandidate(db, c);
     await revalidate(db, okReads(180000, 120000));
-    const parsed = candidateSchema.safeParse(JSON.parse((await stateOf(db, c.candidato_id)).payload));
+    const parsed = candidateSchema.safeParse(JSON.parse((await stateOf(db, c.candidate_id)).payload));
     expect(parsed.success).toBe(true);
   });
 
   it("invalidates instead of storing when the stored payload is not a valid candidate", async () => {
     const db = await setupDb();
-    await db.run("INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado) VALUES ('broken', ?, 'FAKE:AAA111', '{\"nope\":1}', 'elegido')", [RUN]);
+    await db.run("INSERT INTO candidates (id, run_id, model_id, payload, status) VALUES ('broken', ?, 'FAKE:AAA111', '{\"nope\":1}', 'chosen')", [RUN]);
     const report = await revalidate(db, okReads());
-    expect(report.invalidated).toEqual([{ candidato_id: "broken", titulo: "broken", reason: "offer_missing" }]);
-    expect((await stateOf(db, "broken")).estado).toBe("invalidado");
+    expect(report.invalidated).toEqual([{ candidate_id: "broken", title: "broken", reason: "offer_missing" }]);
+    expect((await stateOf(db, "broken")).status).toBe("invalidated");
   });
 
-  it("saves every re-read price as an observation under the original corrida_id", async () => {
+  it("saves every re-read price as an observation under the original run_id", async () => {
     const db = await setupDb();
     await seedCandidate(db, candidate());
     const f = fakes({
@@ -491,16 +491,16 @@ describe("revalidateChosen", () => {
       stores: { fravega: { [FAKE_MODEL_TERM]: [listing("fravega", "/p/fake-aaa111-1", 150000), listing("fravega", "/p/fake-aaa111-2", 155000)] } },
     });
     await revalidate(db, f);
-    const rows = await db.all<{ tienda_id: string; ref_externa: string; precio_ars: number; corrida_id: string; observado_en: string }>(
-      `SELECT p.tienda_id, p.ref_externa, o.precio_ars, o.corrida_id, o.observado_en FROM observaciones_precio o
-       JOIN publicaciones_tienda p ON p.id = o.publicacion_id ORDER BY p.tienda_id, p.ref_externa`,
+    const rows = await db.all<{ store_id: string; external_ref: string; price_ars: number; run_id: string; observed_at: string }>(
+      `SELECT p.store_id, p.external_ref, o.price_ars, o.run_id, o.observed_at FROM price_observations o
+       JOIN store_listings p ON p.id = o.listing_id ORDER BY p.store_id, p.external_ref`,
     );
     expect(rows).toEqual([
-      { tienda_id: "fravega", ref_externa: "/p/fake-aaa111-1", precio_ars: 150000, corrida_id: RUN, observado_en: "2026-11-10T10:45:00-03:00" },
-      { tienda_id: "fravega", ref_externa: "/p/fake-aaa111-2", precio_ars: 155000, corrida_id: RUN, observado_en: "2026-11-10T10:45:00-03:00" },
-      { tienda_id: "ml", ref_externa: "MLA90000990", precio_ars: 100000, corrida_id: RUN, observado_en: "2026-11-10T10:45:00-03:00" },
-      { tienda_id: "ml", ref_externa: "MLA90000991", precio_ars: 130000, corrida_id: RUN, observado_en: "2026-11-10T10:45:00-03:00" },
-      { tienda_id: "ml", ref_externa: "MLA90000992", precio_ars: 80000, corrida_id: RUN, observado_en: "2026-11-10T10:45:00-03:00" },
+      { store_id: "fravega", external_ref: "/p/fake-aaa111-1", price_ars: 150000, run_id: RUN, observed_at: "2026-11-10T10:45:00-03:00" },
+      { store_id: "fravega", external_ref: "/p/fake-aaa111-2", price_ars: 155000, run_id: RUN, observed_at: "2026-11-10T10:45:00-03:00" },
+      { store_id: "ml", external_ref: "MLA90000990", price_ars: 100000, run_id: RUN, observed_at: "2026-11-10T10:45:00-03:00" },
+      { store_id: "ml", external_ref: "MLA90000991", price_ars: 130000, run_id: RUN, observed_at: "2026-11-10T10:45:00-03:00" },
+      { store_id: "ml", external_ref: "MLA90000992", price_ars: 80000, run_id: RUN, observed_at: "2026-11-10T10:45:00-03:00" },
     ]);
   });
 
@@ -508,16 +508,16 @@ describe("revalidateChosen", () => {
     const db = await setupDb();
     await seedCandidate(db, candidate());
     await revalidate(db, okReads(110000));
-    const n = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM observaciones_precio WHERE corrida_id = ?", [RUN]);
+    const n = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM price_observations WHERE run_id = ?", [RUN]);
     expect(n[0]!.n).toBe(2);
   });
 
-  it("never changes enlace_afiliado", async () => {
+  it("never changes affiliate_link", async () => {
     const db = await setupDb();
     await seedModel(db, "FAKE:BBB222", "BBB222");
     const link = "https://meli.la/2AbCdEf?x=1&y=%20z";
     const a = candidate();
-    const b = candidate({ modelo: "FAKE:BBB222" });
+    const b = candidate({ model: "FAKE:BBB222" });
     await seedCandidate(db, a, { enlace: link });
     await seedCandidate(db, b, { enlace: link });
     const f = fakes({
@@ -525,8 +525,8 @@ describe("revalidateChosen", () => {
       stores: { fravega: { "Fake AAA111": [listing("fravega", "/p/fake-aaa111-1", 140000)], "Fake BBB222": [] } },
     });
     await revalidate(db, f);
-    expect((await stateOf(db, a.candidato_id)).enlace_afiliado).toBe(link);
-    expect((await stateOf(db, b.candidato_id))).toMatchObject({ estado: "invalidado", enlace_afiliado: link });
+    expect((await stateOf(db, a.candidate_id)).affiliate_link).toBe(link);
+    expect((await stateOf(db, b.candidate_id))).toMatchObject({ status: "invalidated", affiliate_link: link });
   });
 
   it("does not overwrite a candidate whose state changed while it was being re-read", async () => {
@@ -537,13 +537,13 @@ describe("revalidateChosen", () => {
     const slow: MlCatalog = {
       ...f.catalog,
       async getOffers(id) {
-        await db.run("UPDATE candidatos SET estado = 'publicado' WHERE id = ?", [c.candidato_id]);
+        await db.run("UPDATE candidates SET status = 'published' WHERE id = ?", [c.candidate_id]);
         return f.catalog.getOffers(id);
       },
     };
     const { report } = await revalidateChosen({ db, catalog: slow, stores: f.stores, config: await config(db), now: () => NOW });
-    expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
-    expect((await stateOf(db, c.candidato_id)).estado).toBe("publicado");
+    expect(report).toEqual({ run_date: "2026-11-10", validated: [], invalidated: [] });
+    expect((await stateOf(db, c.candidate_id)).status).toBe("published");
   });
 });
 
@@ -591,7 +591,7 @@ function composedRoutes(): Routes {
 type Hooks = LocalOutputHooks & { reports: RevalidationReport[]; alerts: OwnerAlert[] };
 function setup(opts: { routes?: Routes; fetchImpl?: typeof fetch } = {}) {
   const sqlite = createSqliteClient();
-  sqlite.raw.prepare("INSERT INTO tokens_ml (id, access_token, refresh_token, expira_en) VALUES (1, ?, ?, '2026-11-12T00:00:00.000Z')").run(SECRETS.token, SECRETS.refresh);
+  sqlite.raw.prepare("INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, '2026-11-12T00:00:00.000Z')").run(SECRETS.token, SECRETS.refresh);
   const routes = opts.routes ?? composedRoutes();
   const fetched: string[] = [];
   const routed: typeof fetch = async (input) => {
@@ -631,7 +631,7 @@ const PHILCO = `${RUN}:PHILCO:PHRA26N`;
 const logLine = (p: string) => JSON.parse(readFileSync(p, "utf8").trim().split("\n").at(-1)!) as Record<string, string>;
 async function collectAndChoose(s: Setup): Promise<void> {
   expect((await runDaily(s.deps, { force: false })).exitCode).toBe(0);
-  await s.sqlite.run("UPDATE candidatos SET estado = 'elegido', telegram_file_id = 'AgACfile', enlace_afiliado = 'https://meli.la/abc' WHERE id = ?", [PHILCO]);
+  await s.sqlite.run("UPDATE candidates SET status = 'chosen', telegram_file_id = 'AgACfile', affiliate_link = 'https://meli.la/abc' WHERE id = ?", [PHILCO]);
   s.fetched.length = 0;
   s.out.length = 0;
   s.clock.now = new Date("2026-11-10T13:45:00Z"); // 10:45 ART
@@ -641,13 +641,13 @@ describe("imperdibles revalidar", () => {
   it("replays the run: validates the chosen candidate, reports it to the hook and reads only what it needs", async () => {
     const s = setup();
     await collectAndChoose(s);
-    const before = await s.sqlite.all<{ n: number }>("SELECT COUNT(*) AS n FROM observaciones_precio");
+    const before = await s.sqlite.all<{ n: number }>("SELECT COUNT(*) AS n FROM price_observations");
     expect(await runRevalidate(s.deps)).toBe(0);
-    expect(s.hooks.reports).toEqual([{ fecha: "2026-11-10", validated: [PHILCO], invalidated: [] }]);
+    expect(s.hooks.reports).toEqual([{ run_date: "2026-11-10", validated: [PHILCO], invalidated: [] }]);
     expect(s.fetched).toEqual([itemsUrl("MLA00000011"), fravegaSearchUrl("Philco PHRA26N")]);
     const row = await stateOf(s.sqlite, PHILCO);
-    expect(row).toMatchObject({ estado: "validado", validado_en: "2026-11-10T10:45:00-03:00", telegram_file_id: "AgACfile", enlace_afiliado: "https://meli.la/abc" });
-    const after = await s.sqlite.all<{ n: number }>("SELECT COUNT(*) AS n FROM observaciones_precio");
+    expect(row).toMatchObject({ status: "validated", validated_at: "2026-11-10T10:45:00-03:00", telegram_file_id: "AgACfile", affiliate_link: "https://meli.la/abc" });
+    const after = await s.sqlite.all<{ n: number }>("SELECT COUNT(*) AS n FROM price_observations");
     expect(after[0]!.n).toBeGreaterThan(before[0]!.n);
     expect(s.out.join("")).toBe("Revalidación 2026-11-10: 1 validados, 0 invalidados.\n");
   });
@@ -658,8 +658,8 @@ describe("imperdibles revalidar", () => {
     s.routes.set(fravegaSearchUrl("Philco PHRA26N"), () => new Response(FRAVEGA_NONE, { status: 200 }));
     expect(await runRevalidate(s.deps)).toBe(0);
     expect(s.hooks.reports).toHaveLength(1);
-    expect(s.hooks.reports[0]!.invalidated).toMatchObject([{ candidato_id: PHILCO, reason: "offer_missing" }]);
-    expect((await stateOf(s.sqlite, PHILCO)).estado).toBe("invalidado");
+    expect(s.hooks.reports[0]!.invalidated).toMatchObject([{ candidate_id: PHILCO, reason: "offer_missing" }]);
+    expect((await stateOf(s.sqlite, PHILCO)).status).toBe("invalidated");
   });
 
   it("leaves the candidate untouched, logs it, alerts and exits 1 when the other store answers an error", async () => {
@@ -669,9 +669,9 @@ describe("imperdibles revalidar", () => {
     s.routes.set(fravegaSearchUrl("Philco PHRA26N"), () => new Response("nope", { status: 500 }));
     expect(await runRevalidate(s.deps)).toBe(1);
     expect(await stateOf(s.sqlite, PHILCO)).toEqual(before);
-    expect(s.hooks.reports).toEqual([{ fecha: "2026-11-10", validated: [], invalidated: [] }]);
+    expect(s.hooks.reports).toEqual([{ run_date: "2026-11-10", validated: [], invalidated: [] }]);
     expect(s.hooks.alerts).toHaveLength(1);
-    expect(s.hooks.alerts[0]).toMatchObject({ kind: "run_failed", corrida_id: null });
+    expect(s.hooks.alerts[0]).toMatchObject({ kind: "run_failed", run_id: null });
     expect(JSON.stringify(s.hooks.alerts[0])).toContain(PHILCO);
     expect(readFileSync(s.logPath, "utf8")).toContain(PHILCO);
     expect(s.err.join("")).toContain("sin cambios");
@@ -683,7 +683,7 @@ describe("imperdibles revalidar", () => {
     const before = await stateOf(s.sqlite, PHILCO);
     s.routes.set(fravegaSearchUrl("Philco PHRA26N"), () => new Response(read("fravega", "listing-broken-derived.html"), { status: 200 }));
     expect(await runRevalidate(s.deps)).toBe(1);
-    expect(s.hooks.alerts).toEqual([{ kind: "store_format_error", tienda: "fravega" }]);
+    expect(s.hooks.alerts).toEqual([{ kind: "store_format_error", store: "fravega" }]);
     expect(await stateOf(s.sqlite, PHILCO)).toEqual(before);
   });
 
@@ -695,7 +695,7 @@ describe("imperdibles revalidar", () => {
     s.clock.now = new Date("2026-11-10T13:45:00Z");
     expect(await runRevalidate(s.deps)).toBe(0);
     expect(s.fetched).toEqual([]);
-    expect(s.hooks.reports).toEqual([{ fecha: "2026-11-10", validated: [], invalidated: [] }]);
+    expect(s.hooks.reports).toEqual([{ run_date: "2026-11-10", validated: [], invalidated: [] }]);
     expect(s.out.join("")).toBe("Revalidación 2026-11-10: 0 validados, 0 invalidados.\n");
   });
 
@@ -707,7 +707,7 @@ describe("imperdibles revalidar", () => {
     expect(await runRevalidate(s.deps)).toBe(1);
     expect(s.hooks.alerts).toEqual([{ kind: "ml_auth_required" }]);
     expect(s.hooks.reports).toEqual([]);
-    expect((await stateOf(s.sqlite, PHILCO)).estado).toBe("elegido");
+    expect((await stateOf(s.sqlite, PHILCO)).status).toBe("chosen");
   });
 
   it("scrubs secrets from the log, stderr and alerts when the hook fails", async () => {
@@ -721,7 +721,7 @@ describe("imperdibles revalidar", () => {
     for (const secret of Object.values(SECRETS)) expect(everything).not.toContain(secret);
     expect(everything).not.toContain("111222:ABC-def_ghi");
     expect(everything).toContain("boom");
-    expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", corrida_id: null }]);
+    expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", run_id: null }]);
   });
 
   it("leaves the chosen candidate untouched, alerts and exits 1 when the network is down", async () => {
@@ -733,9 +733,9 @@ describe("imperdibles revalidar", () => {
     };
     expect(await runRevalidate(s.deps)).toBe(1);
     expect(await stateOf(s.sqlite, PHILCO)).toEqual(before);
-    expect(s.hooks.reports).toEqual([{ fecha: "2026-11-10", validated: [], invalidated: [] }]);
-    expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", corrida_id: null }]);
-    expect(logLine(s.logPath)).toMatchObject({ corrida_id: null, estado: "fallida" });
+    expect(s.hooks.reports).toEqual([{ run_date: "2026-11-10", validated: [], invalidated: [] }]);
+    expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", run_id: null }]);
+    expect(logLine(s.logPath)).toMatchObject({ run_id: null, status: "failed" });
     expect(logLine(s.logPath).error).toContain(PHILCO);
   });
 

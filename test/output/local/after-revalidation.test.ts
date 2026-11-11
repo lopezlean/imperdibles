@@ -11,34 +11,34 @@ import { seedRun } from "../../worker/support/seed.js";
 const OWNER = "42";
 const SECRET = "publish-secret";
 const BASE = "https://worker.example";
-const FECHA = "2026-11-10";
+const RUN_DATE = "2026-11-10";
 // ART is UTC-3: 10:45 ART = 13:45Z, 12:45 ART = 15:45Z.
 const AT_1045 = new Date("2026-11-10T13:45:00Z");
 const AT_1245 = new Date("2026-11-10T15:45:00Z");
 
 const candidate: Candidate = parseCandidateList(
   JSON.parse(readFileSync(path.join(process.cwd(), "fixtures", "lista-candidatos", "valid-2026-11-10.json"), "utf8")),
-).candidatos[0]!;
+).candidates[0]!;
 
-async function setup(opts: { estado?: string; fileId?: string | null; withSalida?: boolean; seedCandidate?: boolean } = {}) {
+async function setup(opts: { status?: string; fileId?: string | null; withPost?: boolean; seedCandidate?: boolean } = {}) {
   const db = createSqliteClient();
-  const { corridaId } = await seedRun(db, { fecha: FECHA, modeloIds: [candidate.modelo_id] });
+  const { runId } = await seedRun(db, { run_date: RUN_DATE, modelIds: [candidate.model_id] });
   if (opts.seedCandidate !== false) {
     await db.run(
-      "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, telegram_file_id, validado_en) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO candidates (id, run_id, model_id, payload, status, telegram_file_id, validated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [
-        candidate.candidato_id,
-        corridaId,
-        candidate.modelo_id,
+        candidate.candidate_id,
+        runId,
+        candidate.model_id,
         JSON.stringify(candidate),
-        opts.estado ?? "validado",
+        opts.status ?? "validated",
         opts.fileId === undefined ? null : opts.fileId,
         "2026-11-10T10:40:00-03:00",
       ],
     );
-    if (opts.withSalida) {
-      await db.run("INSERT INTO salidas (candidato_id, canal, publicado_en) VALUES (?, 'telegram_canal', ?)", [
-        candidate.candidato_id,
+    if (opts.withPost) {
+      await db.run("INSERT INTO posts (candidate_id, channel, published_at) VALUES (?, 'telegram_channel', ?)", [
+        candidate.candidate_id,
         "2026-11-10T11:00:00-03:00",
       ]);
     }
@@ -76,7 +76,7 @@ function fakeWorker(status = 200) {
 }
 
 const render = async () => new Uint8Array([137, 80, 78, 71]);
-const empty: RevalidationReport = { fecha: FECHA, validated: [], invalidated: [] };
+const empty: RevalidationReport = { run_date: RUN_DATE, validated: [], invalidated: [] };
 
 function deps(db: Awaited<ReturnType<typeof setup>>, tg: TelegramClient, f: typeof fetch, now: Date, r = render) {
   return { db, telegram: tg, ownerChatId: OWNER, render: r, fetch: f, workerBaseUrl: BASE, publishSecret: SECRET, now: () => now };
@@ -90,8 +90,8 @@ describe("afterRevalidation", () => {
     await afterRevalidation(deps(db, t, w.f, AT_1045), {
       ...empty,
       invalidated: [
-        { candidato_id: "a", titulo: "Robot A", reason: "below_threshold" },
-        { candidato_id: "b", titulo: "Robot B", reason: "offer_missing" },
+        { candidate_id: "a", title: "Robot A", reason: "below_threshold" },
+        { candidate_id: "b", title: "Robot B", reason: "offer_missing" },
       ],
     });
     expect(messages).toEqual([
@@ -104,8 +104,8 @@ describe("afterRevalidation", () => {
     const db = await setup({ fileId: null });
     const { t, photos } = fakeTelegram();
     await afterRevalidation(deps(db, t, fakeWorker().f, AT_1045), empty);
-    expect(photos).toEqual([{ caption: `Tarjeta actualizada: ${candidate.titulo}` }]);
-    const rows = await db.all<{ telegram_file_id: string }>("SELECT telegram_file_id FROM candidatos");
+    expect(photos).toEqual([{ caption: `Tarjeta actualizada: ${candidate.title}` }]);
+    const rows = await db.all<{ telegram_file_id: string }>("SELECT telegram_file_id FROM candidates");
     expect(rows[0]!.telegram_file_id).toBe("new-file-id");
   });
 
@@ -120,8 +120,8 @@ describe("afterRevalidation", () => {
     const db = await setup({ fileId: null });
     const { t, messages } = fakeTelegram({ failPhoto: true });
     const w = fakeWorker();
-    await afterRevalidation(deps(db, t, w.f, AT_1245), { ...empty, validated: [candidate.candidato_id] });
-    expect(messages.some((m) => m.includes(candidate.titulo))).toBe(true);
+    await afterRevalidation(deps(db, t, w.f, AT_1245), { ...empty, validated: [candidate.candidate_id] });
+    expect(messages.some((m) => m.includes(candidate.title))).toBe(true);
     expect(w.calls).toHaveLength(1);
   });
 
@@ -131,23 +131,23 @@ describe("afterRevalidation", () => {
     const w = fakeWorker();
     await afterRevalidation(
       deps(db, t, w.f, AT_1245, () => Promise.reject(new Error("no renderer"))),
-      { ...empty, validated: [candidate.candidato_id] },
+      { ...empty, validated: [candidate.candidate_id] },
     );
-    expect(messages.some((m) => m.includes(candidate.titulo))).toBe(true);
+    expect(messages.some((m) => m.includes(candidate.title))).toBe(true);
     expect(w.calls).toHaveLength(1);
   });
 
   it("does not call publish-now before the publication hour", async () => {
     const db = await setup({ fileId: "f" });
     const w = fakeWorker();
-    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1045), { ...empty, validated: [candidate.candidato_id] });
+    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1045), { ...empty, validated: [candidate.candidate_id] });
     expect(w.calls).toHaveLength(0);
   });
 
   it("calls publish-now once with the Bearer secret after the hour when something validated", async () => {
     const db = await setup({ fileId: "f" });
     const w = fakeWorker();
-    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1245), { ...empty, validated: [candidate.candidato_id] });
+    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1245), { ...empty, validated: [candidate.candidate_id] });
     expect(w.calls).toHaveLength(1);
     expect(w.calls[0]!.url).toBe(`${BASE}/internal/publish-now`);
     expect(w.calls[0]!.init.method).toBe("POST");
@@ -165,13 +165,13 @@ describe("afterRevalidation", () => {
   });
 
   it("does not call publish-now with an empty report and nothing pending", async () => {
-    const db = await setup({ fileId: "f", withSalida: true });
+    const db = await setup({ fileId: "f", withPost: true });
     const w = fakeWorker();
     await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1245), empty);
     expect(w.calls).toHaveLength(0);
   });
 
-  it("calls publish-now with an empty report when a validated candidate of today has no salida", async () => {
+  it("calls publish-now with an empty report when a validated candidate of today has no post", async () => {
     const db = await setup({ fileId: "f" });
     const w = fakeWorker();
     await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1245), empty);
@@ -202,7 +202,7 @@ describe("afterRevalidation", () => {
     const w = fakeWorker();
     await afterRevalidation(deps(db, t, w.f, AT_1245), {
       ...empty,
-      invalidated: [{ candidato_id: "a", titulo: "Robot A", reason: "offer_missing" }],
+      invalidated: [{ candidate_id: "a", title: "Robot A", reason: "offer_missing" }],
     });
     expect(photos).toHaveLength(1);
     expect(w.calls).toHaveLength(1);

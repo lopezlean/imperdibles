@@ -11,21 +11,21 @@ import {
   truncate,
 } from "../../src/output/format.js";
 
-const offer = (tienda: string, precio_ars: number) => ({
-  tienda,
-  titulo_listado: "x",
+const offer = (store: string, price_ars: number) => ({
+  store,
+  listing_title: "x",
   url: "https://example.test/x",
-  precio_ars,
-  observado_en: "2026-11-10T10:00:00-03:00",
-  ref_externa: "r",
-  vendedor: null,
+  price_ars,
+  observed_at: "2026-11-10T10:00:00-03:00",
+  external_ref: "r",
+  seller: null,
 });
 
-function c(ml: number, ...others: number[]): Pick<Candidate, "ml" | "otras"> {
+function c(ml: number, ...others: number[]): Pick<Candidate, "ml" | "others"> {
   return {
-    ml: { ...offer("ml", ml), tienda: "ml", ml_product_id: "p", ml_seller_id: "s" },
-    otras: others.map((p) => offer("fravega", p)),
-  } as Pick<Candidate, "ml" | "otras">;
+    ml: { ...offer("ml", ml), store: "ml", ml_product_id: "p", ml_seller_id: "s" },
+    others: others.map((p) => offer("fravega", p)),
+  } as Pick<Candidate, "ml" | "others">;
 }
 
 describe("formatArs", () => {

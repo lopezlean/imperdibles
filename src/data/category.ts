@@ -5,9 +5,9 @@ import { daysBetween } from "../shared/time.js";
 const ROTATION_BASE = "2026-11-10";
 
 /** One category per ART day, cycling in config order; dates before the base wrap backwards. */
-export function categoryOfDay(categories: Category[], fecha: string): Category {
+export function categoryOfDay(categories: Category[], run_date: string): Category {
   const n = categories.length;
-  if (n === 0) throw new Error("config key categorias has no categories");
-  const index = ((daysBetween(ROTATION_BASE, fecha) % n) + n) % n;
+  if (n === 0) throw new Error("config key categories has no categories");
+  const index = ((daysBetween(ROTATION_BASE, run_date) % n) + n) % n;
   return categories[index]!;
 }

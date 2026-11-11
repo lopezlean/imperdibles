@@ -65,15 +65,15 @@ async function recordRun(categoryId: string): Promise<void> {
   const env = loadLocalEnv(process.env, DATA_ENV_KEYS);
   const db = createD1HttpClient({ accountId: env.cfAccountId, databaseId: env.d1DatabaseId, apiToken: env.cfApiToken });
   const config = await loadConfig(db);
-  const category = config.categorias.find((c) => c.id === categoryId);
+  const category = config.categories.find((c) => c.id === categoryId);
   if (!category) {
-    console.error(`run: unknown category "${categoryId}" (known: ${config.categorias.map((c) => c.id).join(", ")})`);
+    console.error(`run: unknown category "${categoryId}" (known: ${config.categories.map((c) => c.id).join(", ")})`);
     process.exitCode = 1;
     return;
   }
   const now = () => new Date();
-  const fecha = artDate(now());
-  const dir = join(ROOT, "fixtures", "runs", `${fecha}-${category.id}`);
+  const run_date = artDate(now());
+  const dir = join(ROOT, "fixtures", "runs", `${run_date}-${category.id}`);
   if (existsSync(dir)) {
     console.error(`run: ${dir} already exists; move or delete it before recording again`);
     process.exitCode = 1;
@@ -82,14 +82,14 @@ async function recordRun(categoryId: string): Promise<void> {
   const tokens = createTokenProvider({ db, fetch, env, now });
   const http = createBudgetedHttp({
     fetch: createRecordingFetch(fetch, dir),
-    budget: config.presupuesto_consultas,
+    budget: config.query_budget,
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   });
   const catalog = createMlCatalog({ http, token: tokens });
   const primary = createFravegaAdapter({
     http,
     now,
-    onRejected: (tienda, rejected) => console.log(`run: seller_rejected ${tienda} count=${rejected.length}`),
+    onRejected: (store, rejected) => console.log(`run: seller_rejected ${store} count=${rejected.length}`),
   });
   const result = await runPipeline(
     {
@@ -100,9 +100,9 @@ async function recordRun(categoryId: string): Promise<void> {
       now,
       log: (event, data) => console.log(`run: ${event} ${JSON.stringify(data)}`),
     },
-    { corrida_id: `rec-${fecha}`, fecha, category, umbral_pct: config.umbral_pct },
+    { run_id: `rec-${run_date}`, run_date, category, threshold_pct: config.threshold_pct },
   );
-  console.log(`run: estado ${result.estado}, comparados ${result.list.modelos_comparados}, candidatos ${result.list.candidatos.length}, consultas ${http.used()}`);
+  console.log(`run: estado ${result.status}, comparados ${result.list.models_compared}, candidatos ${result.list.candidates.length}, consultas ${http.used()}`);
   try {
     await revalidationReads({ catalog, stores: [primary] }, result);
   } catch (error) {

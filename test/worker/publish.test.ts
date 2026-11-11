@@ -16,52 +16,52 @@ const LINK = "https://meli.la/2AbC_xY?r=1/";
 type Db = ReturnType<typeof createSqliteClient>;
 let db: Db;
 
-function payloadFor(titulo: string): string {
-  const offer = (tienda: string, precio: number) => ({
-    tienda,
-    titulo_listado: titulo,
-    url: `https://example.test/${tienda}`,
-    precio_ars: precio,
-    observado_en: "2026-11-10T10:00:00-03:00",
-    ref_externa: `${tienda}-1`,
-    vendedor: null,
+function payloadFor(title: string): string {
+  const offer = (store: string, price: number) => ({
+    store,
+    listing_title: title,
+    url: `https://example.test/${store}`,
+    price_ars: price,
+    observed_at: "2026-11-10T10:00:00-03:00",
+    external_ref: `${store}-1`,
+    seller: null,
   });
   return JSON.stringify({
-    candidato_id: "x",
-    modelo_id: "x",
-    marca: "Fake",
-    titulo,
-    imagen_url: null,
+    candidate_id: "x",
+    model_id: "x",
+    brand: "Fake",
+    title,
+    image_url: null,
     ml: { ...offer("ml", 329999), ml_product_id: "MLA1", ml_seller_id: "1" },
-    otras: [offer("fravega", 399999)],
-    diferencia_ars: 70000,
-    diferencia_pct: 17.5,
-    confianza: "alta",
-    regla_emparejado: "gtin",
+    others: [offer("fravega", 399999)],
+    difference_ars: 70000,
+    difference_pct: 17.5,
+    confidence: "high",
+    match_rule: "gtin",
   });
 }
 
-async function addRun(corridaId: string, modeloIds: string[], fecha = "2026-11-10") {
-  await seedRun(db, { fecha, modeloIds, corridaId });
+async function addRun(runId: string, modelIds: string[], run_date = "2026-11-10") {
+  await seedRun(db, { run_date, modelIds, runId });
 }
 
 async function addCandidate(
   id: string,
-  corridaId: string,
-  modeloId: string,
-  o: { estado?: string; validado_en?: string | null; link?: string | null; fileId?: string | null } = {},
+  runId: string,
+  modelId: string,
+  o: { status?: string; validated_at?: string | null; link?: string | null; fileId?: string | null } = {},
 ) {
   await db.run(
-    "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, enlace_afiliado, telegram_file_id, validado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO candidates (id, run_id, model_id, payload, status, affiliate_link, telegram_file_id, validated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     [
       id,
-      corridaId,
-      modeloId,
+      runId,
+      modelId,
       payloadFor(`Robot ${id}`),
-      o.estado ?? "validado",
+      o.status ?? "validated",
       o.link === undefined ? LINK : o.link,
       o.fileId === undefined ? `file-${id}` : o.fileId,
-      o.validado_en === undefined ? FRESH : o.validado_en,
+      o.validated_at === undefined ? FRESH : o.validated_at,
     ],
   );
 }
@@ -111,10 +111,10 @@ function failingDb(pattern: RegExp, nth: number): SqlClient {
   };
 }
 
-const estado = (id: string) =>
-  db.all<{ estado: string; telegram_file_id: string | null }>("SELECT estado, telegram_file_id FROM candidatos WHERE id = ?", [id]).then((r) => r[0]!);
-const salidas = (canal: string) =>
-  db.all<{ candidato_id: string; mensaje_externo_id: string | null }>("SELECT candidato_id, mensaje_externo_id FROM salidas WHERE canal = ? ORDER BY candidato_id", [canal]);
+const status = (id: string) =>
+  db.all<{ status: string; telegram_file_id: string | null }>("SELECT status, telegram_file_id FROM candidates WHERE id = ?", [id]).then((r) => r[0]!);
+const posts = (channel: string) =>
+  db.all<{ candidate_id: string; external_message_id: string | null }>("SELECT candidate_id, external_message_id FROM posts WHERE channel = ? ORDER BY candidate_id", [channel]);
 
 beforeEach(async () => {
   db = createSqliteClient();
@@ -122,16 +122,16 @@ beforeEach(async () => {
 });
 
 describe("publishValidated", () => {
-  it("publishes a fresh validado candidate to the channel and records the salida", async () => {
+  it("publishes a fresh validated candidate to the channel and records the post", async () => {
     await addCandidate("c1", "r1", "m1");
     const tg = fakeTelegram();
     const report = await run(tg.client);
     expect(report).toEqual({ published: ["c1"], failed: [], stale: [] });
-    expect((await estado("c1")).estado).toBe("publicado");
+    expect((await status("c1")).status).toBe("published");
     expect(tg.channelPhotos()).toHaveLength(1);
     expect(tg.channelPhotos()[0]!.fileId).toBe("file-c1");
     expect(tg.channelPhotos()[0]!.caption).toContain(LINK);
-    expect(await salidas("telegram_canal")).toEqual([{ candidato_id: "c1", mensaje_externo_id: "101" }]);
+    expect(await posts("telegram_channel")).toEqual([{ candidate_id: "c1", external_message_id: "101" }]);
   });
 
   it("sends the owner the X material and records x_manual", async () => {
@@ -142,23 +142,23 @@ describe("publishValidated", () => {
     expect(ownerPhoto.fileId).toBe("file-c1");
     const c = JSON.parse(payloadFor("Robot c1"));
     expect(ownerPhoto.caption).toBe(buildXPost(c, LINK));
-    expect((await salidas("x_manual")).map((s) => s.candidato_id)).toEqual(["c1"]);
+    expect((await posts("x_manual")).map((s) => s.candidate_id)).toEqual(["c1"]);
   });
 
   it("reports a candidate validated 31 minutes ago as stale and does not send it", async () => {
-    await addCandidate("c1", "r1", "m1", { validado_en: OLD });
+    await addCandidate("c1", "r1", "m1", { validated_at: OLD });
     const tg = fakeTelegram();
     const report = await run(tg.client);
     expect(report).toEqual({ published: [], failed: [], stale: ["c1"] });
     expect(tg.calls).toHaveLength(0);
-    expect((await estado("c1")).estado).toBe("validado");
+    expect((await status("c1")).status).toBe("validated");
   });
 
-  it("ignores candidates without link, without file_id, not validado, or from another day", async () => {
+  it("ignores candidates without link, without file_id, not validated, or from another day", async () => {
     await addRun("r0", ["m9"], "2026-11-09");
     await addCandidate("a", "r1", "m1", { link: null });
     await addCandidate("b", "r1", "m2", { fileId: null });
-    await addCandidate("c", "r1", "m3", { estado: "elegido" });
+    await addCandidate("c", "r1", "m3", { status: "chosen" });
     await addCandidate("d", "r0", "m9");
     const tg = fakeTelegram();
     const report = await run(tg.client);
@@ -175,19 +175,19 @@ describe("publishValidated", () => {
     expect(report.published).toHaveLength(1);
     expect(report.failed).toEqual([]);
     expect(tg.channelPhotos()).toHaveLength(1);
-    expect(await salidas("telegram_canal")).toHaveLength(1);
-    const states = await db.all<{ estado: string }>("SELECT estado FROM candidatos ORDER BY id");
-    expect(states.map((s) => s.estado).sort()).toEqual(["publicado", "validado"]);
+    expect(await posts("telegram_channel")).toHaveLength(1);
+    const states = await db.all<{ status: string }>("SELECT status FROM candidates ORDER BY id");
+    expect(states.map((s) => s.status).sort()).toEqual(["published", "validated"]);
     // A later call still leaves the sibling alone.
     const again = fakeTelegram();
     await run(again.client);
     expect(again.channelPhotos()).toHaveLength(0);
   });
 
-  it("skips a candidate whose model already has a telegram_canal salida today", async () => {
+  it("skips a candidate whose model already has a telegram_channel post today", async () => {
     await addRun("r2", ["m1"]);
-    await addCandidate("c1", "r1", "m1", { estado: "invalidado" });
-    await db.run("INSERT INTO salidas (candidato_id, canal, mensaje_externo_id, publicado_en) VALUES ('c1', 'telegram_canal', '7', 'x')");
+    await addCandidate("c1", "r1", "m1", { status: "invalidated" });
+    await db.run("INSERT INTO posts (candidate_id, channel, external_message_id, published_at) VALUES ('c1', 'telegram_channel', '7', 'x')");
     await addCandidate("c2", "r2", "m1");
     const tg = fakeTelegram();
     const report = await run(tg.client);
@@ -195,9 +195,9 @@ describe("publishValidated", () => {
     expect(tg.calls).toHaveLength(0);
   });
 
-  it("never sends a candidate that already has a telegram_canal salida", async () => {
+  it("never sends a candidate that already has a telegram_channel post", async () => {
     await addCandidate("c1", "r1", "m1");
-    await db.run("INSERT INTO salidas (candidato_id, canal, mensaje_externo_id, publicado_en) VALUES ('c1', 'telegram_canal', '7', 'x')");
+    await db.run("INSERT INTO posts (candidate_id, channel, external_message_id, published_at) VALUES ('c1', 'telegram_channel', '7', 'x')");
     const tg = fakeTelegram();
     const report = await run(tg.client);
     expect(report.published).toEqual([]);
@@ -213,7 +213,7 @@ describe("publishValidated", () => {
     expect(PUBLISH_CAP_PER_CALL).toBe(5);
     expect(report.published).toHaveLength(5);
     expect(tg.channelPhotos()).toHaveLength(5);
-    const left = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidatos WHERE estado = 'validado'");
+    const left = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidates WHERE status = 'validated'");
     expect(left[0]!.n).toBe(3);
   });
 
@@ -224,8 +224,8 @@ describe("publishValidated", () => {
     const after = vi.fn(async () => {});
     await expect(run(tg.client, after, NOW, failingDb(/SELECT c2\.id/, 2))).rejects.toThrow("d1 down");
     expect(after).toHaveBeenCalledTimes(1);
-    expect((await estado("c1")).estado).toBe("publicado");
-    expect((await estado("c2")).estado).toBe("validado");
+    expect((await status("c1")).status).toBe("published");
+    expect((await status("c2")).status).toBe("validated");
   });
 
   it("does not regenerate when the database fails before anything was published", async () => {
@@ -235,12 +235,12 @@ describe("publishValidated", () => {
     expect(after).not.toHaveBeenCalled();
   });
 
-  it("alerts the owner and keeps going when the revert to validado fails", async () => {
+  it("alerts the owner and keeps going when the revert to validated fails", async () => {
     await addCandidate("c1", "r1", "m1");
     await addCandidate("c2", "r1", "m2");
     const tg = fakeTelegram({ failChannel: (fileId) => (fileId === "file-c1" ? new TelegramError(500, "boom") : undefined) });
     const after = vi.fn(async () => {});
-    const report = await run(tg.client, after, NOW, failingDb(/SET estado = 'validado'/, 1));
+    const report = await run(tg.client, after, NOW, failingDb(/SET status = 'validated'/, 1));
     expect(report.published).toEqual(["c2"]);
     expect(report.failed).toEqual(["c1"]);
     expect(after).toHaveBeenCalledTimes(1);
@@ -256,17 +256,17 @@ describe("publishValidated", () => {
     const [a, b] = await Promise.all([run(tg.client, after), run(tg.client, after)]);
     expect(tg.channelPhotos()).toHaveLength(2);
     expect([...a.published, ...b.published].sort()).toEqual(["c1", "c2"]);
-    expect(await salidas("telegram_canal")).toHaveLength(2);
+    expect(await posts("telegram_channel")).toHaveLength(2);
   });
 
-  it("reverts to validado, alerts the owner and records no salida after two channel failures", async () => {
+  it("reverts to validated, alerts the owner and records no post after two channel failures", async () => {
     await addCandidate("c1", "r1", "m1");
     const tg = fakeTelegram({ failChannel: () => new TelegramError(500, "sendPhoto: boom") });
     const report = await run(tg.client);
     expect(report).toEqual({ published: [], failed: ["c1"], stale: [] });
     expect(tg.channelPhotos()).toHaveLength(2);
-    expect((await estado("c1")).estado).toBe("validado");
-    expect(await salidas("telegram_canal")).toEqual([]);
+    expect((await status("c1")).status).toBe("validated");
+    expect(await posts("telegram_channel")).toEqual([]);
     const alert = tg.calls.find((c) => c.kind === "message")!;
     expect(alert.chat).toBe(OWNER);
     expect(alert.text).toBe(
@@ -288,8 +288,8 @@ describe("publishValidated", () => {
     const tg = fakeTelegram({ failChannel: () => new TelegramError(400, "sendPhoto: Bad Request: wrong file identifier") });
     const report = await run(tg.client);
     expect(report.failed).toEqual(["c1"]);
-    const row = await estado("c1");
-    expect(row).toEqual({ estado: "validado", telegram_file_id: null });
+    const row = await status("c1");
+    expect(row).toEqual({ status: "validated", telegram_file_id: null });
     expect(tg.calls.filter((c) => c.kind === "message")).toHaveLength(1);
   });
 
@@ -306,15 +306,15 @@ describe("publishValidated", () => {
     const tg = fakeTelegram({ failOwnerPhoto: true });
     const report = await run(tg.client);
     expect(report.published).toEqual(["c1"]);
-    expect(await salidas("x_manual")).toEqual([]);
+    expect(await posts("x_manual")).toEqual([]);
   });
 
-  it("keeps the candidate publicado and never reposts when the salidas insert fails after a successful send", async () => {
+  it("keeps the candidate published and never reposts when the posts insert fails after a successful send", async () => {
     await addCandidate("c1", "r1", "m1");
     const failing = {
       all: db.all.bind(db),
       run: (sql: string, params?: Parameters<typeof db.run>[1]) =>
-        sql.includes("INSERT INTO salidas") && sql.includes("'telegram_canal'")
+        sql.includes("INSERT INTO posts") && sql.includes("'telegram_channel'")
           ? Promise.reject(new Error("d1 unavailable"))
           : db.run(sql, params),
     };
@@ -324,7 +324,7 @@ describe("publishValidated", () => {
     });
     expect(report.failed).toEqual([]);
     expect(report.published).toEqual(["c1"]);
-    expect((await estado("c1")).estado).toBe("publicado");
+    expect((await status("c1")).status).toBe("published");
     expect(tg.channelPhotos()).toHaveLength(1);
     expect(tg.calls.some((c) => c.kind === "message" && c.text?.startsWith("No se pudo publicar"))).toBe(false);
     const again = fakeTelegram();
@@ -341,8 +341,8 @@ describe("publishValidated", () => {
     await run(fakeTelegram().client, after);
     expect(after).toHaveBeenCalledTimes(1);
     const failing = vi.fn(async () => {});
-    await db.run("UPDATE candidatos SET estado = 'validado'");
-    await db.run("DELETE FROM salidas");
+    await db.run("UPDATE candidates SET status = 'validated'");
+    await db.run("DELETE FROM posts");
     await run(fakeTelegram({ failChannel: () => new TelegramError(500, "sendPhoto: boom") }).client, failing);
     expect(failing).not.toHaveBeenCalled();
   });

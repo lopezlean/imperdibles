@@ -16,27 +16,27 @@ const OWNER = "42";
 
 function twelve(): CandidateList {
   const base = load("valid-2026-11-10.json");
-  const c0 = base.candidatos[1]!;
-  const candidatos = Array.from({ length: 12 }, (_, i) => ({
+  const c0 = base.candidates[1]!;
+  const candidates = Array.from({ length: 12 }, (_, i) => ({
     ...c0,
-    candidato_id: `${base.corrida_id}:M${i + 1}`,
-    modelo_id: `M${i + 1}`,
+    candidate_id: `${base.run_id}:M${i + 1}`,
+    model_id: `M${i + 1}`,
   }));
-  return { ...base, candidatos };
+  return { ...base, candidates };
 }
 
 async function setup(list: CandidateList, withRows = true) {
   const db = createSqliteClient();
-  const { corridaId } = await seedRun(db, { fecha: list.fecha, modeloIds: list.candidatos.map((c) => c.modelo_id) });
-  // seedRun owns the corrida id; candidato rows must point at the list's corrida_id
-  const corrida = list.corrida_id === corridaId ? corridaId : list.corrida_id;
-  if (corrida !== corridaId) await db.run("UPDATE corridas SET id = ?", [corrida]);
+  const { runId } = await seedRun(db, { run_date: list.run_date, modelIds: list.candidates.map((c) => c.model_id) });
+  // seedRun owns the run id; candidate rows must point at the list's run_id
+  const run = list.run_id === runId ? runId : list.run_id;
+  if (run !== runId) await db.run("UPDATE runs SET id = ?", [run]);
   if (withRows) {
-    for (const c of list.candidatos) {
-      await db.run("INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado) VALUES (?, ?, ?, ?, 'pendiente')", [
-        c.candidato_id,
-        corrida,
-        c.modelo_id,
+    for (const c of list.candidates) {
+      await db.run("INSERT INTO candidates (id, run_id, model_id, payload, status) VALUES (?, ?, ?, ?, 'pending')", [
+        c.candidate_id,
+        run,
+        c.model_id,
         JSON.stringify(c),
       ]);
     }
@@ -73,16 +73,16 @@ describe("sendShortlist", () => {
     const r = await sendShortlist({ db, telegram: t, ownerChatId: OWNER, render }, list);
     expect(r).toEqual({ sent: 10, failed: 0 });
     expect(photos).toHaveLength(10);
-    const rows = await db.all<{ id: string; telegram_file_id: string | null; telegram_mensaje_id: number | null }>(
-      "SELECT id, telegram_file_id, telegram_mensaje_id FROM candidatos ORDER BY rowid",
+    const rows = await db.all<{ id: string; telegram_file_id: string | null; telegram_message_id: number | null }>(
+      "SELECT id, telegram_file_id, telegram_message_id FROM candidates ORDER BY rowid",
     );
     rows.slice(0, 10).forEach((row, i) => {
       expect(row.telegram_file_id).toBe(`file-${i + 1}`);
-      expect(row.telegram_mensaje_id).toBe(1001 + i);
+      expect(row.telegram_message_id).toBe(1001 + i);
     });
     for (const row of rows.slice(10)) {
       expect(row.telegram_file_id).toBeNull();
-      expect(row.telegram_mensaje_id).toBeNull();
+      expect(row.telegram_message_id).toBeNull();
     }
     const first = photos[0] as { chat_id: string; photo: { png: Uint8Array }; caption: string };
     expect(first.chat_id).toBe(OWNER);
@@ -132,7 +132,7 @@ describe("sendShortlist", () => {
     expect(r).toEqual({ sent: 0, failed: 4 });
   });
 
-  it("a second run only sends rows without telegram_mensaje_id", async () => {
+  it("a second run only sends rows without telegram_message_id", async () => {
     const list = load("valid-2026-11-10.json");
     const db = await setup(list);
     const first = fakeTelegram((n) => n === 2);
@@ -143,7 +143,7 @@ describe("sendShortlist", () => {
     err.mockRestore();
     expect(r).toEqual({ sent: 1, failed: 0 });
     expect(second.photos).toHaveLength(1);
-    expect((second.photos[0] as { caption: string }).caption).toContain(list.candidatos[1]!.titulo);
+    expect((second.photos[0] as { caption: string }).caption).toContain(list.candidates[1]!.title);
     expect(second.messages).toHaveLength(0);
   });
 
@@ -223,13 +223,13 @@ describe("createOutputHooks", () => {
     await hooks.notifyOwner({ kind: "ml_auth_required" });
     // Real renderer, fake Telegram: the daily path never needs the Worker variables.
     await expect(hooks.onCandidatesReady(list)).resolves.toBeUndefined();
-    const rows = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidatos WHERE telegram_mensaje_id IS NOT NULL");
+    const rows = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidates WHERE telegram_message_id IS NOT NULL");
     expect(rows[0]!.n).toBeGreaterThan(0);
   });
 
   it("onRevalidated rejects naming the missing variables, never values", async () => {
     const db = createSqliteClient();
-    const report = { fecha: "2026-11-10", validated: [], invalidated: [] };
+    const report = { run_date: "2026-11-10", validated: [], invalidated: [] };
     const a = createOutputHooks({ db, env: env({ publishNowSecret: "s3cret" }), now: () => new Date(), fetch });
     await expect(a.onRevalidated(report)).rejects.toThrow(/WORKER_BASE_URL/);
     const msg = await a.onRevalidated(report).then(() => "", (e: Error) => e.message);

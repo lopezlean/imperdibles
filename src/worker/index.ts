@@ -8,7 +8,7 @@ import { regeneratePages, servePage } from "./page-store.js";
 import { publishValidated } from "./publish.js";
 import { handleTelegramUpdate } from "./webhook.js";
 
-// Cron times mirror hora_aviso and hora_publicacion in config; changing an hour means editing both and wrangler.toml.
+// Cron times mirror notify_time and publish_time in config; changing an hour means editing both and wrangler.toml.
 const CRON_MISSING_RUN = "30 10 * * *";
 const CRON_PUBLISH = "0 14 * * *";
 

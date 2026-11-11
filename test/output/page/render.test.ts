@@ -15,13 +15,13 @@ function inputFrom(file: string, mode: "today" | "archive"): PageInput {
   );
   return {
     mode,
-    fecha: list.fecha,
-    categoriaNombre: "Aspiradoras robot",
-    umbral_pct: list.umbral_pct,
-    modelos_comparados: list.modelos_comparados,
-    items: list.candidatos.map((candidate, i) => ({
+    run_date: list.run_date,
+    categoryName: "Aspiradoras robot",
+    threshold_pct: list.threshold_pct,
+    models_compared: list.models_compared,
+    items: list.candidates.map((candidate, i) => ({
       candidate,
-      enlace_afiliado: i === 0 ? "https://meli.la/AbC_1?x=1&y=2" : `https://meli.la/Link${i}`,
+      affiliate_link: i === 0 ? "https://meli.la/AbC_1?x=1&y=2" : `https://meli.la/Link${i}`,
     })),
     channelUrl: CHANNEL,
   };
@@ -29,10 +29,10 @@ function inputFrom(file: string, mode: "today" | "archive"): PageInput {
 
 const none: PageInput = {
   mode: "none",
-  fecha: null,
-  categoriaNombre: null,
-  umbral_pct: 15,
-  modelos_comparados: 0,
+  run_date: null,
+  categoryName: null,
+  threshold_pct: 15,
+  models_compared: 0,
   items: [],
   channelUrl: CHANNEL,
 };
@@ -88,18 +88,18 @@ describe("renderHomePage", () => {
   });
 
   it("formats the threshold", () => {
-    expect(renderHomePage({ ...i, umbral_pct: 12.5 })).toContain("gana por 12,5% o más");
+    expect(renderHomePage({ ...i, threshold_pct: 12.5 })).toContain("gana por 12,5% o más");
   });
 
   it("renders archive mode with the given date", () => {
-    const a = renderHomePage({ ...i, mode: "archive", fecha: "2026-11-09" });
+    const a = renderHomePage({ ...i, mode: "archive", run_date: "2026-11-09" });
     expect(a).toContain("Los imperdibles del 9 de noviembre de 2026");
     expect(a).toContain("Aspiradoras robot · 9 de noviembre de 2026");
     expect(a).toContain("Precios de lista al 9 de noviembre de 2026");
   });
 
   it("omits the category and separator when the name is null", () => {
-    const h = renderHomePage({ ...i, categoriaNombre: null });
+    const h = renderHomePage({ ...i, categoryName: null });
     expect(h).toContain(">10 de noviembre de 2026</p>");
     expect(h).not.toContain(" · ");
   });
@@ -117,7 +117,7 @@ describe("renderHomePage", () => {
 
   it("uses singular chips", () => {
     const one = inputFrom("valid-three-rivals.json", "today");
-    const h = renderHomePage({ ...one, modelos_comparados: 1 });
+    const h = renderHomePage({ ...one, models_compared: 1 });
     expect(h).toContain("1 modelo comparado");
     expect(h).toContain("1 publicado");
   });
@@ -127,11 +127,11 @@ describe("renderHomePage", () => {
     const first = base.items[0]!;
     const evil = renderHomePage({
       ...base,
-      categoriaNombre: "A&B <x>",
+      categoryName: "A&B <x>",
       items: [
         {
-          candidate: { ...first.candidate, titulo: 'Robot "S8+" <Negro> & base' },
-          enlace_afiliado: 'https://meli.la/a"b',
+          candidate: { ...first.candidate, title: 'Robot "S8+" <Negro> & base' },
+          affiliate_link: 'https://meli.la/a"b',
         },
       ],
     });
@@ -149,16 +149,16 @@ describe("renderHomePage", () => {
 
     const three = inputFrom("valid-three-rivals.json", "today");
     const c = three.items[0]!.candidate;
-    expect(c.otras).toHaveLength(3);
+    expect(c.others).toHaveLength(3);
     const h = renderHomePage(three);
     const article = h.slice(h.indexOf("<article"), h.indexOf("</article>"));
     let last = -1;
-    for (const o of c.otras) {
-      const at = article.indexOf(`<span>${ars(o.precio_ars)}</span>`);
+    for (const o of c.others) {
+      const at = article.indexOf(`<span>${ars(o.price_ars)}</span>`);
       expect(at).toBeGreaterThan(last);
       last = at;
     }
     expect(article.indexOf("Diferencia")).toBeGreaterThan(last);
-    expect(article).toContain(ars(c.diferencia_ars));
+    expect(article).toContain(ars(c.difference_ars));
   });
 });

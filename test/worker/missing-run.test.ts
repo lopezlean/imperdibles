@@ -26,16 +26,16 @@ describe("checkMissingRun", () => {
 
   it("messages the owner when the only run is from yesterday", async () => {
     const db = createSqliteClient();
-    await seedRun(db, { fecha: "2026-11-09" });
+    await seedRun(db, { run_date: "2026-11-09" });
     const telegram = fakeTelegram();
     expect(await checkMissingRun({ db, telegram, ownerChatId: "42", now: () => NOW })).toBe(true);
     expect(telegram.sendMessage).toHaveBeenCalledTimes(1);
   });
 
-  it("stays silent when a run exists today, whatever its estado", async () => {
+  it("stays silent when a run exists today, whatever its status", async () => {
     const db = createSqliteClient();
-    await seedRun(db, { fecha: "2026-11-10" });
-    await db.run("UPDATE corridas SET estado = 'fallida'");
+    await seedRun(db, { run_date: "2026-11-10" });
+    await db.run("UPDATE runs SET status = 'failed'");
     const telegram = fakeTelegram();
     expect(await checkMissingRun({ db, telegram, ownerChatId: "42", now: () => NOW })).toBe(false);
     expect(telegram.sendMessage).not.toHaveBeenCalled();

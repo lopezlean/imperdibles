@@ -4,14 +4,14 @@ import { artDate } from "../shared/time.js";
 
 const MISSING_RUN_TEXT = "Hoy no se recolectó nada. Se puede correr a mano con: imperdibles correr";
 
-/** Tells the owner when no run exists for today's ART date (any estado counts as a run). Returns true if it alerted. */
+/** Tells the owner when no run exists for today's ART date (any status counts as a run). Returns true if it alerted. */
 export async function checkMissingRun(deps: {
   db: SqlClient;
   telegram: TelegramClient;
   ownerChatId: string;
   now: () => Date;
 }): Promise<boolean> {
-  const rows = await deps.db.all<{ id: string }>("SELECT id FROM corridas WHERE fecha = ? LIMIT 1", [artDate(deps.now())]);
+  const rows = await deps.db.all<{ id: string }>("SELECT id FROM runs WHERE run_date = ? LIMIT 1", [artDate(deps.now())]);
   if (rows.length > 0) return false;
   await deps.telegram.sendMessage({ chat_id: deps.ownerChatId, text: MISSING_RUN_TEXT });
   return true;

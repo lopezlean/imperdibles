@@ -1,61 +1,61 @@
 {
   "version": 1,
-  "corrida_id": "2026-11-10-aspiradoras-robot-060000",
-  "fecha": "2026-11-10",
-  "categoria": "aspiradoras-robot",
-  "umbral_pct": 15,
-  "modelos_comparados": 9,
-  "candidatos": [
+  "run_id": "2026-11-10-aspiradoras-robot-060000",
+  "run_date": "2026-11-10",
+  "category": "aspiradoras-robot",
+  "threshold_pct": 15,
+  "models_compared": 9,
+  "candidates": [
     {
-      "candidato_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:S40C",
-      "modelo_id": "XIAOMI:S40C",
-      "marca": "Xiaomi",
-      "titulo": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
-      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100002-F.jpg",
+      "candidate_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:S40C",
+      "model_id": "XIAOMI:S40C",
+      "brand": "Xiaomi",
+      "title": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
+      "image_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100002-F.jpg",
       "ml": {
-        "tienda": "ml",
-        "titulo_listado": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
+        "store": "ml",
+        "listing_title": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
         "url": "https://www.mercadolibre.com.ar/p/MLA45100002",
-        "precio_ars": 329999,
-        "observado_en": "2026-11-10T06:12:00-03:00",
-        "ref_externa": "MLA2100000002",
-        "vendedor": "Tienda oficial",
+        "price_ars": 329999,
+        "observed_at": "2026-11-10T06:12:00-03:00",
+        "external_ref": "MLA2100000002",
+        "seller": "Tienda oficial",
         "ml_product_id": "MLA45100002",
         "ml_seller_id": "100000002"
       },
-      "otras": [
+      "others": [
         {
-          "tienda": "musimundo",
-          "titulo_listado": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
+          "store": "musimundo",
+          "listing_title": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
           "url": "https://www.musimundo.com/xiaomi-robot-vacuum-s40c/p",
-          "precio_ars": 419999,
-          "observado_en": "2026-11-10T06:16:00-03:00",
-          "ref_externa": "MSM-S40C",
-          "vendedor": null
+          "price_ars": 419999,
+          "observed_at": "2026-11-10T06:16:00-03:00",
+          "external_ref": "MSM-S40C",
+          "seller": null
         },
         {
-          "tienda": "cetrogar",
-          "titulo_listado": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
+          "store": "cetrogar",
+          "listing_title": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
           "url": "https://www.cetrogar.com.ar/xiaomi-robot-vacuum-s40c.html",
-          "precio_ars": 409999,
-          "observado_en": "2026-11-10T06:15:00-03:00",
-          "ref_externa": "CTG-S40C",
-          "vendedor": null
+          "price_ars": 409999,
+          "observed_at": "2026-11-10T06:15:00-03:00",
+          "external_ref": "CTG-S40C",
+          "seller": null
         },
         {
-          "tienda": "fravega",
-          "titulo_listado": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
+          "store": "fravega",
+          "listing_title": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, succión de 6000 Pa, mopa de agua, control por app y asistente de voz, color blanco, edición Argentina",
           "url": "https://www.fravega.com/p/xiaomi-robot-vacuum-s40c",
-          "precio_ars": 399999,
-          "observado_en": "2026-11-10T06:14:00-03:00",
-          "ref_externa": "XIA-S40C",
-          "vendedor": null
+          "price_ars": 399999,
+          "observed_at": "2026-11-10T06:14:00-03:00",
+          "external_ref": "XIA-S40C",
+          "seller": null
         }
       ],
-      "diferencia_ars": 70000,
-      "diferencia_pct": 17.500043750109374,
-      "confianza": "alta",
-      "regla_emparejado": "marca_codigo_variante"
+      "difference_ars": 70000,
+      "difference_pct": 17.500043750109374,
+      "confidence": "high",
+      "match_rule": "brand_code_variant"
     }
   ]
 }

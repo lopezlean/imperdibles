@@ -2,8 +2,8 @@ import { UpstreamError, type BudgetedHttp } from "../http.js";
 import { StoreFormatError, type Comparable } from "../types.js";
 import { MlAuthError, type TokenProvider } from "./auth.js";
 
-export type MlProduct = Comparable & { id: string; url: string; imagen_url: string | null };
-export type MlOffer = { item_id: string; seller_id: string; precio_ars: number; condicion: string };
+export type MlProduct = Comparable & { id: string; url: string; image_url: string | null };
+export type MlOffer = { item_id: string; seller_id: string; price_ars: number; item_condition: string };
 
 export interface MlCatalog {
   searchProducts(q: string): Promise<MlProduct[]>;
@@ -42,18 +42,18 @@ function firstPicture(raw: Record<string, unknown>): string | null {
 function mapProduct(raw: unknown): MlProduct {
   if (!isRecord(raw)) throw formatError("product is not an object");
   const id = str(raw.id);
-  const titulo = str(raw.name);
-  if (!id || !titulo) throw formatError("product without id or name");
+  const title = str(raw.name);
+  if (!id || !title) throw formatError("product without id or name");
   return {
-    tienda: "ml",
+    store: "ml",
     id,
-    titulo,
-    marca: attribute(raw, "BRAND"),
-    modelo: attribute(raw, "MODEL"),
+    title,
+    brand: attribute(raw, "BRAND"),
+    model: attribute(raw, "MODEL"),
     gtin: attribute(raw, "GTIN"),
-    precio_ars: null,
+    price_ars: null,
     url: str(raw.permalink) ?? `${PRODUCT_PAGE}${id}`,
-    imagen_url: firstPicture(raw),
+    image_url: firstPicture(raw),
   };
 }
 
@@ -61,20 +61,20 @@ function mapProduct(raw: unknown): MlProduct {
 export function mapOffer(raw: unknown): MlOffer {
   if (!isRecord(raw)) throw formatError("offer is not an object");
   const item_id = str(raw.item_id);
-  const condicion = str(raw.condition);
+  const item_condition = str(raw.condition);
   const sellerRaw = raw.seller_id;
   const seller_id = typeof sellerRaw === "number" || typeof sellerRaw === "string" ? String(sellerRaw) : null;
   const price = raw.price;
-  if (!item_id || !condicion || !seller_id) throw formatError("offer without item_id, condition or seller_id");
+  if (!item_id || !item_condition || !seller_id) throw formatError("offer without item_id, condition or seller_id");
   if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) throw formatError("offer without a usable price");
-  return { item_id, seller_id, precio_ars: Math.ceil(price), condicion };
+  return { item_id, seller_id, price_ars: Math.ceil(price), item_condition };
 }
 
 export function cheapestNewOffer(offers: MlOffer[]): MlOffer | null {
   let best: MlOffer | null = null;
   for (const offer of offers) {
-    if (offer.condicion !== "new") continue;
-    if (best === null || offer.precio_ars < best.precio_ars) best = offer;
+    if (offer.item_condition !== "new") continue;
+    if (best === null || offer.price_ars < best.price_ars) best = offer;
   }
   return best;
 }

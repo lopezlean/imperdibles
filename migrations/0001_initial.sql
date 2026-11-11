@@ -1,110 +1,110 @@
 -- imperdibles.ar phase 1: initial schema (spec section 4, "Modelo de datos").
 -- Prices are integer pesos. Dates are ISO 8601 text.
 
-CREATE TABLE tiendas (
+CREATE TABLE stores (
   id TEXT PRIMARY KEY,
-  nombre TEXT NOT NULL,
-  habilitada INTEGER NOT NULL DEFAULT 1 CHECK (habilitada IN (0, 1))
+  name TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1))
 );
 
-CREATE TABLE modelos (
+CREATE TABLE models (
   id TEXT PRIMARY KEY,
-  categoria TEXT NOT NULL,
-  marca TEXT NOT NULL,
-  codigo_modelo TEXT NOT NULL,
-  clave TEXT NOT NULL UNIQUE,
+  category TEXT NOT NULL,
+  brand TEXT NOT NULL,
+  model_code TEXT NOT NULL,
+  model_key TEXT NOT NULL UNIQUE,
   gtin TEXT,
   ml_product_id TEXT,
-  titulo TEXT NOT NULL,
-  imagen_url TEXT,
-  creado_en TEXT NOT NULL
+  title TEXT NOT NULL,
+  image_url TEXT,
+  created_at TEXT NOT NULL
 );
 
-CREATE TABLE publicaciones_tienda (
+CREATE TABLE store_listings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tienda_id TEXT NOT NULL REFERENCES tiendas (id),
-  modelo_id TEXT REFERENCES modelos (id),
-  ref_externa TEXT NOT NULL,
-  titulo TEXT NOT NULL,
+  store_id TEXT NOT NULL REFERENCES stores (id),
+  model_id TEXT REFERENCES models (id),
+  external_ref TEXT NOT NULL,
+  title TEXT NOT NULL,
   url TEXT NOT NULL,
-  vendedor TEXT,
-  condicion TEXT,
-  primera_vez TEXT NOT NULL,
-  ultima_vez TEXT NOT NULL,
-  UNIQUE (tienda_id, ref_externa)
+  seller TEXT,
+  item_condition TEXT,
+  first_seen_at TEXT NOT NULL,
+  last_seen_at TEXT NOT NULL,
+  UNIQUE (store_id, external_ref)
 );
 
-CREATE TABLE corridas (
+CREATE TABLE runs (
   id TEXT PRIMARY KEY,
-  fecha TEXT NOT NULL,
-  categoria TEXT NOT NULL,
-  estado TEXT NOT NULL CHECK (estado IN ('ok', 'parcial', 'fallida')),
-  modelos_comparados INTEGER NOT NULL DEFAULT 0,
-  consultas_usadas INTEGER NOT NULL DEFAULT 0,
+  run_date TEXT NOT NULL,
+  category TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('ok', 'partial', 'failed')),
+  models_compared INTEGER NOT NULL DEFAULT 0,
+  queries_used INTEGER NOT NULL DEFAULT 0,
   error TEXT,
-  iniciada_en TEXT NOT NULL,
-  terminada_en TEXT
+  started_at TEXT NOT NULL,
+  finished_at TEXT
 );
 
-CREATE TABLE observaciones_precio (
+CREATE TABLE price_observations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  publicacion_id INTEGER NOT NULL REFERENCES publicaciones_tienda (id),
-  precio_ars INTEGER NOT NULL,
-  observado_en TEXT NOT NULL,
-  corrida_id TEXT NOT NULL REFERENCES corridas (id)
+  listing_id INTEGER NOT NULL REFERENCES store_listings (id),
+  price_ars INTEGER NOT NULL,
+  observed_at TEXT NOT NULL,
+  run_id TEXT NOT NULL REFERENCES runs (id)
 );
 
-CREATE TABLE emparejados (
+CREATE TABLE matches (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  modelo_id TEXT NOT NULL REFERENCES modelos (id),
-  publicacion_id INTEGER NOT NULL REFERENCES publicaciones_tienda (id),
-  confianza TEXT NOT NULL CHECK (confianza IN ('alta', 'dudosa')),
-  regla TEXT NOT NULL,
-  evidencia TEXT NOT NULL,
-  estado TEXT NOT NULL CHECK (estado IN ('auto', 'rechazado')),
-  creado_en TEXT NOT NULL,
-  UNIQUE (modelo_id, publicacion_id)
+  model_id TEXT NOT NULL REFERENCES models (id),
+  listing_id INTEGER NOT NULL REFERENCES store_listings (id),
+  confidence TEXT NOT NULL CHECK (confidence IN ('high', 'doubtful')),
+  rule TEXT NOT NULL,
+  evidence TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('auto', 'rejected')),
+  created_at TEXT NOT NULL,
+  UNIQUE (model_id, listing_id)
 );
 
-CREATE TABLE candidatos (
+CREATE TABLE candidates (
   id TEXT PRIMARY KEY,
-  corrida_id TEXT NOT NULL REFERENCES corridas (id),
-  modelo_id TEXT NOT NULL REFERENCES modelos (id),
+  run_id TEXT NOT NULL REFERENCES runs (id),
+  model_id TEXT NOT NULL REFERENCES models (id),
   payload TEXT NOT NULL,
-  estado TEXT NOT NULL CHECK (estado IN ('pendiente', 'elegido', 'validado', 'descartado', 'publicado', 'invalidado')),
-  enlace_afiliado TEXT,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'chosen', 'validated', 'discarded', 'published', 'invalidated')),
+  affiliate_link TEXT,
   telegram_file_id TEXT,
-  telegram_mensaje_id INTEGER,
-  validado_en TEXT
+  telegram_message_id INTEGER,
+  validated_at TEXT
 );
 
-CREATE TABLE salidas (
+CREATE TABLE posts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  candidato_id TEXT NOT NULL REFERENCES candidatos (id),
-  canal TEXT NOT NULL CHECK (canal IN ('telegram_canal', 'x', 'x_manual')),
-  mensaje_externo_id TEXT,
-  publicado_en TEXT NOT NULL,
-  UNIQUE (candidato_id, canal)
+  candidate_id TEXT NOT NULL REFERENCES candidates (id),
+  channel TEXT NOT NULL CHECK (channel IN ('telegram_channel', 'x', 'x_manual')),
+  external_message_id TEXT,
+  published_at TEXT NOT NULL,
+  UNIQUE (candidate_id, channel)
 );
 
-CREATE TABLE paginas (
-  clave TEXT PRIMARY KEY,
+CREATE TABLE pages (
+  page_key TEXT PRIMARY KEY,
   html TEXT NOT NULL,
-  generada_en TEXT NOT NULL
+  generated_at TEXT NOT NULL
 );
 
 CREATE TABLE config (
-  clave TEXT PRIMARY KEY,
-  valor TEXT NOT NULL
+  name TEXT PRIMARY KEY,
+  value TEXT NOT NULL
 );
 
-CREATE TABLE tokens_ml (
+CREATE TABLE ml_tokens (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   access_token TEXT NOT NULL,
   refresh_token TEXT NOT NULL,
-  expira_en TEXT NOT NULL
+  expires_at TEXT NOT NULL
 );
 
-CREATE INDEX idx_observaciones_publicacion_fecha ON observaciones_precio (publicacion_id, observado_en);
-CREATE INDEX idx_candidatos_corrida_estado ON candidatos (corrida_id, estado);
-CREATE INDEX idx_corridas_fecha ON corridas (fecha);
+CREATE INDEX idx_price_observations_listing_observed ON price_observations (listing_id, observed_at);
+CREATE INDEX idx_candidates_run_status ON candidates (run_id, status);
+CREATE INDEX idx_runs_run_date ON runs (run_date);

@@ -25,8 +25,8 @@ describe("parsePesos", () => {
 
 describe("createStoreAdapter", () => {
   const listing = {
-    tienda: "t", titulo: "x", marca: null, modelo: null, gtin: null, precio_ars: 10,
-    ref_externa: "/p/x/", url: "https://t.test/p/x/", vendedor: "T", condicion: null, observado_en: "",
+    store: "t", title: "x", brand: null, model: null, gtin: null, price_ars: 10,
+    external_ref: "/p/x/", url: "https://t.test/p/x/", seller: "T", item_condition: null, observed_at: "",
   };
   function build(res: () => Response, parse: (html: string, at: string) => ListingParse, onRejected?: (t: string, r: any[]) => void) {
     const get = vi.fn(async (_u: string, _h?: Record<string, string>) => res());
@@ -56,7 +56,7 @@ describe("createStoreAdapter", () => {
 
   it("reports rejected items once, only when there are any", async () => {
     const onRejected = vi.fn();
-    const rejected = [{ ref_externa: "/p/y/", reason: "third_party_seller" as const }];
+    const rejected = [{ external_ref: "/p/y/", reason: "third_party_seller" as const }];
     const a = build(() => new Response("h"), () => ({ listings: [], rejected }), onRejected);
     await a.adapter.search("x");
     expect(onRejected).toHaveBeenCalledTimes(1);

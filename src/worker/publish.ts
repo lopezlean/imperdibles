@@ -23,7 +23,7 @@ type Deps = {
   afterPublish: () => Promise<void>;
 };
 
-type Row = { id: string; modelo_id: string; payload: string; enlace_afiliado: string; telegram_file_id: string; validado_en: string | null };
+type Row = { id: string; model_id: string; payload: string; affiliate_link: string; telegram_file_id: string; validated_at: string | null };
 
 async function sendWithRetry(telegram: TelegramClient, chatId: string, fileId: string, caption: string) {
   let last: unknown;
@@ -46,9 +46,9 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
   const report: PublishReport = { published: [], failed: [], stale: [] };
 
   const rows = await db.all<Row>(
-    `SELECT c.* FROM candidatos c JOIN corridas r ON r.id = c.corrida_id
-     WHERE r.fecha = ? AND c.estado = 'validado' AND c.enlace_afiliado IS NOT NULL AND c.telegram_file_id IS NOT NULL
-       AND NOT EXISTS (SELECT 1 FROM salidas s WHERE s.candidato_id = c.id AND s.canal = 'telegram_canal')
+    `SELECT c.* FROM candidates c JOIN runs r ON r.id = c.run_id
+     WHERE r.run_date = ? AND c.status = 'validated' AND c.affiliate_link IS NOT NULL AND c.telegram_file_id IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM posts s WHERE s.candidate_id = c.id AND s.channel = 'telegram_channel')
      ORDER BY c.id`,
     [today],
   );
@@ -65,8 +65,8 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
   let pending: { error: unknown } | undefined;
   try {
     for (const row of rows) {
-      // validado_en is an artIso string with -03:00: compare as an instant, never as a string.
-      const validatedAt = row.validado_en === null ? Number.NaN : Date.parse(row.validado_en);
+      // validated_at is an artIso string with -03:00: compare as an instant, never as a string.
+      const validatedAt = row.validated_at === null ? Number.NaN : Date.parse(row.validated_at);
       if (!(validatedAt >= now.getTime() - WINDOW_MS)) {
         report.stale.push(row.id);
         continue;
@@ -74,13 +74,13 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
       if (attempted >= PUBLISH_CAP_PER_CALL) break;
 
       const sibling = await db.all<{ id: string }>(
-        `SELECT c2.id FROM candidatos c2 JOIN corridas r2 ON r2.id = c2.corrida_id
-         WHERE c2.modelo_id = ? AND c2.id <> ? AND r2.fecha = ?
-           AND (c2.estado = 'publicado' OR EXISTS (SELECT 1 FROM salidas s WHERE s.candidato_id = c2.id AND s.canal = 'telegram_canal'))
+        `SELECT c2.id FROM candidates c2 JOIN runs r2 ON r2.id = c2.run_id
+         WHERE c2.model_id = ? AND c2.id <> ? AND r2.run_date = ?
+           AND (c2.status = 'published' OR EXISTS (SELECT 1 FROM posts s WHERE s.candidate_id = c2.id AND s.channel = 'telegram_channel'))
          LIMIT 1`,
-        [row.modelo_id, row.id, today],
+        [row.model_id, row.id, today],
       );
-      if (sibling.length > 0) continue; // one post per model per day; stays validado
+      if (sibling.length > 0) continue; // one post per model per day; stays validated
 
       let candidate: Candidate;
       try {
@@ -91,32 +91,32 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
       }
 
       // The claim is the guard against two concurrent calls posting the same candidate.
-      const claim = await db.run("UPDATE candidatos SET estado = 'publicado' WHERE id = ? AND estado = 'validado'", [row.id]);
+      const claim = await db.run("UPDATE candidates SET status = 'published' WHERE id = ? AND status = 'validated'", [row.id]);
       if (claim.changes !== 1) continue;
       attempted++;
 
       let sent: { message_id: number };
       try {
-        sent = await sendWithRetry(telegram, deps.channelId, row.telegram_file_id, buildChannelCaption(candidate, row.enlace_afiliado));
+        sent = await sendWithRetry(telegram, deps.channelId, row.telegram_file_id, buildChannelCaption(candidate, row.affiliate_link));
       } catch (e) {
         try {
-          await db.run("UPDATE candidatos SET estado = 'validado' WHERE id = ? AND estado = 'publicado'", [row.id]);
-          if (isInvalidFileId(e)) await db.run("UPDATE candidatos SET telegram_file_id = NULL WHERE id = ?", [row.id]);
+          await db.run("UPDATE candidates SET status = 'validated' WHERE id = ? AND status = 'published'", [row.id]);
+          if (isInvalidFileId(e)) await db.run("UPDATE candidates SET telegram_file_id = NULL WHERE id = ?", [row.id]);
         } catch {
-          await alertOwner(`No se pudo publicar ${candidate.titulo} y quedó marcado como publicado sin estar en el canal. Revisar a mano.`);
+          await alertOwner(`No se pudo publicar ${candidate.title} y quedó marcado como publicado sin estar en el canal. Revisar a mano.`);
         }
         report.failed.push(row.id);
-        await alertOwner(`No se pudo publicar ${candidate.titulo} en el canal. Queda validado y se reintenta en la próxima revalidación.`);
+        await alertOwner(`No se pudo publicar ${candidate.title} en el canal. Queda validado y se reintenta en la próxima revalidación.`);
         continue;
       }
-      // The post is out: from here the candidate stays publicado whatever happens, or the next call would repost it.
+      // The post is out: from here the candidate stays published whatever happens, or the next call would repost it.
       try {
         await db.run(
-          "INSERT INTO salidas (candidato_id, canal, mensaje_externo_id, publicado_en) VALUES (?, 'telegram_canal', ?, ?)",
+          "INSERT INTO posts (candidate_id, channel, external_message_id, published_at) VALUES (?, 'telegram_channel', ?, ?)",
           [row.id, String(sent.message_id), artIso(deps.now())],
         );
       } catch {
-        await alertOwner(`Se publicó ${candidate.titulo} en el canal, pero no se pudo registrar la salida. Queda publicado; no se reenvía.`);
+        await alertOwner(`Se publicó ${candidate.title} en el canal, pero no se pudo registrar la salida. Queda publicado; no se reenvía.`);
       }
       report.published.push(row.id);
 
@@ -124,10 +124,10 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
         const x = await telegram.sendPhoto({
           chat_id: deps.ownerChatId,
           photo: { fileId: row.telegram_file_id },
-          caption: buildXPost(candidate, row.enlace_afiliado),
+          caption: buildXPost(candidate, row.affiliate_link),
         });
         await db.run(
-          "INSERT INTO salidas (candidato_id, canal, mensaje_externo_id, publicado_en) VALUES (?, 'x_manual', ?, ?)",
+          "INSERT INTO posts (candidate_id, channel, external_message_id, published_at) VALUES (?, 'x_manual', ?, ?)",
           [row.id, String(x.message_id), artIso(deps.now())],
         );
       } catch {

@@ -2,9 +2,9 @@ import { appendFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 
 export type RunLogEntry = {
-  corrida_id: string | null;
-  fecha: string;
-  estado: string;
+  run_id: string | null;
+  run_date: string;
+  status: string;
   error: string | null;
   at: string;
 };

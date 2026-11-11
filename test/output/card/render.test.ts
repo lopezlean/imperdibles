@@ -19,30 +19,30 @@ function expectPng(png: Uint8Array) {
 describe("renderCardPng", () => {
   it("renders a 1200x675 PNG for the default fixture", async () => {
     const list = load("valid-2026-11-10.json");
-    expectPng(await renderCardPng(list.candidatos[0]!, { fecha: list.fecha }));
+    expectPng(await renderCardPng(list.candidates[0]!, { run_date: list.run_date }));
   });
 
   it("renders every candidate of the three-rival fixture as 1200x675 PNGs", async () => {
     const list = load("valid-three-rivals.json");
-    expect(Math.max(...list.candidatos.map((c) => c.otras.length))).toBe(3);
-    for (const c of list.candidatos) expectPng(await renderCardPng(c, { fecha: list.fecha }));
+    expect(Math.max(...list.candidates.map((c) => c.others.length))).toBe(3);
+    for (const c of list.candidates) expectPng(await renderCardPng(c, { run_date: list.run_date }));
   });
 
   it("renders a three-rival candidate with a 60-character title", async () => {
     const list = load("valid-three-rivals.json");
-    const c = list.candidatos.find((x) => x.otras.length === 3)!;
-    expectPng(await renderCardPng({ ...c, titulo: "W".repeat(60) }, { fecha: list.fecha }));
+    const c = list.candidates.find((x) => x.others.length === 3)!;
+    expectPng(await renderCardPng({ ...c, title: "W".repeat(60) }, { run_date: list.run_date }));
   });
 
   it("natural content height fits in 675px for the worst cases", async () => {
     const list = load("valid-three-rivals.json");
-    const base = list.candidatos.find((x) => x.otras.length === 3)!;
+    const base = list.candidates.find((x) => x.others.length === 3)!;
     const cases = [
-      { ...base, titulo: "W".repeat(60) },
-      { ...base, titulo: "Aspiradora robot con estación de vaciado automático y mapeo láser LDS" },
+      { ...base, title: "W".repeat(60) },
+      { ...base, title: "Aspiradora robot con estación de vaciado automático y mapeo láser LDS" },
     ];
     for (const c of cases) {
-      const tree = buildCardTree(c, { fecha: list.fecha });
+      const tree = buildCardTree(c, { run_date: list.run_date });
       const { height: _h, ...style } = tree.props.style as Record<string, string | number>;
       // Root without a fixed height on a tall canvas: the opaque area is the natural content height.
       const free = { ...tree, props: { ...tree.props, style } };
@@ -59,8 +59,8 @@ describe("renderCardPng", () => {
 
   it("lays out inside the 1200x675 canvas: badge ends at the right padding and the footer is visible", async () => {
     const list = load("valid-three-rivals.json");
-    const c = list.candidatos.find((x) => x.otras.length === 3)!;
-    const img = new Resvg(await renderCardSvg(buildCardTree(c, { fecha: list.fecha }), { width: 1200, height: 675 })).render();
+    const c = list.candidates.find((x) => x.others.length === 3)!;
+    const img = new Resvg(await renderCardSvg(buildCardTree(c, { run_date: list.run_date }), { width: 1200, height: 675 })).render();
     const px = img.pixels; // the getter copies the buffer on every access
     const at = (x: number, y: number) => {
       const i = (y * img.width + x) * 4;

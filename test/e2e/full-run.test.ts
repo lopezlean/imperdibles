@@ -83,7 +83,7 @@ const routedReplay =
 function createWorld(replay: typeof fetch, startIso: string) {
   const db = createSqliteClient();
   db.raw
-    .prepare("INSERT INTO tokens_ml (id, access_token, refresh_token, expira_en) VALUES (1, 'fake-access', 'fake-refresh', '2099-01-01T00:00:00.000Z')")
+    .prepare("INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, 'fake-access', 'fake-refresh', '2099-01-01T00:00:00.000Z')")
     .run();
   const clock = { now: new Date(startIso) };
   const calls: TelegramCall[] = [];
@@ -167,12 +167,12 @@ function createWorld(replay: typeof fetch, startIso: string) {
     );
   const channelPosts = () => calls.filter((c) => c.method === "sendPhoto" && c.chat_id === CHANNEL);
   const candidates = () =>
-    db.all<{ id: string; estado: string; telegram_mensaje_id: number | null; telegram_file_id: string | null; enlace_afiliado: string | null }>(
-      "SELECT id, estado, telegram_mensaje_id, telegram_file_id, enlace_afiliado FROM candidatos ORDER BY id",
+    db.all<{ id: string; status: string; telegram_message_id: number | null; telegram_file_id: string | null; affiliate_link: string | null }>(
+      "SELECT id, status, telegram_message_id, telegram_file_id, affiliate_link FROM candidates ORDER BY id",
     );
-  const salidas = () => db.all<{ canal: string }>("SELECT canal FROM salidas ORDER BY canal").then((r) => r.map((x) => x.canal));
+  const posts = () => db.all<{ channel: string }>("SELECT channel FROM posts ORDER BY channel").then((r) => r.map((x) => x.channel));
 
-  return { db, runDeps, at, get, reply, channelPosts, candidates, salidas, calls, workerRequests, workerDeps, workerFetch: (p: string) => get(p) };
+  return { db, runDeps, at, get, reply, channelPosts, candidates, posts, calls, workerRequests, workerDeps, workerFetch: (p: string) => get(p) };
 }
 type World = ReturnType<typeof createWorld>;
 
@@ -183,16 +183,16 @@ async function collectAndChoose(w: World, date: string): Promise<string> {
   const pending = await w.candidates();
   expect(pending.length).toBeGreaterThan(0);
   for (const c of pending) {
-    expect(c.estado).toBe("pendiente");
-    expect(c.telegram_mensaje_id).not.toBeNull();
+    expect(c.status).toBe("pending");
+    expect(c.telegram_message_id).not.toBeNull();
   }
   w.at(`${date}T10:20:00-03:00`);
   const first = pending[0]!;
-  const res = await w.reply(first.telegram_mensaje_id!, LINK);
+  const res = await w.reply(first.telegram_message_id!, LINK);
   expect(res.status).toBe(200);
   const [chosen] = await w.candidates().then((rows) => rows.filter((r) => r.id === first.id));
-  expect(chosen!.estado).toBe("elegido");
-  expect(Buffer.from(chosen!.enlace_afiliado!).equals(Buffer.from(LINK))).toBe(true);
+  expect(chosen!.status).toBe("chosen");
+  expect(Buffer.from(chosen!.affiliate_link!).equals(Buffer.from(LINK))).toBe(true);
   return first.id;
 }
 
@@ -210,21 +210,21 @@ describe("end to end: replayed data to the published page", () => {
       const id = await collectAndChoose(w, "2026-11-10");
       expect(w.calls.filter((c) => c.chat_id === OWNER && c.method === "sendPhoto" && c.photo === "png")).toHaveLength(1);
 
-      w.at("2026-11-10T10:45:00-03:00"); // before hora_publicacion: the hook must not ask for an early post
+      w.at("2026-11-10T10:45:00-03:00"); // before publish_time: the hook must not ask for an early post
       expect(await runRevalidate(w.runDeps)).toBe(0);
-      expect((await w.candidates()).find((c) => c.id === id)!.estado).toBe("validado");
+      expect((await w.candidates()).find((c) => c.id === id)!.status).toBe("validated");
       expect(w.workerRequests).toEqual([]);
       expect(w.channelPosts()).toHaveLength(0);
 
-      w.at("2026-11-10T11:00:00-03:00"); // the 14:00 UTC cron, 15 minutes after validado_en
+      w.at("2026-11-10T11:00:00-03:00"); // the 14:00 UTC cron, 15 minutes after validated_at
       await handleScheduled("0 14 * * *", w.workerDeps);
       const posts = w.channelPosts();
       expect(posts).toHaveLength(1);
       expect(posts[0]!.photo).toBe("file_id");
       expect(posts[0]!.text).toContain(LINK);
       expect(posts[0]!.text).toContain(AFFILIATE_LEGEND);
-      expect(await w.salidas()).toEqual(["telegram_canal", "x_manual"]); // the channel post and the X material for the owner
-      expect((await w.candidates()).find((c) => c.id === id)!.estado).toBe("publicado");
+      expect(await w.posts()).toEqual(["telegram_channel", "x_manual"]); // the channel post and the X material for the owner
+      expect((await w.candidates()).find((c) => c.id === id)!.status).toBe("published");
 
       const page = await w.get("/");
       expect(page.status).toBe(200);
@@ -246,7 +246,7 @@ describe("end to end: replayed data to the published page", () => {
 
       await handleScheduled("0 14 * * *", w.workerDeps);
       expect(w.channelPosts()).toHaveLength(1);
-      expect(await w.salidas()).toEqual(["telegram_canal", "x_manual"]);
+      expect(await w.posts()).toEqual(["telegram_channel", "x_manual"]);
       expectPublishedPage(await (await w.get("/")).text());
     },
     60_000,
@@ -272,19 +272,19 @@ describe("end to end: replayed data to the published page", () => {
     async () => {
       // The multi-rival end-to-end flow waits for real rival adapters (Cetrogar, Musimundo); until then only the rendering is covered.
       const list = parseCandidateList(JSON.parse(read("lista-candidatos", "valid-three-rivals.json")));
-      const c = list.candidatos[0]!;
-      expect(c.otras.length).toBe(3);
+      const c = list.candidates[0]!;
+      expect(c.others.length).toBe(3);
       const html = renderHomePage({
         mode: "today",
-        fecha: list.fecha,
-        categoriaNombre: "Aspiradoras robot",
-        umbral_pct: 15,
-        modelos_comparados: list.modelos_comparados,
-        items: [{ candidate: c, enlace_afiliado: LINK }],
+        run_date: list.run_date,
+        categoryName: "Aspiradoras robot",
+        threshold_pct: 15,
+        models_compared: list.models_compared,
+        items: [{ candidate: c, affiliate_link: LINK }],
         channelUrl: "https://t.me/e2e_test",
       });
       expectPublishedPage(html);
-      const png = await renderCardPng(c, { fecha: list.fecha });
+      const png = await renderCardPng(c, { run_date: list.run_date });
       expect([...png.slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
     },
     60_000,
@@ -306,7 +306,7 @@ describe.skipIf(recorded === undefined)(recorded === undefined ? SKIP_RECORDED :
       const id = await collectAndChoose(w, date);
       w.at(`${date}T10:45:00-03:00`);
       expect(await runRevalidate(w.runDeps)).toBe(0);
-      expect((await w.candidates()).find((c) => c.id === id)!.estado).toBe("validado");
+      expect((await w.candidates()).find((c) => c.id === id)!.status).toBe("validated");
       w.at(`${date}T11:00:00-03:00`);
       await handleScheduled("0 14 * * *", w.workerDeps);
       expect(w.channelPosts()).toHaveLength(1);

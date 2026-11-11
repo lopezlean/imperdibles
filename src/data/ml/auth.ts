@@ -18,7 +18,7 @@ const AUTH_URL = "https://auth.mercadolibre.com.ar/authorization";
 const TOKEN_URL = "https://api.mercadolibre.com/oauth/token";
 const REFRESH_MARGIN_MS = 30 * 60_000;
 
-type StoredTokens = { access_token: string; refresh_token: string; expira_en: string };
+type StoredTokens = { access_token: string; refresh_token: string; expires_at: string };
 
 export function authorizationUrl(env: Pick<LocalEnv, "mlAppId" | "mlRedirectUri">): string {
   const query = new URLSearchParams({
@@ -56,12 +56,12 @@ async function requestAndStore(deps: AuthDeps, params: Record<string, string>, f
   if (typeof body.access_token !== "string" || !body.access_token || typeof body.expires_in !== "number" || !refresh) {
     throw new MlAuthError("refresh_failed");
   }
-  const expiraEn = new Date(deps.now().getTime() + body.expires_in * 1000).toISOString();
+  const expiresAt = new Date(deps.now().getTime() + body.expires_in * 1000).toISOString();
   await deps.db.run(
-    `INSERT INTO tokens_ml (id, access_token, refresh_token, expira_en) VALUES (1, ?, ?, ?)
+    `INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET access_token = excluded.access_token,
-       refresh_token = excluded.refresh_token, expira_en = excluded.expira_en`,
-    [body.access_token, refresh, expiraEn],
+       refresh_token = excluded.refresh_token, expires_at = excluded.expires_at`,
+    [body.access_token, refresh, expiresAt],
   );
   return body.access_token;
 }
@@ -77,7 +77,7 @@ export async function exchangeCode(deps: AuthDeps, code: string): Promise<void> 
 export function createTokenProvider(deps: AuthDeps): TokenProvider {
   async function load(): Promise<StoredTokens> {
     const [row] = await deps.db.all<StoredTokens>(
-      "SELECT access_token, refresh_token, expira_en FROM tokens_ml WHERE id = 1",
+      "SELECT access_token, refresh_token, expires_at FROM ml_tokens WHERE id = 1",
     );
     if (!row) throw new MlAuthError("not_authorized");
     return row;
@@ -88,7 +88,7 @@ export function createTokenProvider(deps: AuthDeps): TokenProvider {
   return {
     async get() {
       const stored = await load();
-      const remaining = new Date(stored.expira_en).getTime() - deps.now().getTime();
+      const remaining = new Date(stored.expires_at).getTime() - deps.now().getTime();
       return remaining > REFRESH_MARGIN_MS ? stored.access_token : refresh(stored);
     },
     async forceRefresh() {

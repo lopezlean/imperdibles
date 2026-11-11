@@ -1,16 +1,16 @@
 import type { CandidateList } from "./candidate-list.js";
 
 export type OwnerAlert =
-  | { kind: "run_failed"; corrida_id: string | null; reason: string }
-  | { kind: "run_partial"; corrida_id: string; skipped_models: number; reason: string }
-  | { kind: "store_format_error"; tienda: string }
+  | { kind: "run_failed"; run_id: string | null; reason: string }
+  | { kind: "run_partial"; run_id: string; skipped_models: number; reason: string }
+  | { kind: "store_format_error"; store: string }
   | { kind: "ml_auth_required" }
   | { kind: "ml_permission_denied"; path: string };
 
 export type RevalidationReport = {
-  fecha: string;
-  validated: string[]; // candidato_id
-  invalidated: { candidato_id: string; titulo: string; reason: "below_threshold" | "offer_missing" }[];
+  run_date: string;
+  validated: string[]; // candidate_id
+  invalidated: { candidate_id: string; title: string; reason: "below_threshold" | "offer_missing" }[];
 };
 
 export interface LocalOutputHooks {

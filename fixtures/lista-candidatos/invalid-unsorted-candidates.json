@@ -1,142 +1,142 @@
 {
   "version": 1,
-  "corrida_id": "2026-11-10-aspiradoras-robot-060000",
-  "fecha": "2026-11-10",
-  "categoria": "aspiradoras-robot",
-  "umbral_pct": 15,
-  "modelos_comparados": 9,
-  "candidatos": [
+  "run_id": "2026-11-10-aspiradoras-robot-060000",
+  "run_date": "2026-11-10",
+  "category": "aspiradoras-robot",
+  "threshold_pct": 15,
+  "models_compared": 9,
+  "candidates": [
     {
-      "candidato_id": "2026-11-10-aspiradoras-robot-060000:ELECTROLUX:ERB80",
-      "modelo_id": "ELECTROLUX:ERB80",
-      "marca": "Electrolux",
-      "titulo": "Electrolux ERB80, base de autolimpieza",
-      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100004-F.jpg",
+      "candidate_id": "2026-11-10-aspiradoras-robot-060000:ELECTROLUX:ERB80",
+      "model_id": "ELECTROLUX:ERB80",
+      "brand": "Electrolux",
+      "title": "Electrolux ERB80, base de autolimpieza",
+      "image_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100004-F.jpg",
       "ml": {
-        "tienda": "ml",
-        "titulo_listado": "Electrolux ERB80, base de autolimpieza",
+        "store": "ml",
+        "listing_title": "Electrolux ERB80, base de autolimpieza",
         "url": "https://www.mercadolibre.com.ar/p/MLA45100004",
-        "precio_ars": 569000,
-        "observado_en": "2026-11-10T06:12:00-03:00",
-        "ref_externa": "MLA2100000004",
-        "vendedor": "Tienda oficial",
+        "price_ars": 569000,
+        "observed_at": "2026-11-10T06:12:00-03:00",
+        "external_ref": "MLA2100000004",
+        "seller": "Tienda oficial",
         "ml_product_id": "MLA45100004",
         "ml_seller_id": "100000004"
       },
-      "otras": [
+      "others": [
         {
-          "tienda": "fravega",
-          "titulo_listado": "Electrolux ERB80, base de autolimpieza",
+          "store": "fravega",
+          "listing_title": "Electrolux ERB80, base de autolimpieza",
           "url": "https://www.fravega.com/p/electrolux-erb80-base-de-autolimpieza",
-          "precio_ars": 669899,
-          "observado_en": "2026-11-10T06:14:00-03:00",
-          "ref_externa": "ELX-ERB80",
-          "vendedor": null
+          "price_ars": 669899,
+          "observed_at": "2026-11-10T06:14:00-03:00",
+          "external_ref": "ELX-ERB80",
+          "seller": null
         }
       ],
-      "diferencia_ars": 100899,
-      "diferencia_pct": 15.06182275238506,
-      "confianza": "alta",
-      "regla_emparejado": "marca_codigo_variante"
+      "difference_ars": 100899,
+      "difference_pct": 15.06182275238506,
+      "confidence": "high",
+      "match_rule": "brand_code_variant"
     },
     {
-      "candidato_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:H50PRO",
-      "modelo_id": "XIAOMI:H50PRO",
-      "marca": "Xiaomi",
-      "titulo": "Xiaomi Robot Vacuum H50 Pro",
-      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100003-F.jpg",
+      "candidate_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:H50PRO",
+      "model_id": "XIAOMI:H50PRO",
+      "brand": "Xiaomi",
+      "title": "Xiaomi Robot Vacuum H50 Pro",
+      "image_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100003-F.jpg",
       "ml": {
-        "tienda": "ml",
-        "titulo_listado": "Xiaomi Robot Vacuum H50 Pro",
+        "store": "ml",
+        "listing_title": "Xiaomi Robot Vacuum H50 Pro",
         "url": "https://www.mercadolibre.com.ar/p/MLA45100003",
-        "precio_ars": 994899,
-        "observado_en": "2026-11-10T06:12:00-03:00",
-        "ref_externa": "MLA2100000003",
-        "vendedor": "Tienda oficial",
+        "price_ars": 994899,
+        "observed_at": "2026-11-10T06:12:00-03:00",
+        "external_ref": "MLA2100000003",
+        "seller": "Tienda oficial",
         "ml_product_id": "MLA45100003",
         "ml_seller_id": "100000003"
       },
-      "otras": [
+      "others": [
         {
-          "tienda": "fravega",
-          "titulo_listado": "Xiaomi Robot Vacuum H50 Pro",
+          "store": "fravega",
+          "listing_title": "Xiaomi Robot Vacuum H50 Pro",
           "url": "https://www.fravega.com/p/xiaomi-robot-vacuum-h50-pro",
-          "precio_ars": 1199999,
-          "observado_en": "2026-11-10T06:14:00-03:00",
-          "ref_externa": "XIA-H50PRO",
-          "vendedor": null
+          "price_ars": 1199999,
+          "observed_at": "2026-11-10T06:14:00-03:00",
+          "external_ref": "XIA-H50PRO",
+          "seller": null
         }
       ],
-      "diferencia_ars": 205100,
-      "diferencia_pct": 17.09168090973409,
-      "confianza": "alta",
-      "regla_emparejado": "marca_codigo_variante"
+      "difference_ars": 205100,
+      "difference_pct": 17.09168090973409,
+      "confidence": "high",
+      "match_rule": "brand_code_variant"
     },
     {
-      "candidato_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:S40C",
-      "modelo_id": "XIAOMI:S40C",
-      "marca": "Xiaomi",
-      "titulo": "Xiaomi Robot Vacuum S40C",
-      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100002-F.jpg",
+      "candidate_id": "2026-11-10-aspiradoras-robot-060000:XIAOMI:S40C",
+      "model_id": "XIAOMI:S40C",
+      "brand": "Xiaomi",
+      "title": "Xiaomi Robot Vacuum S40C",
+      "image_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100002-F.jpg",
       "ml": {
-        "tienda": "ml",
-        "titulo_listado": "Xiaomi Robot Vacuum S40C",
+        "store": "ml",
+        "listing_title": "Xiaomi Robot Vacuum S40C",
         "url": "https://www.mercadolibre.com.ar/p/MLA45100002",
-        "precio_ars": 329999,
-        "observado_en": "2026-11-10T06:12:00-03:00",
-        "ref_externa": "MLA2100000002",
-        "vendedor": "Tienda oficial",
+        "price_ars": 329999,
+        "observed_at": "2026-11-10T06:12:00-03:00",
+        "external_ref": "MLA2100000002",
+        "seller": "Tienda oficial",
         "ml_product_id": "MLA45100002",
         "ml_seller_id": "100000002"
       },
-      "otras": [
+      "others": [
         {
-          "tienda": "fravega",
-          "titulo_listado": "Xiaomi Robot Vacuum S40C",
+          "store": "fravega",
+          "listing_title": "Xiaomi Robot Vacuum S40C",
           "url": "https://www.fravega.com/p/xiaomi-robot-vacuum-s40c",
-          "precio_ars": 399999,
-          "observado_en": "2026-11-10T06:14:00-03:00",
-          "ref_externa": "XIA-S40C",
-          "vendedor": null
+          "price_ars": 399999,
+          "observed_at": "2026-11-10T06:14:00-03:00",
+          "external_ref": "XIA-S40C",
+          "seller": null
         }
       ],
-      "diferencia_ars": 70000,
-      "diferencia_pct": 17.500043750109374,
-      "confianza": "alta",
-      "regla_emparejado": "marca_codigo_variante"
+      "difference_ars": 70000,
+      "difference_pct": 17.500043750109374,
+      "confidence": "high",
+      "match_rule": "brand_code_variant"
     },
     {
-      "candidato_id": "2026-11-10-aspiradoras-robot-060000:SMARTLIFE:RVCL050",
-      "modelo_id": "SMARTLIFE:RVCL050",
-      "marca": "Smartlife",
-      "titulo": "Smartlife RVCL050, mapeo láser",
-      "imagen_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100001-F.jpg",
+      "candidate_id": "2026-11-10-aspiradoras-robot-060000:SMARTLIFE:RVCL050",
+      "model_id": "SMARTLIFE:RVCL050",
+      "brand": "Smartlife",
+      "title": "Smartlife RVCL050, mapeo láser",
+      "image_url": "https://http2.mlstatic.com/D_NQ_NP_MLA45100001-F.jpg",
       "ml": {
-        "tienda": "ml",
-        "titulo_listado": "Smartlife RVCL050, mapeo láser",
+        "store": "ml",
+        "listing_title": "Smartlife RVCL050, mapeo láser",
         "url": "https://www.mercadolibre.com.ar/p/MLA45100001",
-        "precio_ars": 264699,
-        "observado_en": "2026-11-10T06:12:00-03:00",
-        "ref_externa": "MLA2100000001",
-        "vendedor": "Tienda oficial",
+        "price_ars": 264699,
+        "observed_at": "2026-11-10T06:12:00-03:00",
+        "external_ref": "MLA2100000001",
+        "seller": "Tienda oficial",
         "ml_product_id": "MLA45100001",
         "ml_seller_id": "100000001"
       },
-      "otras": [
+      "others": [
         {
-          "tienda": "fravega",
-          "titulo_listado": "Smartlife RVCL050, mapeo láser",
+          "store": "fravega",
+          "listing_title": "Smartlife RVCL050, mapeo láser",
           "url": "https://www.fravega.com/p/smartlife-rvcl050-mapeo-laser",
-          "precio_ars": 329999,
-          "observado_en": "2026-11-10T06:14:00-03:00",
-          "ref_externa": "RVCL050",
-          "vendedor": null
+          "price_ars": 329999,
+          "observed_at": "2026-11-10T06:14:00-03:00",
+          "external_ref": "RVCL050",
+          "seller": null
         }
       ],
-      "diferencia_ars": 65300,
-      "diferencia_pct": 19.78793875132955,
-      "confianza": "alta",
-      "regla_emparejado": "marca_codigo_variante"
+      "difference_ars": 65300,
+      "difference_pct": 19.78793875132955,
+      "confidence": "high",
+      "match_rule": "brand_code_variant"
     }
   ]
 }

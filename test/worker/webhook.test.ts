@@ -13,38 +13,38 @@ type Db = ReturnType<typeof createSqliteClient>;
 let db: Db;
 const deps = () => ({ db, ownerChatId: OWNER, now: () => NOW });
 
-function payload(titulo: string, otras: { tienda: string; ref: string }[]): string {
-  return JSON.stringify({ titulo, otras: otras.map((o) => ({ tienda: o.tienda, ref_externa: o.ref })) });
+function payload(title: string, others: { store: string; ref: string }[]): string {
+  return JSON.stringify({ title, others: others.map((o) => ({ store: o.store, external_ref: o.ref })) });
 }
 
-async function candidate(id: string, opts: { fecha?: string; estado?: string; msg?: number; otras?: { tienda: string; ref: string }[] } = {}) {
-  const fecha = opts.fecha ?? "2026-11-11";
-  const existing = await db.all<{ id: string }>("SELECT id FROM corridas WHERE fecha = ?", [fecha]);
-  let corridaId: string;
+async function candidate(id: string, opts: { run_date?: string; status?: string; msg?: number; others?: { store: string; ref: string }[] } = {}) {
+  const run_date = opts.run_date ?? "2026-11-11";
+  const existing = await db.all<{ id: string }>("SELECT id FROM runs WHERE run_date = ?", [run_date]);
+  let runId: string;
   if (existing[0]) {
-    corridaId = existing[0].id;
+    runId = existing[0].id;
     await db.run(
-      "INSERT INTO modelos (id, categoria, marca, codigo_modelo, clave, titulo, creado_en) VALUES (?, 'aspiradoras-robot', 'Fake', ?, ?, 'Fake', 'x')",
+      "INSERT INTO models (id, category, brand, model_code, model_key, title, created_at) VALUES (?, 'aspiradoras-robot', 'Fake', ?, ?, 'Fake', 'x')",
       [`m-${id}`, `m-${id}`, `m-${id}`],
     );
   } else {
-    corridaId = (await seedRun(db, { fecha, modeloIds: [`m-${id}`] })).corridaId;
+    runId = (await seedRun(db, { run_date, modelIds: [`m-${id}`] })).runId;
   }
   await db.run(
-    "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, telegram_mensaje_id) VALUES (?, ?, ?, ?, ?, ?)",
-    [id, corridaId, `m-${id}`, payload(`Robot ${id}`, opts.otras ?? [{ tienda: "fravega", ref: "F1" }]), opts.estado ?? "pendiente", opts.msg ?? 202],
+    "INSERT INTO candidates (id, run_id, model_id, payload, status, telegram_message_id) VALUES (?, ?, ?, ?, ?, ?)",
+    [id, runId, `m-${id}`, payload(`Robot ${id}`, opts.others ?? [{ store: "fravega", ref: "F1" }]), opts.status ?? "pending", opts.msg ?? 202],
   );
 }
 
-async function pairing(modelo: string, ref: string) {
+async function pairing(model: string, ref: string) {
   await db.run(
-    "INSERT OR IGNORE INTO publicaciones_tienda (tienda_id, ref_externa, titulo, url, primera_vez, ultima_vez) VALUES ('fravega', ?, 't', 'u', 'x', 'x')",
+    "INSERT OR IGNORE INTO store_listings (store_id, external_ref, title, url, first_seen_at, last_seen_at) VALUES ('fravega', ?, 't', 'u', 'x', 'x')",
     [ref],
   );
-  const [p] = await db.all<{ id: number }>("SELECT id FROM publicaciones_tienda WHERE tienda_id='fravega' AND ref_externa=?", [ref]);
+  const [p] = await db.all<{ id: number }>("SELECT id FROM store_listings WHERE store_id='fravega' AND external_ref=?", [ref]);
   await db.run(
-    "INSERT INTO emparejados (modelo_id, publicacion_id, confianza, regla, evidencia, estado, creado_en) VALUES (?, ?, 'alta', 'gtin', 'e', 'auto', 'x')",
-    [modelo, p!.id],
+    "INSERT INTO matches (model_id, listing_id, confidence, rule, evidence, status, created_at) VALUES (?, ?, 'high', 'gtin', 'e', 'auto', 'x')",
+    [model, p!.id],
   );
 }
 
@@ -59,9 +59,9 @@ const upd = (text: string, o: { chat?: number; replyTo?: number | null; messageI
 });
 
 const row = (id: string) =>
-  db.all<{ estado: string; enlace_afiliado: string | null }>("SELECT estado, enlace_afiliado FROM candidatos WHERE id = ?", [id]).then((r) => r[0]!);
+  db.all<{ status: string; affiliate_link: string | null }>("SELECT status, affiliate_link FROM candidates WHERE id = ?", [id]).then((r) => r[0]!);
 
-/** A client that moves the candidate to `publicado` right before the first matching UPDATE: the publish race. */
+/** A client that moves the candidate to `published` right before the first matching UPDATE: the publish race. */
 function racingDeps(updatePattern: RegExp) {
   let raced = false;
   const racing = {
@@ -69,7 +69,7 @@ function racingDeps(updatePattern: RegExp) {
     run: async (sql: string, params?: (string | number | null)[]) => {
       if (!raced && updatePattern.test(sql)) {
         raced = true;
-        await db.run("UPDATE candidatos SET estado = 'publicado' WHERE id = 'c1'");
+        await db.run("UPDATE candidates SET status = 'published' WHERE id = 'c1'");
       }
       return db.run(sql, params);
     },
@@ -82,7 +82,7 @@ beforeEach(() => {
 });
 
 describe("handleTelegramUpdate", () => {
-  it("stores a valid link byte for byte and marks the candidate elegido", async () => {
+  it("stores a valid link byte for byte and marks the candidate chosen", async () => {
     await candidate("c1");
     const reply = await handleTelegramUpdate(deps(), upd(`  ${LINK}  `));
     expect(reply).toEqual({
@@ -92,8 +92,8 @@ describe("handleTelegramUpdate", () => {
       reply_to_message_id: 501,
     });
     const r = await row("c1");
-    expect(r.estado).toBe("elegido");
-    expect(Buffer.from(r.enlace_afiliado!).equals(Buffer.from(LINK))).toBe(true);
+    expect(r.status).toBe("chosen");
+    expect(Buffer.from(r.affiliate_link!).equals(Buffer.from(LINK))).toBe(true);
   });
 
   it("works from the recorded fixture", async () => {
@@ -103,51 +103,51 @@ describe("handleTelegramUpdate", () => {
     expect(reply?.text).toContain("Enlace guardado para Robot c1");
   });
 
-  it("allows replacing the link on an elegido candidate", async () => {
-    await candidate("c1", { estado: "elegido" });
+  it("allows replacing the link on an chosen candidate", async () => {
+    await candidate("c1", { status: "chosen" });
     await handleTelegramUpdate(deps(), upd("https://meli.la/NEW"));
-    expect((await row("c1")).enlace_afiliado).toBe("https://meli.la/NEW");
+    expect((await row("c1")).affiliate_link).toBe("https://meli.la/NEW");
   });
 
   it("explains an invalid link in Spanish and changes nothing", async () => {
     await candidate("c1");
     const reply = await handleTelegramUpdate(deps(), upd("http://meli.la/x"));
     expect(reply?.text).toBe("No se guardó el enlace: el enlace no usa https. Debe ser un único enlace https://meli.la/...");
-    expect(await row("c1")).toEqual({ estado: "pendiente", enlace_afiliado: null });
+    expect(await row("c1")).toEqual({ status: "pending", affiliate_link: null });
     const r2 = await handleTelegramUpdate(deps(), upd("https://www.meli.la/x"));
     expect(r2?.text).toContain("el enlace no es de meli.la");
     const r3 = await handleTelegramUpdate(deps(), upd("mirá https://meli.la/x"));
     expect(r3?.text).toContain("tiene que ser un único enlace, sin otro texto");
   });
 
-  it.each(["publicado", "descartado"])("rechazar on a %s candidate changes nothing", async (estado) => {
-    await candidate("c1", { estado });
+  it.each([["published", "publicado"], ["discarded", "descartado"]])("rechazar on a %s candidate changes nothing", async (status, label) => {
+    await candidate("c1", { status });
     const reply = await handleTelegramUpdate(deps(), upd("rechazar"));
-    expect(reply?.text).toBe(`Este candidato ya está ${estado}; no se cambió nada.`);
-    expect((await row("c1")).estado).toBe(estado);
+    expect(reply?.text).toBe(`Este candidato ya está ${label}; no se cambió nada.`);
+    expect((await row("c1")).status).toBe(status);
   });
 
-  it("rechazar loses the race against a publish: the row stays publicado and the pairings are untouched", async () => {
+  it("rechazar loses the race against a publish: the row stays published and the pairings are untouched", async () => {
     await candidate("c1");
     await pairing("m-c1", "F1");
-    const reply = await handleTelegramUpdate(racingDeps(/UPDATE candidatos SET estado = 'descartado'/), upd("rechazar"));
+    const reply = await handleTelegramUpdate(racingDeps(/UPDATE candidates SET status = 'discarded'/), upd("rechazar"));
     expect(reply?.text).toBe("Este candidato ya está publicado; no se cambió nada.");
-    expect((await row("c1")).estado).toBe("publicado");
-    const e = await db.all<{ estado: string }>("SELECT estado FROM emparejados");
-    expect(e).toEqual([{ estado: "auto" }]);
+    expect((await row("c1")).status).toBe("published");
+    const e = await db.all<{ status: string }>("SELECT status FROM matches");
+    expect(e).toEqual([{ status: "auto" }]);
   });
 
-  it("a link reply loses the race against a publish: the row stays publicado and keeps no new link", async () => {
+  it("a link reply loses the race against a publish: the row stays published and keeps no new link", async () => {
     await candidate("c1");
-    const reply = await handleTelegramUpdate(racingDeps(/UPDATE candidatos SET estado = 'elegido'/), upd(LINK));
+    const reply = await handleTelegramUpdate(racingDeps(/UPDATE candidates SET status = 'chosen'/), upd(LINK));
     expect(reply?.text).toBe("Este candidato ya está publicado; no se cambió nada.");
-    expect(await row("c1")).toEqual({ estado: "publicado", enlace_afiliado: null });
+    expect(await row("c1")).toEqual({ status: "published", affiliate_link: null });
   });
 
   it("returns null and saves nothing for another chat", async () => {
     await candidate("c1");
     expect(await handleTelegramUpdate(deps(), upd(LINK, { chat: 999 }))).toBeNull();
-    expect(await row("c1")).toEqual({ estado: "pendiente", enlace_afiliado: null });
+    expect(await row("c1")).toEqual({ status: "pending", affiliate_link: null });
   });
 
   it("returns null for malformed updates", async () => {
@@ -157,51 +157,51 @@ describe("handleTelegramUpdate", () => {
   });
 
   it("explains that yesterday's candidate cannot be published", async () => {
-    await candidate("c1", { fecha: "2026-11-10" });
+    await candidate("c1", { run_date: "2026-11-10" });
     const reply = await handleTelegramUpdate(deps(), upd(LINK));
     expect(reply?.text).toBe("Ese candidato es de otro día y ya no se puede publicar.");
-    expect(await row("c1")).toEqual({ estado: "pendiente", enlace_afiliado: null });
+    expect(await row("c1")).toEqual({ status: "pending", affiliate_link: null });
   });
 
   it("answers with help when the message is not a reply", async () => {
     await candidate("c1");
     const reply = await handleTelegramUpdate(deps(), upd(LINK, { replyTo: null }));
     expect(reply).toEqual({ method: "sendMessage", chat_id: 123456789, text: HELP, reply_to_message_id: 501 });
-    expect((await row("c1")).estado).toBe("pendiente");
+    expect((await row("c1")).status).toBe("pending");
   });
 
   it("answers with help when the reply targets no candidate", async () => {
     await candidate("c1");
     const reply = await handleTelegramUpdate(deps(), upd(LINK, { replyTo: 9999 }));
     expect(reply?.text).toBe(HELP);
-    expect((await row("c1")).estado).toBe("pendiente");
+    expect((await row("c1")).status).toBe("pending");
   });
 
   it.each([["Rechazar", 1], ["  RECHAZAR ", 3]])("%j discards the candidate and rejects %i rival pairing(s)", async (text, n) => {
-    const otras = Array.from({ length: n }, (_, i) => ({ tienda: "fravega", ref: `F${i}` }));
-    await candidate("c1", { otras });
+    const others = Array.from({ length: n }, (_, i) => ({ store: "fravega", ref: `F${i}` }));
+    await candidate("c1", { others });
     await candidate("c2");
-    for (const o of otras) await pairing("m-c1", o.ref);
+    for (const o of others) await pairing("m-c1", o.ref);
     await pairing("m-c2", "F1");
     const reply = await handleTelegramUpdate(deps(), upd(text));
     expect(reply?.text).toBe("Descartado: Robot c1. No se volverá a proponer.");
-    expect((await row("c1")).estado).toBe("descartado");
-    const rows = await db.all<{ modelo_id: string; estado: string }>("SELECT modelo_id, estado FROM emparejados");
-    expect(rows.filter((r) => r.modelo_id === "m-c1").map((r) => r.estado)).toEqual(Array(n).fill("rechazado"));
-    expect(rows.filter((r) => r.modelo_id === "m-c2").map((r) => r.estado)).toEqual(["auto"]);
-    expect((await row("c2")).estado).toBe("pendiente");
+    expect((await row("c1")).status).toBe("discarded");
+    const rows = await db.all<{ model_id: string; status: string }>("SELECT model_id, status FROM matches");
+    expect(rows.filter((r) => r.model_id === "m-c1").map((r) => r.status)).toEqual(Array(n).fill("rejected"));
+    expect(rows.filter((r) => r.model_id === "m-c2").map((r) => r.status)).toEqual(["auto"]);
+    expect((await row("c2")).status).toBe("pending");
   });
 
-  it.each(["pendiente", "elegido", "validado"])("allows rechazar on %s", async (estado) => {
-    await candidate("c1", { estado });
+  it.each(["pending", "chosen", "validated"])("allows rechazar on %s", async (status) => {
+    await candidate("c1", { status });
     await handleTelegramUpdate(deps(), upd("rechazar"));
-    expect((await row("c1")).estado).toBe("descartado");
+    expect((await row("c1")).status).toBe("discarded");
   });
 
-  it("refuses a link on a validado candidate", async () => {
-    await candidate("c1", { estado: "validado" });
+  it("refuses a link on a validated candidate", async () => {
+    await candidate("c1", { status: "validated" });
     const reply = await handleTelegramUpdate(deps(), upd(LINK));
     expect(reply?.text).toBe("Este candidato ya está validado; no se cambió nada.");
-    expect(await row("c1")).toEqual({ estado: "validado", enlace_afiliado: null });
+    expect(await row("c1")).toEqual({ status: "validated", affiliate_link: null });
   });
 });

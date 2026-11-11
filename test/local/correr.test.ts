@@ -67,8 +67,8 @@ function fakeHooks(): Hooks {
   return hooks;
 }
 
-function addToken(db: ReturnType<typeof createSqliteClient>, expiraEn: string) {
-  db.raw.prepare("INSERT INTO tokens_ml (id, access_token, refresh_token, expira_en) VALUES (1, ?, ?, ?)").run(SECRETS.token, SECRETS.refresh, expiraEn);
+function addToken(db: ReturnType<typeof createSqliteClient>, expiresAt: string) {
+  db.raw.prepare("INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, ?)").run(SECRETS.token, SECRETS.refresh, expiresAt);
 }
 
 /** Wraps a client so that chosen writes fail with D1Unavailable once the run has started. */
@@ -81,7 +81,7 @@ function flakyDb(base: SqlClient, shouldFail: (sql: string, attempt: number) => 
       const key = sql.trim().split(/\s+/).slice(0, 3).join(" ");
       const n = (attempts.get(key) ?? 0) + 1;
       attempts.set(key, n);
-      if (!sql.includes("INTO corridas") && shouldFail(sql, n)) throw new D1Unavailable("D1 answered HTTP 503");
+      if (!sql.includes("INTO runs") && shouldFail(sql, n)) throw new D1Unavailable("D1 answered HTTP 503");
       return base.run(sql, params);
     },
   };
@@ -140,46 +140,46 @@ function setup(
 
 const count = (db: SqlClient, table: string) => db.all<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`).then((r) => r[0]!.n);
 const logLines = (p: string) => readFileSync(p, "utf8").trim().split("\n").map((l) => JSON.parse(l) as Record<string, unknown>);
-const runRow = (db: SqlClient) => db.all<Record<string, unknown>>("SELECT * FROM corridas ORDER BY iniciada_en DESC, rowid DESC LIMIT 1").then((r) => r[0]);
+const runRow = (db: SqlClient) => db.all<Record<string, unknown>>("SELECT * FROM runs ORDER BY started_at DESC, rowid DESC LIMIT 1").then((r) => r[0]);
 
 describe("imperdibles correr", () => {
-  it("stores the run, candidates as pendiente and calls onCandidatesReady once", async () => {
+  it("stores the run, candidates as pending and calls onCandidatesReady once", async () => {
     const s = setup();
     const r = await runDaily(s.deps, { force: false });
-    expect(r).toEqual({ exitCode: 0, corrida_id: RUN_ID });
-    expect(await runRow(s.sqlite)).toMatchObject({ id: RUN_ID, fecha: "2026-11-10", categoria: "aspiradoras-robot", estado: "ok", modelos_comparados: 2, consultas_usadas: 6, error: null });
-    const cands = await s.sqlite.all<{ estado: string; corrida_id: string; modelo_id: string }>("SELECT estado, corrida_id, modelo_id FROM candidatos");
-    expect(cands).toEqual([{ estado: "pendiente", corrida_id: RUN_ID, modelo_id: "PHILCO:PHRA26N" }]);
+    expect(r).toEqual({ exitCode: 0, run_id: RUN_ID });
+    expect(await runRow(s.sqlite)).toMatchObject({ id: RUN_ID, run_date: "2026-11-10", category: "aspiradoras-robot", status: "ok", models_compared: 2, queries_used: 6, error: null });
+    const cands = await s.sqlite.all<{ status: string; run_id: string; model_id: string }>("SELECT status, run_id, model_id FROM candidates");
+    expect(cands).toEqual([{ status: "pending", run_id: RUN_ID, model_id: "PHILCO:PHRA26N" }]);
     expect(s.hooks.ready).toHaveLength(1);
-    expect(s.hooks.ready[0]!.corrida_id).toBe(RUN_ID);
-    expect(s.hooks.ready[0]!.candidatos).toHaveLength(1);
+    expect(s.hooks.ready[0]!.run_id).toBe(RUN_ID);
+    expect(s.hooks.ready[0]!.candidates).toHaveLength(1);
     expect(s.hooks.alerts).toEqual([]);
-    expect(await count(s.sqlite, "observaciones_precio")).toBeGreaterThan(0);
-    expect(await count(s.sqlite, "emparejados")).toBeGreaterThan(0);
-    expect(logLines(s.logPath)).toEqual([{ corrida_id: RUN_ID, fecha: "2026-11-10", estado: "ok", error: null, at: "2026-11-10T06:00:00-03:00" }]);
+    expect(await count(s.sqlite, "price_observations")).toBeGreaterThan(0);
+    expect(await count(s.sqlite, "matches")).toBeGreaterThan(0);
+    expect(logLines(s.logPath)).toEqual([{ run_id: RUN_ID, run_date: "2026-11-10", status: "ok", error: null, at: "2026-11-10T06:00:00-03:00" }]);
   });
 
-  it("runs the category of the ART day and stores it in corridas.categoria", async () => {
+  it("runs the category of the ART day and stores it in runs.category", async () => {
     const s = setup({ now: new Date("2026-11-11T09:00:00Z"), tokenExpiry: "2026-11-12T00:00:00.000Z" });
-    const categorias = [
-      { id: "aspiradoras-robot", nombre: "Aspiradoras robot", terminos: ["aspiradora robot"] },
-      { id: "test-rotation", nombre: "Test rotation", terminos: ["aspiradora robot"] },
+    const categories = [
+      { id: "aspiradoras-robot", name: "Aspiradoras robot", terms: ["aspiradora robot"] },
+      { id: "test-rotation", name: "Test rotation", terms: ["aspiradora robot"] },
     ];
-    await s.sqlite.run("UPDATE config SET valor = ? WHERE clave = 'categorias'", [JSON.stringify(categorias)]);
+    await s.sqlite.run("UPDATE config SET value = ? WHERE name = 'categories'", [JSON.stringify(categories)]);
     const r = await runDaily(s.deps, { force: false });
-    expect(r.corrida_id).toBe("2026-11-11-test-rotation-060000");
-    expect(await runRow(s.sqlite)).toMatchObject({ fecha: "2026-11-11", categoria: "test-rotation" });
+    expect(r.run_id).toBe("2026-11-11-test-rotation-060000");
+    expect(await runRow(s.sqlite)).toMatchObject({ run_date: "2026-11-11", category: "test-rotation" });
   });
 
   it("calls onCandidatesReady with an empty list and ends ok when nothing passes", async () => {
     const s = setup();
-    await s.sqlite.run("UPDATE config SET valor = '90' WHERE clave = 'umbral_pct'");
+    await s.sqlite.run("UPDATE config SET value = '90' WHERE name = 'threshold_pct'");
     const r = await runDaily(s.deps, { force: false });
     expect(r.exitCode).toBe(0);
     expect(s.hooks.ready).toHaveLength(1);
-    expect(s.hooks.ready[0]!.candidatos).toEqual([]);
-    expect(await count(s.sqlite, "candidatos")).toBe(0);
-    expect(await runRow(s.sqlite)).toMatchObject({ estado: "ok" });
+    expect(s.hooks.ready[0]!.candidates).toEqual([]);
+    expect(await count(s.sqlite, "candidates")).toBe(0);
+    expect(await runRow(s.sqlite)).toMatchObject({ status: "ok" });
   });
 
   it("refuses a second run of the same ART day without --forzar", async () => {
@@ -188,11 +188,11 @@ describe("imperdibles correr", () => {
     s.fetched.length = 0;
     s.out.length = 0;
     const r = await runDaily(s.deps, { force: false });
-    expect(r).toEqual({ exitCode: 2, corrida_id: null });
+    expect(r).toEqual({ exitCode: 2, run_id: null });
     expect(s.out.join("")).toBe(`Ya hay una corrida de hoy (${RUN_ID}). Para repetirla: imperdibles correr --forzar\n`);
     expect(s.fetched).toEqual([]);
     expect(s.hooks.ready).toHaveLength(1);
-    expect(await count(s.sqlite, "candidatos")).toBe(1);
+    expect(await count(s.sqlite, "candidates")).toBe(1);
   });
 
   it("runs again on the same day with --forzar", async () => {
@@ -200,11 +200,11 @@ describe("imperdibles correr", () => {
     await runDaily(s.deps, { force: false });
     s.clock.now = new Date("2026-11-10T09:05:00Z");
     const r = await runDaily(s.deps, { force: true });
-    expect(r).toEqual({ exitCode: 0, corrida_id: "2026-11-10-aspiradoras-robot-060500" });
-    expect(await count(s.sqlite, "corridas")).toBe(2);
+    expect(r).toEqual({ exitCode: 0, run_id: "2026-11-10-aspiradoras-robot-060500" });
+    expect(await count(s.sqlite, "runs")).toBe(2);
   });
 
-  it("does not count a fallida run of the day as done", async () => {
+  it("does not count a failed run of the day as done", async () => {
     const s = setup({ routes: new Map([[fravegaSearchUrl("aspiradora robot"), () => new Response(FRAVEGA_BROKEN, { status: 200 })]]) });
     expect((await runDaily(s.deps, { force: false })).exitCode).toBe(1);
     s.clock.now = new Date("2026-11-10T09:05:00Z");
@@ -212,24 +212,24 @@ describe("imperdibles correr", () => {
     expect(again.exitCode).not.toBe(2);
   });
 
-  it("stamps fecha with the ART date at 01:30 UTC", async () => {
+  it("stamps run_date with the ART date at 01:30 UTC", async () => {
     const s = setup({ now: new Date("2026-11-11T01:30:00Z"), tokenExpiry: "2026-11-12T00:00:00.000Z" });
     const r = await runDaily(s.deps, { force: false });
-    expect(r.corrida_id).toBe("2026-11-10-aspiradoras-robot-223000");
-    expect(await runRow(s.sqlite)).toMatchObject({ fecha: "2026-11-10", iniciada_en: "2026-11-10T22:30:00-03:00" });
-    expect(s.hooks.ready[0]!.fecha).toBe("2026-11-10");
+    expect(r.run_id).toBe("2026-11-10-aspiradoras-robot-223000");
+    expect(await runRow(s.sqlite)).toMatchObject({ run_date: "2026-11-10", started_at: "2026-11-10T22:30:00-03:00" });
+    expect(s.hooks.ready[0]!.run_date).toBe("2026-11-10");
   });
 
-  it("leaves no candidatos rows when D1 fails while saving, retries once, logs fallida locally and alerts", async () => {
+  it("leaves no candidates rows when D1 fails while saving, retries once, logs failed locally and alerts", async () => {
     let flaky!: ReturnType<typeof flakyDb>;
-    const s = setup({ wrapDb: (db) => (flaky = flakyDb(db, (sql) => sql.includes("INTO candidatos"))) });
+    const s = setup({ wrapDb: (db) => (flaky = flakyDb(db, (sql) => sql.includes("INTO candidates"))) });
     const r = await runDaily(s.deps, { force: false });
-    expect(r).toEqual({ exitCode: 1, corrida_id: RUN_ID });
-    expect(flaky.attempts.get("INSERT INTO candidatos")).toBe(2);
-    expect(await count(s.sqlite, "candidatos")).toBe(0);
-    expect(await runRow(s.sqlite)).toMatchObject({ id: RUN_ID, estado: "fallida" });
-    expect(logLines(s.logPath)).toMatchObject([{ corrida_id: RUN_ID, estado: "fallida" }]);
-    expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", corrida_id: RUN_ID }]);
+    expect(r).toEqual({ exitCode: 1, run_id: RUN_ID });
+    expect(flaky.attempts.get("INSERT INTO candidates")).toBe(2);
+    expect(await count(s.sqlite, "candidates")).toBe(0);
+    expect(await runRow(s.sqlite)).toMatchObject({ id: RUN_ID, status: "failed" });
+    expect(logLines(s.logPath)).toMatchObject([{ run_id: RUN_ID, status: "failed" }]);
+    expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", run_id: RUN_ID }]);
     expect(s.hooks.ready).toEqual([]);
   });
 
@@ -237,44 +237,44 @@ describe("imperdibles correr", () => {
     const s = setup({ wrapDb: (db) => flakyDb(db, () => true) });
     const r = await runDaily(s.deps, { force: false });
     expect(r.exitCode).toBe(1);
-    expect(logLines(s.logPath)).toMatchObject([{ corrida_id: RUN_ID, estado: "fallida" }]);
+    expect(logLines(s.logPath)).toMatchObject([{ run_id: RUN_ID, status: "failed" }]);
     expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed" }]);
   });
 
   it("retries only the failed write", async () => {
     const clean = setup();
     await runDaily(clean.deps, { force: false });
-    const expected = await count(clean.sqlite, "observaciones_precio");
+    const expected = await count(clean.sqlite, "price_observations");
 
     let flaky!: ReturnType<typeof flakyDb>;
-    const s = setup({ wrapDb: (db) => (flaky = flakyDb(db, (sql, n) => sql.includes("INTO candidatos") && n === 1)) });
+    const s = setup({ wrapDb: (db) => (flaky = flakyDb(db, (sql, n) => sql.includes("INTO candidates") && n === 1)) });
     const r = await runDaily(s.deps, { force: false });
     expect(r.exitCode).toBe(0);
-    expect(flaky.attempts.get("INSERT INTO candidatos")).toBe(2);
-    expect(flaky.attempts.get("INSERT INTO observaciones_precio")).toBe(1);
-    expect(await count(s.sqlite, "observaciones_precio")).toBe(expected);
-    expect(await count(s.sqlite, "candidatos")).toBe(1);
+    expect(flaky.attempts.get("INSERT INTO candidates")).toBe(2);
+    expect(flaky.attempts.get("INSERT INTO price_observations")).toBe(1);
+    expect(await count(s.sqlite, "price_observations")).toBe(expected);
+    expect(await count(s.sqlite, "candidates")).toBe(1);
     expect(s.hooks.ready).toHaveLength(1);
   });
 
-  it("emits run_partial with skipped_models when the pipeline ends parcial", async () => {
+  it("emits run_partial with skipped_models when the pipeline ends partial", async () => {
     const s = setup();
-    await s.sqlite.run("UPDATE config SET valor = '4' WHERE clave = 'presupuesto_consultas'");
+    await s.sqlite.run("UPDATE config SET value = '4' WHERE name = 'query_budget'");
     const r = await runDaily(s.deps, { force: false });
     expect(r.exitCode).toBe(0);
-    expect(await runRow(s.sqlite)).toMatchObject({ estado: "parcial", consultas_usadas: 4 });
-    expect(s.hooks.alerts).toEqual([{ kind: "run_partial", corrida_id: RUN_ID, skipped_models: 2, reason: "budget_exhausted" }]);
+    expect(await runRow(s.sqlite)).toMatchObject({ status: "partial", queries_used: 4 });
+    expect(s.hooks.alerts).toEqual([{ kind: "run_partial", run_id: RUN_ID, skipped_models: 2, reason: "budget_exhausted" }]);
     expect(s.hooks.ready).toHaveLength(1);
   });
 
-  it("marks the run fallida and alerts store_format_error when the primary store format breaks", async () => {
+  it("marks the run failed and alerts store_format_error when the primary store format breaks", async () => {
     const s = setup({ routes: new Map([[fravegaSearchUrl("aspiradora robot"), () => new Response(FRAVEGA_BROKEN, { status: 200 })]]) });
     const r = await runDaily(s.deps, { force: false });
-    expect(r).toEqual({ exitCode: 1, corrida_id: RUN_ID });
-    expect(await runRow(s.sqlite)).toMatchObject({ estado: "fallida" });
-    expect(s.hooks.alerts).toEqual([{ kind: "store_format_error", tienda: "fravega" }]);
+    expect(r).toEqual({ exitCode: 1, run_id: RUN_ID });
+    expect(await runRow(s.sqlite)).toMatchObject({ status: "failed" });
+    expect(s.hooks.alerts).toEqual([{ kind: "store_format_error", store: "fravega" }]);
     expect(s.hooks.ready).toEqual([]);
-    expect(logLines(s.logPath)).toMatchObject([{ estado: "fallida" }]);
+    expect(logLines(s.logPath)).toMatchObject([{ status: "failed" }]);
   });
 
   it("prints a clear message and exits 1 when offline", async () => {
@@ -282,7 +282,7 @@ describe("imperdibles correr", () => {
     const r = await runDaily(s.deps, { force: false });
     expect(r.exitCode).toBe(1);
     expect(s.err.join("")).toContain("Sin conexión: no se pudieron leer los precios. No se publicó nada.");
-    expect(await runRow(s.sqlite)).toMatchObject({ estado: "fallida" });
+    expect(await runRow(s.sqlite)).toMatchObject({ status: "failed" });
     expect(s.hooks.ready).toEqual([]);
     expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed" }]);
   });
@@ -302,8 +302,8 @@ describe("imperdibles correr", () => {
     expect(r.exitCode).toBe(1);
     expect(s.fetched).toEqual([TOKEN_URL]);
     expect(s.hooks.alerts).toEqual([{ kind: "ml_auth_required" }]);
-    expect(await count(s.sqlite, "corridas")).toBe(0);
-    expect(logLines(s.logPath)).toMatchObject([{ corrida_id: null, estado: "fallida" }]);
+    expect(await count(s.sqlite, "runs")).toBe(0);
+    expect(logLines(s.logPath)).toMatchObject([{ run_id: null, status: "failed" }]);
   });
 
   it("alerts ml_auth_required when no token is stored", async () => {
@@ -314,13 +314,13 @@ describe("imperdibles correr", () => {
     expect(s.hooks.alerts).toEqual([{ kind: "ml_auth_required" }]);
   });
 
-  it("marks the run fallida and alerts ml_permission_denied on a 403", async () => {
+  it("marks the run failed and alerts ml_permission_denied on a 403", async () => {
     const routes = composedRoutes();
     routes.set(searchUrl("Philco PHRA26N"), () => new Response("{}", { status: 403 }));
     const s = setup({ routes });
     const r = await runDaily(s.deps, { force: false });
-    expect(r).toEqual({ exitCode: 1, corrida_id: RUN_ID });
-    expect(await runRow(s.sqlite)).toMatchObject({ estado: "fallida" });
+    expect(r).toEqual({ exitCode: 1, run_id: RUN_ID });
+    expect(await runRow(s.sqlite)).toMatchObject({ status: "failed" });
     expect(s.hooks.alerts).toEqual([{ kind: "ml_permission_denied", path: "/products/search" }]);
   });
 
@@ -335,7 +335,7 @@ describe("imperdibles correr", () => {
 
     it("from a failing persistence write", async () => {
       const s = setup({
-        wrapDb: (db) => ({ all: (q, p) => db.all(q, p), run: async (q, p) => { if (q.includes("INTO candidatos")) throw new Error(leaky); return db.run(q, p); } }),
+        wrapDb: (db) => ({ all: (q, p) => db.all(q, p), run: async (q, p) => { if (q.includes("INTO candidates")) throw new Error(leaky); return db.run(q, p); } }),
       });
       expect((await runDaily(s.deps, { force: false })).exitCode).toBe(1);
       check(s);
@@ -377,10 +377,10 @@ describe("imperdibles correr", () => {
 describe("appendRunLog", () => {
   it("appends one JSON line per call and creates the directory", async () => {
     const p = path.join(mkdtempSync(path.join(tmpdir(), "imperdibles-log-")), "a", "b", "log.jsonl");
-    await appendRunLog(p, { corrida_id: null, fecha: "2026-11-10", estado: "fallida", error: "x", at: "2026-11-10T06:00:00-03:00" });
-    await appendRunLog(p, { corrida_id: "r", fecha: "2026-11-10", estado: "ok", error: null, at: "2026-11-10T06:01:00-03:00" });
+    await appendRunLog(p, { run_id: null, run_date: "2026-11-10", status: "failed", error: "x", at: "2026-11-10T06:00:00-03:00" });
+    await appendRunLog(p, { run_id: "r", run_date: "2026-11-10", status: "ok", error: null, at: "2026-11-10T06:01:00-03:00" });
     expect(existsSync(p)).toBe(true);
-    expect(logLines(p).map((l) => l.estado)).toEqual(["fallida", "ok"]);
+    expect(logLines(p).map((l) => l.status)).toEqual(["failed", "ok"]);
   });
 });
 

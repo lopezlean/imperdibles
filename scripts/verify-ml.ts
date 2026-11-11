@@ -27,7 +27,7 @@ try {
 
   if (refreshMode) {
     const read = async () =>
-      (await db.all<{ refresh_token: string }>("SELECT refresh_token FROM tokens_ml WHERE id = 1"))[0]?.refresh_token;
+      (await db.all<{ refresh_token: string }>("SELECT refresh_token FROM ml_tokens WHERE id = 1"))[0]?.refresh_token;
     const before = await read();
     await tokens.forceRefresh();
     const after = await read();

@@ -9,24 +9,24 @@ const X_LINK_WEIGHT = 23;
 
 /** Channel photo caption, at most 1024 characters. Only the title is shortened; the link never is. */
 export function buildChannelCaption(c: Candidate, link: string): string {
-  const build = (titulo: string) =>
+  const build = (title: string) =>
     [
-      titulo,
-      `${formatPct(c)}% menos en Mercado Libre: ${formatArs(c.ml.precio_ars)}`,
-      ...c.otras.map((o) => `${storeName(o.tienda)}: ${formatArs(o.precio_ars)}`),
-      `Diferencia: ${formatArs(c.diferencia_ars)}`,
+      title,
+      `${formatPct(c)}% menos en Mercado Libre: ${formatArs(c.ml.price_ars)}`,
+      ...c.others.map((o) => `${storeName(o.store)}: ${formatArs(o.price_ars)}`),
+      `Diferencia: ${formatArs(c.difference_ars)}`,
       link,
       "",
       AFFILIATE_LEGEND,
     ].join("\n");
-  const overflow = build(c.titulo).length - CAPTION_LIMIT;
-  return overflow <= 0 ? build(c.titulo) : build(truncate(c.titulo, Math.max(1, c.titulo.length - overflow)));
+  const overflow = build(c.title).length - CAPTION_LIMIT;
+  return overflow <= 0 ? build(c.title) : build(truncate(c.title, Math.max(1, c.title.length - overflow)));
 }
 
 /** X material for the owner: at most 280 weighted characters (link = 23). Only the title is shortened. */
 export function buildXPost(c: Candidate, link: string): string {
-  const tail = `${formatPct(c)}% menos en Mercado Libre que en ${storeName(c.otras[0]!.tienda)} (${formatArs(c.ml.precio_ars)}). `;
+  const tail = `${formatPct(c)}% menos en Mercado Libre que en ${storeName(c.others[0]!.store)} (${formatArs(c.ml.price_ars)}). `;
   const fixed = `: ${tail}`.length + X_LINK_WEIGHT + " Enlace de afiliado.".length;
-  const titulo = truncate(c.titulo, Math.max(1, X_LIMIT - fixed));
-  return `${titulo}: ${tail}${link} Enlace de afiliado.`;
+  const title = truncate(c.title, Math.max(1, X_LIMIT - fixed));
+  return `${title}: ${tail}${link} Enlace de afiliado.`;
 }

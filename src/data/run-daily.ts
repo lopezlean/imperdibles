@@ -52,12 +52,12 @@ async function retryOnce<T>(write: () => Promise<T>): Promise<T> {
   }
 }
 
-export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise<{ exitCode: number; corrida_id: string | null }> {
+export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise<{ exitCode: number; run_id: string | null }> {
   const { db, hooks } = deps;
-  const fecha = artDate(deps.now());
-  let corrida_id: string | null = null;
+  const run_date = artDate(deps.now());
+  let run_id: string | null = null;
   let started = false;
-  let persistedEstado: "ok" | "parcial" | null = null;
+  let persistedStatus: "ok" | "partial" | null = null;
   let http: BudgetedHttp | null = null;
   let networkDown = false;
 
@@ -80,42 +80,42 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
   };
 
   try {
-    const existing = await findRunOfDay(db, fecha);
+    const existing = await findRunOfDay(db, run_date);
     if (existing !== null && !opts.force) {
       deps.stdout(`Ya hay una corrida de hoy (${existing.id}). Para repetirla: imperdibles correr --forzar\n`);
-      return { exitCode: 2, corrida_id: null };
+      return { exitCode: 2, run_id: null };
     }
 
     const token = createTokenProvider({ db, fetch: trackedFetch, env: deps.env, now: deps.now });
     await token.get();
     await holdStoredTokens();
     const config = await loadConfig(db);
-    const category = categoryOfDay(config.categorias, fecha);
+    const category = categoryOfDay(config.categories, run_date);
 
     const startedAt = deps.now();
-    corrida_id = `${fecha}-${category.id}-${artIso(startedAt).slice(11, 19).replaceAll(":", "")}`;
-    await startRun(db, { id: corrida_id, fecha, categoria: category.id, iniciada_en: artIso(startedAt) });
+    run_id = `${run_date}-${category.id}-${artIso(startedAt).slice(11, 19).replaceAll(":", "")}`;
+    await startRun(db, { id: run_id, run_date, category: category.id, started_at: artIso(startedAt) });
     started = true;
 
-    http = createBudgetedHttp({ fetch: deps.fetch, budget: config.presupuesto_consultas, sleep: deps.sleep });
+    http = createBudgetedHttp({ fetch: deps.fetch, budget: config.query_budget, sleep: deps.sleep });
     const result = await runPipeline(
       {
         catalog: createMlCatalog({ http, token }),
         primary: createFravegaAdapter({
           http,
           now: deps.now,
-          onRejected: (tienda, rejected) => deps.stderr(`[seller_rejected] ${JSON.stringify({ tienda, count: rejected.length })}\n`),
+          onRejected: (store, rejected) => deps.stderr(`[seller_rejected] ${JSON.stringify({ store, count: rejected.length })}\n`),
         }),
         secondary: [], // Tasks 16 and 17 add Cetrogar and Musimundo
-        rejected: (modeloId) => rejectedRefs(db, modeloId),
+        rejected: (modelId) => rejectedRefs(db, modelId),
         now: deps.now,
         log: (event, data) => deps.stderr(`[${event}] ${JSON.stringify(data)}\n`),
       },
-      { corrida_id, fecha, category, umbral_pct: config.umbral_pct },
+      { run_id, run_date, category, threshold_pct: config.threshold_pct },
     );
 
     // Each write is retried alone; observations go in before matches, which join on them.
-    const runId = corrida_id;
+    const runId = run_id;
     const stamp = artIso(deps.now());
     await retryOnce(() => upsertModels(db, result.models, stamp));
     await retryOnce(() => saveObservations(db, runId, result.listings));
@@ -123,27 +123,27 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     await retryOnce(() => saveCandidates(db, result.list));
     await retryOnce(() =>
       finishRun(db, runId, {
-        estado: result.estado,
-        modelos_comparados: result.list.modelos_comparados,
-        consultas_usadas: http!.used(),
+        status: result.status,
+        models_compared: result.list.models_compared,
+        queries_used: http!.used(),
         error: null,
-        terminada_en: artIso(deps.now()),
+        finished_at: artIso(deps.now()),
       }),
     );
-    persistedEstado = result.estado;
+    persistedStatus = result.status;
 
     for (const alert of result.alerts) await notify(alert);
-    if (result.estado === "parcial") {
+    if (result.status === "partial") {
       const reasons = [...new Set(result.skipped.map((s) => s.reason))];
-      await notify({ kind: "run_partial", corrida_id: runId, skipped_models: result.skipped.length, reason: reasons.join(", ") || "partial_run" });
+      await notify({ kind: "run_partial", run_id: runId, skipped_models: result.skipped.length, reason: reasons.join(", ") || "partial_run" });
     }
     await hooks.onCandidatesReady(result.list);
 
-    await appendRunLog(deps.logPath, { corrida_id: runId, fecha, estado: result.estado, error: null, at: artIso(deps.now()) });
+    await appendRunLog(deps.logPath, { run_id: runId, run_date, status: result.status, error: null, at: artIso(deps.now()) });
     deps.stdout(
-      `Corrida ${runId}: ${result.list.modelos_comparados} modelos comparados, ${result.list.candidatos.length} candidatos${result.estado === "parcial" ? " (parcial)" : ""}.\n`,
+      `Corrida ${runId}: ${result.list.models_compared} modelos comparados, ${result.list.candidates.length} candidatos${result.status === "partial" ? " (parcial)" : ""}.\n`,
     );
-    return { exitCode: 0, corrida_id: runId };
+    return { exitCode: 0, run_id: runId };
   } catch (error) {
     await holdStoredTokens();
     const message = scrub(error instanceof Error ? error.message : String(error));
@@ -152,35 +152,35 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     let alert: OwnerAlert;
     if (error instanceof MlAuthError && !networkDown) alert = { kind: "ml_auth_required" };
     else if (error instanceof MlPermissionError) alert = { kind: "ml_permission_denied", path: error.path };
-    else if (error instanceof StoreFormatError) alert = { kind: "store_format_error", tienda: error.tienda };
-    else alert = { kind: "run_failed", corrida_id, reason: message };
+    else if (error instanceof StoreFormatError) alert = { kind: "store_format_error", store: error.store };
+    else alert = { kind: "run_failed", run_id, reason: message };
 
     if (offline) deps.stderr("Sin conexión: no se pudieron leer los precios. No se publicó nada.\n");
     else if (alert.kind === "ml_auth_required") deps.stderr("Hay que volver a autorizar Mercado Libre: ejecuta pnpm ml:authorize. No se publicó nada.\n");
     else deps.stderr(`La corrida falló: ${message}\n`);
 
-    // Once the run is stored its state stays; otherwise it is closed as fallida if D1 still answers.
-    if (started && persistedEstado === null && corrida_id !== null) {
-      const runId = corrida_id;
+    // Once the run is stored its state stays; otherwise it is closed as failed if D1 still answers.
+    if (started && persistedStatus === null && run_id !== null) {
+      const runId = run_id;
       try {
         await finishRun(db, runId, {
-          estado: "fallida",
-          modelos_comparados: 0,
-          consultas_usadas: http?.used() ?? 0,
+          status: "failed",
+          models_compared: 0,
+          queries_used: http?.used() ?? 0,
           error: message,
-          terminada_en: artIso(deps.now()),
+          finished_at: artIso(deps.now()),
         });
       } catch {
         // D1 unreachable: the local run log below is the record.
       }
     }
     try {
-      await appendRunLog(deps.logPath, { corrida_id, fecha, estado: persistedEstado ?? "fallida", error: message, at: artIso(deps.now()) });
+      await appendRunLog(deps.logPath, { run_id, run_date, status: persistedStatus ?? "failed", error: message, at: artIso(deps.now()) });
     } catch (logError) {
       deps.stderr(`No se pudo escribir el registro local: ${scrub(logError instanceof Error ? logError.message : String(logError))}\n`);
     }
     await notify(alert);
-    return { exitCode: 1, corrida_id };
+    return { exitCode: 1, run_id };
   }
 }
 

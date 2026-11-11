@@ -23,14 +23,14 @@ describe("parseFravegaListing on the recorded listing", () => {
   it("keeps only items sold by Frávega itself, as clean integer-peso listings", () => {
     expect(r.listings.length).toBe(3);
     for (const l of r.listings) {
-      expect(l.tienda).toBe("fravega");
-      expect(Number.isInteger(l.precio_ars) && l.precio_ars > 0).toBe(true);
+      expect(l.store).toBe("fravega");
+      expect(Number.isInteger(l.price_ars) && l.price_ars > 0).toBe(true);
       expect(l.url.startsWith("https://www.fravega.com/")).toBe(true);
       expect(l.url).not.toContain("?");
-      expect(l.vendedor).toBe("Frávega");
-      expect(l.observado_en).toBe(T);
+      expect(l.seller).toBe("Frávega");
+      expect(l.observed_at).toBe(T);
     }
-    expect(new Set(r.listings.map((l) => l.ref_externa)).size).toBe(r.listings.length);
+    expect(new Set(r.listings.map((l) => l.external_ref)).size).toBe(r.listings.length);
   });
 
   it("counts every third-party article as rejected", () => {
@@ -39,7 +39,7 @@ describe("parseFravegaListing on the recorded listing", () => {
   });
 
   it("takes the current price, never the struck list price or the tax-free line", () => {
-    const byRef = Object.fromEntries(r.listings.map((l) => [l.ref_externa, l.precio_ars]));
+    const byRef = Object.fromEntries(r.listings.map((l) => [l.external_ref, l.price_ars]));
     expect(byRef["/p/aspiradora-robot-trapeadora-philco-limpieza-sense-antichoque-con-app-phra26n-60505/"]).toBe(163999);
     expect(byRef["/p/aspiradora-irobot-m611330-braava-jet-m6-black-60346/"]).toBe(1199999);
     expect(byRef["/p/aspiradora-robot-smartlife-con-sensor-laser-sl-rvcl050-60646/"]).toBe(329999);
@@ -67,11 +67,11 @@ describe("parseFravegaListing seller rule", () => {
     );
     const r = parseFravegaListing(html, T);
     expect(r.rejected).toEqual([
-      { ref_externa: "/p/a-1/", reason: "unknown_seller" },
-      { ref_externa: "/p/b-2/", reason: "unknown_seller" },
-      { ref_externa: "/p/c-3/", reason: "unknown_seller" },
+      { external_ref: "/p/a-1/", reason: "unknown_seller" },
+      { external_ref: "/p/b-2/", reason: "unknown_seller" },
+      { external_ref: "/p/c-3/", reason: "unknown_seller" },
     ]);
-    expect(r.listings.map((l) => l.ref_externa)).toEqual(["/p/d-4/"]);
+    expect(r.listings.map((l) => l.external_ref)).toEqual(["/p/d-4/"]);
   });
 
   it("only accepts a seller that is exactly Frávega", () => {
@@ -80,8 +80,8 @@ describe("parseFravegaListing seller rule", () => {
       article({ href: '<a rel="bookmark" href="/p/b-2/"></a>', seller: "<p>Vendido por Frávega<svg><title>x</title></svg></p>" }),
     );
     const r = parseFravegaListing(html, T);
-    expect(r.rejected).toEqual([{ ref_externa: "/p/a-1/", reason: "third_party_seller" }]);
-    expect(r.listings.map((l) => l.ref_externa)).toEqual(["/p/b-2/"]);
+    expect(r.rejected).toEqual([{ external_ref: "/p/a-1/", reason: "third_party_seller" }]);
+    expect(r.listings.map((l) => l.external_ref)).toEqual(["/p/b-2/"]);
   });
 });
 
@@ -91,14 +91,14 @@ describe("parseFravegaListing prices", () => {
       page(article({ price: "Consultar" }), article({ href: '<a rel="bookmark" href="/p/y-2/"></a>', price: "$391.039,61" })),
       T,
     );
-    expect(r.rejected).toEqual([{ ref_externa: "/p/x-1/", reason: "bad_price" }]);
-    expect(r.listings[0]!.precio_ars).toBe(391039);
+    expect(r.rejected).toEqual([{ external_ref: "/p/x-1/", reason: "bad_price" }]);
+    expect(r.listings[0]!.price_ars).toBe(391039);
   });
 
   it("takes the last span when a struck list price precedes the current price", () => {
     const html = `<article><a rel="bookmark" href="/p/z-9/"></a><div data-test-id="article-title"><span>Z</span><p>Vendido por Frávega</p>
       <div data-test-id="product-price"><div><div><span>$299.999</span><span data-test-id="discount-tag">45</span></div><span>$163.999</span></div><p>Precio s/imp. nac. $135.536</p></div></div></article>`;
-    expect(parseFravegaListing(page(html), T).listings[0]!.precio_ars).toBe(163999);
+    expect(parseFravegaListing(page(html), T).listings[0]!.price_ars).toBe(163999);
   });
 
   it("dedupes repeated articles by product path", () => {
@@ -116,7 +116,7 @@ describe("parseFravegaListing embedded JSON enrichment", () => {
   it("fills gtin and brand from the product whose slug matches the article path", () => {
     const l = parseFravegaListing(withJson([prod({})]), T).listings[0]!;
     expect(l.gtin).toBe("7799219122223");
-    expect(l.marca).toBe("Gadnic");
+    expect(l.brand).toBe("Gadnic");
   });
 
   it("leaves them null when the JSON is absent, malformed, null, or ambiguous", () => {
@@ -131,7 +131,7 @@ describe("parseFravegaListing embedded JSON enrichment", () => {
       const l = parseFravegaListing(html, T).listings[0]!;
       expect(l.gtin).toBeNull();
     }
-    expect(parseFravegaListing(withJson([prod({ brand: null })]), T).listings[0]!.marca).toBeNull();
+    expect(parseFravegaListing(withJson([prod({ brand: null })]), T).listings[0]!.brand).toBeNull();
   });
 
   it("never lets the JSON decide the seller", () => {
@@ -141,9 +141,9 @@ describe("parseFravegaListing embedded JSON enrichment", () => {
 
   it("reads the EAN of the recorded Frávega products", () => {
     const r = parseFravegaListing(read("listing-aspiradoras-robot.html"), T);
-    const philco = r.listings.find((l) => l.ref_externa.includes("philco"))!;
+    const philco = r.listings.find((l) => l.external_ref.includes("philco"))!;
     expect(philco.gtin).toBe("7796962017233");
-    expect(philco.marca).toBe("Philco");
+    expect(philco.brand).toBe("Philco");
   });
 });
 
@@ -186,7 +186,7 @@ describe("createFravegaAdapter", () => {
     expect(adapter.id).toBe("fravega");
     expect(get.mock.calls[0]![0]).toBe("https://www.fravega.com/l/?keyword=aspiradora%20robot");
     expect(listings.length).toBe(2);
-    expect(listings[0]!.observado_en).toBe("2026-11-12T06:00:00-03:00");
+    expect(listings[0]!.observed_at).toBe("2026-11-12T06:00:00-03:00");
   });
 
   it("returns [] for a no-results page and does not call onRejected", async () => {

@@ -44,44 +44,44 @@ export async function afterRevalidation(deps: AfterRevalidationDeps, report: Rev
   for (const inv of report.invalidated) {
     await tell(
       inv.reason === "below_threshold"
-        ? `No se publica ${inv.titulo}: el precio cambió y ya no pasa el ${formatThreshold(config.umbral_pct)}%.`
-        : `No se publica ${inv.titulo}: la oferta ya no está disponible.`,
+        ? `No se publica ${inv.title}: el precio cambió y ya no pasa el ${formatThreshold(config.threshold_pct)}%.`
+        : `No se publica ${inv.title}: la oferta ya no está disponible.`,
     );
   }
 
-  const fecha = artDate(now);
+  const run_date = artDate(now);
   const stale = await db.all<{ id: string; payload: string }>(
-    `SELECT c.id, c.payload FROM candidatos c JOIN corridas r ON r.id = c.corrida_id
-     WHERE r.fecha = ? AND c.estado = 'validado' AND c.telegram_file_id IS NULL`,
-    [fecha],
+    `SELECT c.id, c.payload FROM candidates c JOIN runs r ON r.id = c.run_id
+     WHERE r.run_date = ? AND c.status = 'validated' AND c.telegram_file_id IS NULL`,
+    [run_date],
   );
   for (const row of stale) {
-    let titulo = row.id;
+    let title = row.id;
     try {
       const candidate = candidateSchema.parse(JSON.parse(row.payload));
-      titulo = candidate.titulo;
-      const png = await render(candidate, { fecha });
+      title = candidate.title;
+      const png = await render(candidate, { run_date });
       const sent = await telegram.sendPhoto({
         chat_id: ownerChatId,
         photo: { png },
-        caption: `Tarjeta actualizada: ${titulo}`,
+        caption: `Tarjeta actualizada: ${title}`,
       });
-      await db.run("UPDATE candidatos SET telegram_file_id = ? WHERE id = ?", [sent.file_id, row.id]);
+      await db.run("UPDATE candidates SET telegram_file_id = ? WHERE id = ?", [sent.file_id, row.id]);
     } catch (e) {
       console.error(`after-revalidation: re-upload of ${row.id} failed: ${errText(e)}`);
-      await tell(`No se pudo actualizar la tarjeta de ${titulo}. Revisar antes de publicar.`);
+      await tell(`No se pudo actualizar la tarjeta de ${title}. Revisar antes de publicar.`);
     }
   }
 
-  if (artTime(now) < padTime(config.hora_publicacion)) return;
+  if (artTime(now) < padTime(config.publish_time)) return;
 
   let pending = report.validated.length > 0;
   if (!pending) {
     const rows = await db.all<{ n: number }>(
-      `SELECT COUNT(*) AS n FROM candidatos c JOIN corridas r ON r.id = c.corrida_id
-       WHERE r.fecha = ? AND c.estado = 'validado'
-         AND NOT EXISTS (SELECT 1 FROM salidas s WHERE s.candidato_id = c.id AND s.canal = 'telegram_canal')`,
-      [fecha],
+      `SELECT COUNT(*) AS n FROM candidates c JOIN runs r ON r.id = c.run_id
+       WHERE r.run_date = ? AND c.status = 'validated'
+         AND NOT EXISTS (SELECT 1 FROM posts s WHERE s.candidate_id = c.id AND s.channel = 'telegram_channel')`,
+      [run_date],
     );
     pending = (rows[0]?.n ?? 0) > 0;
   }

@@ -1,19 +1,19 @@
 import type { SqlClient } from "./db/sql-client.js";
 
-export type Category = { id: string; nombre: string; terminos: string[] };
+export type Category = { id: string; name: string; terms: string[] };
 export type AppConfig = {
-  umbral_pct: number;
-  presupuesto_consultas: number;
-  hora_recoleccion: string;
-  hora_aviso: string;
-  hora_revalidacion: string;
-  hora_publicacion: string;
-  categorias: Category[];
+  threshold_pct: number;
+  query_budget: number;
+  collect_time: string;
+  notify_time: string;
+  revalidate_time: string;
+  publish_time: string;
+  categories: Category[];
 };
 
 export async function loadConfig(db: SqlClient): Promise<AppConfig> {
-  const rows = await db.all<{ clave: string; valor: string }>("SELECT clave, valor FROM config");
-  const m = new Map(rows.map((r) => [r.clave, r.valor]));
+  const rows = await db.all<{ name: string; value: string }>("SELECT name, value FROM config");
+  const m = new Map(rows.map((r) => [r.name, r.value]));
   const text = (k: string): string => {
     const v = m.get(k);
     if (v === undefined) throw new Error(`config key missing: ${k}`);
@@ -25,12 +25,12 @@ export async function loadConfig(db: SqlClient): Promise<AppConfig> {
     return n;
   };
   return {
-    umbral_pct: num("umbral_pct"),
-    presupuesto_consultas: num("presupuesto_consultas"),
-    hora_recoleccion: text("hora_recoleccion"),
-    hora_aviso: text("hora_aviso"),
-    hora_revalidacion: text("hora_revalidacion"),
-    hora_publicacion: text("hora_publicacion"),
-    categorias: JSON.parse(text("categorias")) as Category[],
+    threshold_pct: num("threshold_pct"),
+    query_budget: num("query_budget"),
+    collect_time: text("collect_time"),
+    notify_time: text("notify_time"),
+    revalidate_time: text("revalidate_time"),
+    publish_time: text("publish_time"),
+    categories: JSON.parse(text("categories")) as Category[],
   };
 }

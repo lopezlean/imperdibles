@@ -11,40 +11,40 @@ import { matchListings, pickCatalogProduct } from "../../../src/data/matching/ma
 import type { Comparable } from "../../../src/data/types.js";
 import type { MlProduct } from "../../../src/data/ml/catalog.js";
 
-type Spec = string | { titulo: string; gtin?: string | null; marca?: string | null; modelo?: string | null; precio?: number | null };
+type Spec = string | { title: string; gtin?: string | null; brand?: string | null; model?: string | null; price?: number | null };
 
 function spec(s: Spec) {
-  return typeof s === "string" ? { titulo: s } : s;
+  return typeof s === "string" ? { title: s } : s;
 }
 
-// ML side: brand taken from the catalog `marca` attribute (first title word in these tests).
-function ml(s: Spec, precio: number | null = null): Comparable {
+// ML side: brand taken from the catalog `brand` attribute (first title word in these tests).
+function ml(s: Spec, price: number | null = null): Comparable {
   const x = spec(s);
   return {
-    tienda: "mercadolibre",
-    titulo: x.titulo,
-    marca: x.marca !== undefined ? x.marca : x.titulo.split(" ")[0]!,
-    modelo: x.modelo ?? null,
+    store: "mercadolibre",
+    title: x.title,
+    brand: x.brand !== undefined ? x.brand : x.title.split(" ")[0]!,
+    model: x.model ?? null,
     gtin: x.gtin ?? null,
-    precio_ars: x.precio ?? precio,
+    price_ars: x.price ?? price,
   };
 }
 
 // Store side: title-only listing, brand unknown.
-function other(s: Spec, precio: number | null = null): Comparable {
+function other(s: Spec, price: number | null = null): Comparable {
   const x = spec(s);
   return {
-    tienda: "fravega",
-    titulo: x.titulo,
-    marca: x.marca ?? null,
-    modelo: x.modelo ?? null,
+    store: "fravega",
+    title: x.title,
+    brand: x.brand ?? null,
+    model: x.model ?? null,
     gtin: x.gtin ?? null,
-    precio_ars: x.precio ?? precio,
+    price_ars: x.price ?? price,
   };
 }
 
-function p(titulo: string): MlProduct {
-  return { ...ml(titulo), id: `MLA-${titulo}`, url: "https://example.test/p", imagen_url: null };
+function p(title: string): MlProduct {
+  return { ...ml(title), id: `MLA-${title}`, url: "https://example.test/p", image_url: null };
 }
 
 // PLACEHOLDER pair: docs/verification/data.md V7 is still PENDING OWNER, so these titles
@@ -54,23 +54,23 @@ const V7_OTHER_TITLE = "Xiaomi Robot Vacuum E5 Pro Plus";
 
 describe("matchListings table", () => {
   it.each([
-    [{ titulo: "Xiaomi Robot Vacuum S40C", gtin: "6941812700000" }, { titulo: "Aspiradora Xiaomi S40C", gtin: "6941812700000" }, "alta", "gtin"],
-    [{ titulo: "Xiaomi Robot Vacuum S40C", gtin: "6941812700000" }, { titulo: "Xiaomi S40C", gtin: "6941812700017" }, null, null],
-    ["Xiaomi Robot Vacuum S40C", "Aspiradora Robot Xiaomi S40C Negra", "alta", "marca_codigo_variante"],
-    ["Smartlife RVCL050, mapeo láser", "Robot Aspiradora Smartlife RVC-L050", "alta", "marca_codigo_variante"],
-    ["Xiaomi Robot Vacuum H50 Pro", "Xiaomi Robot Vacuum H50", "dudosa", "parcial"],
-    ["Xiaomi Robot Vacuum H50 Pro", "Xiaomi H50Pro", "alta", "marca_codigo_variante"],
-    ["Roborock S8+", "Roborock S8 Plus", "alta", "marca_codigo_variante"],
-    ["Xiaomi S40", "Xiaomi S40C", "dudosa", "parcial"],
+    [{ title: "Xiaomi Robot Vacuum S40C", gtin: "6941812700000" }, { title: "Aspiradora Xiaomi S40C", gtin: "6941812700000" }, "high", "gtin"],
+    [{ title: "Xiaomi Robot Vacuum S40C", gtin: "6941812700000" }, { title: "Xiaomi S40C", gtin: "6941812700017" }, null, null],
+    ["Xiaomi Robot Vacuum S40C", "Aspiradora Robot Xiaomi S40C Negra", "high", "brand_code_variant"],
+    ["Smartlife RVCL050, mapeo láser", "Robot Aspiradora Smartlife RVC-L050", "high", "brand_code_variant"],
+    ["Xiaomi Robot Vacuum H50 Pro", "Xiaomi Robot Vacuum H50", "doubtful", "partial"],
+    ["Xiaomi Robot Vacuum H50 Pro", "Xiaomi H50Pro", "high", "brand_code_variant"],
+    ["Roborock S8+", "Roborock S8 Plus", "high", "brand_code_variant"],
+    ["Xiaomi S40", "Xiaomi S40C", "doubtful", "partial"],
     ["Xiaomi S40C", "Samsung S40C", null, null],
-    ["Electrolux ERB80 4000Pa", "Electrolux ERB80", "alta", "marca_codigo_variante"],
-    [V7_ML_TITLE, V7_OTHER_TITLE, "dudosa", expect.any(String)],
-  ])("%j vs %j", (a, b, confianza, regla) => {
+    ["Electrolux ERB80 4000Pa", "Electrolux ERB80", "high", "brand_code_variant"],
+    [V7_ML_TITLE, V7_OTHER_TITLE, "doubtful", expect.any(String)],
+  ])("%j vs %j", (a, b, confidence, rule) => {
     const m = matchListings(ml(a as Spec), other(b as Spec));
-    if (confianza === null) {
+    if (confidence === null) {
       expect(m).toBeNull();
     } else {
-      expect(m).toMatchObject({ confianza, regla });
+      expect(m).toMatchObject({ confidence, rule });
     }
   });
 });
@@ -98,66 +98,66 @@ describe("normalize", () => {
 });
 
 describe("guards and brand source", () => {
-  it("reads the brand from the title when the store marca is null", () => {
-    expect(matchListings(ml("Xiaomi S40C", 329999), other("Aspiradora Robot Xiaomi S40C Negra", 399999))).toMatchObject({ confianza: "alta" });
+  it("reads the brand from the title when the store brand is null", () => {
+    expect(matchListings(ml("Xiaomi S40C", 329999), other("Aspiradora Robot Xiaomi S40C Negra", 399999))).toMatchObject({ confidence: "high" });
   });
   it("lowers packs", () => {
-    expect(matchListings(ml("Xiaomi S40C", 329999), other("Pack x2 Xiaomi S40C", 699998))?.confianza).toBe("dudosa");
+    expect(matchListings(ml("Xiaomi S40C", 329999), other("Pack x2 Xiaomi S40C", 699998))?.confidence).toBe("doubtful");
   });
   it("lowers accessories", () => {
-    expect(matchListings(ml("Xiaomi S40C", 329999), other("Filtro HEPA para Xiaomi S40C", 15999))?.motivo).toBe("accesorio");
+    expect(matchListings(ml("Xiaomi S40C", 329999), other("Filtro HEPA para Xiaomi S40C", 15999))?.reason).toBe("accessory");
   });
   it("lowers a leading 'base' (Review Focus 1)", () => {
-    expect(matchListings(ml("Xiaomi S40C", 329999), other("Base de autovaciado Xiaomi S40C", 249999))?.confianza).toBe("dudosa");
+    expect(matchListings(ml("Xiaomi S40C", 329999), other("Base de autovaciado Xiaomi S40C", 249999))?.confidence).toBe("doubtful");
   });
   it("lowers a spare-parts kit priced within range", () => {
     const m = matchListings(ml("Xiaomi S40C", 329999), other("Kit de repuestos para Xiaomi S40C", 300000));
-    expect(m).toMatchObject({ confianza: "dudosa", motivo: "accesorio" });
+    expect(m).toMatchObject({ confidence: "doubtful", reason: "accessory" });
   });
   it("lowers an implausible price ratio", () => {
-    expect(matchListings(ml("Xiaomi S40C", 329999), other("Xiaomi S40C", 120000))?.motivo).toBe("cociente_precio");
+    expect(matchListings(ml("Xiaomi S40C", 329999), other("Xiaomi S40C", 120000))?.reason).toBe("price_ratio");
   });
   it("applies the guards to a GTIN match too", () => {
     const m = matchListings(
-      ml({ titulo: "Xiaomi S40C", gtin: "6941812700000" }, 329999),
-      other({ titulo: "Xiaomi S40C", gtin: "6941812700000" }, 120000),
+      ml({ title: "Xiaomi S40C", gtin: "6941812700000" }, 329999),
+      other({ title: "Xiaomi S40C", gtin: "6941812700000" }, 120000),
     );
-    expect(m).toMatchObject({ confianza: "dudosa", regla: "gtin", motivo: "cociente_precio" });
+    expect(m).toMatchObject({ confidence: "doubtful", rule: "gtin", reason: "price_ratio" });
   });
   it("returns null when no brand can be established", () => {
-    expect(matchListings(ml({ titulo: "S40C", marca: null }), other("Xiaomi S40C"))).toBeNull();
+    expect(matchListings(ml({ title: "S40C", brand: null }), other("Xiaomi S40C"))).toBeNull();
   });
-  it("prefers the ML modelo attribute over the title", () => {
-    const m = matchListings(ml({ titulo: "Xiaomi Robot Aspirador Premium", modelo: "S40C" }), other("Xiaomi S40C"));
-    expect(m).toMatchObject({ confianza: "alta" });
+  it("prefers the ML model attribute over the title", () => {
+    const m = matchListings(ml({ title: "Xiaomi Robot Aspirador Premium", model: "S40C" }), other("Xiaomi S40C"));
+    expect(m).toMatchObject({ confidence: "high" });
   });
-  it("is dudosa with two model codes on one side", () => {
-    expect(matchListings(ml("Xiaomi S40C"), other("Xiaomi S40C X10"))?.confianza).toBe("dudosa");
+  it("is doubtful with two model codes on one side", () => {
+    expect(matchListings(ml("Xiaomi S40C"), other("Xiaomi S40C X10"))?.confidence).toBe("doubtful");
   });
 });
 
 describe("pickCatalogProduct", () => {
-  it("rejects several alta candidates", () => {
-    expect(pickCatalogProduct(other("Xiaomi S40C"), [p("Xiaomi S40C"), p("Xiaomi S40C Negro")])).toEqual({ product: null, reason: "multiple_alta" });
+  it("rejects several high candidates", () => {
+    expect(pickCatalogProduct(other("Xiaomi S40C"), [p("Xiaomi S40C"), p("Xiaomi S40C Negro")])).toEqual({ product: null, reason: "multiple_high" });
   });
-  it("rejects when nothing is alta", () => {
-    expect(pickCatalogProduct(other("Xiaomi S40C"), [p("Xiaomi S40")])).toEqual({ product: null, reason: "no_alta" });
+  it("rejects when nothing is high", () => {
+    expect(pickCatalogProduct(other("Xiaomi S40C"), [p("Xiaomi S40")])).toEqual({ product: null, reason: "no_high" });
   });
-  it("returns the single alta product", () => {
+  it("returns the single high product", () => {
     const r = pickCatalogProduct(other("Xiaomi S40C"), [p("Xiaomi S40"), p("Xiaomi S40C")]);
-    expect(r.product?.titulo).toBe("Xiaomi S40C");
-    expect(r.product && r.match.confianza).toBe("alta");
+    expect(r.product?.title).toBe("Xiaomi S40C");
+    expect(r.product && r.match.confidence).toBe("high");
   });
 });
 
 const X = "Xiaomi";
-const mlX = (titulo: string, precio: number | null = null) => ml({ titulo, marca: X }, precio);
-const otherX = (titulo: string, precio: number | null = null) => other({ titulo, marca: X }, precio);
+const mlX = (title: string, price: number | null = null) => ml({ title, brand: X }, price);
+const otherX = (title: string, price: number | null = null) => other({ title, brand: X }, price);
 
 describe("fix round 1: accessories (findings 1 and 2)", () => {
   it("lowers an accessory priced near the robot (station for the model)", () => {
     const m = matchListings(ml("Xiaomi S40C", 329999), other("Estación de autovaciado para Xiaomi S40C", 249999));
-    expect(m).toMatchObject({ confianza: "dudosa", motivo: "accesorio" });
+    expect(m).toMatchObject({ confidence: "doubtful", reason: "accessory" });
   });
   it.each([
     "Dock de carga Xiaomi S40C",
@@ -170,19 +170,19 @@ describe("fix round 1: accessories (findings 1 and 2)", () => {
     "Repuesto Xiaomi S40C",
   ])("recognises the accessory title %s", (t) => {
     expect(hasAccessoryWords(t)).toBe(true);
-    expect(matchListings(mlX("Xiaomi S40C", 329999), otherX(t, 300000))?.confianza).toBe("dudosa");
+    expect(matchListings(mlX("Xiaomi S40C", 329999), otherX(t, 300000))?.confidence).toBe("doubtful");
   });
   it("lowers when 'para' or 'compatible con' comes before the brand", () => {
-    expect(matchListings(mlX("Xiaomi S40C", 329999), otherX("Soporte para Xiaomi S40C", 300000))?.confianza).toBe("dudosa");
-    expect(matchListings(mlX("Xiaomi S40C", 329999), otherX("Pieza compatible con Xiaomi S40C", 300000))?.confianza).toBe("dudosa");
+    expect(matchListings(mlX("Xiaomi S40C", 329999), otherX("Soporte para Xiaomi S40C", 300000))?.confidence).toBe("doubtful");
+    expect(matchListings(mlX("Xiaomi S40C", 329999), otherX("Pieza compatible con Xiaomi S40C", 300000))?.confidence).toBe("doubtful");
   });
   it("lowers when BOTH titles have accessory words", () => {
     const m = matchListings(mlX("Filtro HEPA Xiaomi S40C", 15999), otherX("Kit cepillos Xiaomi S40C", 15999));
-    expect(m).toMatchObject({ confianza: "dudosa", motivo: "accesorio" });
+    expect(m).toMatchObject({ confidence: "doubtful", reason: "accessory" });
   });
-  it("control: a complete robot with extra descriptive title words stays alta", () => {
+  it("control: a complete robot with extra descriptive title words stays high", () => {
     const m = matchListings(mlX("Aspiradora Robot Xiaomi Robot Vacuum S40C Negra", 329999), otherX("Xiaomi Robot Vacuum S40C", 329999));
-    expect(m).toMatchObject({ confianza: "alta", regla: "marca_codigo_variante" });
+    expect(m).toMatchObject({ confidence: "high", rule: "brand_code_variant" });
   });
   it("control: a robot sold 'con estación' is not an accessory", () => {
     expect(hasAccessoryWords("Xiaomi S40C con estación de autovaciado")).toBe(false);
@@ -194,30 +194,30 @@ describe("fix round 1: variants (finding 3)", () => {
     expect(extractVariants(`Ecovacs Deebot T30 ${v}`)).toEqual([v]);
   });
   it("lowers T30 vs T30 Omni", () => {
-    const m = matchListings(ml({ titulo: "Ecovacs Deebot T30", marca: "Ecovacs" }), other("Ecovacs Deebot T30 Omni"));
-    expect(m?.confianza).toBe("dudosa");
+    const m = matchListings(ml({ title: "Ecovacs Deebot T30", brand: "Ecovacs" }), other("Ecovacs Deebot T30 Omni"));
+    expect(m?.confidence).toBe("doubtful");
   });
   it("structural guard: an unlisted word right after the model code lowers", () => {
-    const m = matchListings(ml({ titulo: "Ecovacs Deebot T30", marca: "Ecovacs" }), other("Ecovacs Deebot T30 Hyper"));
-    expect(m).toMatchObject({ confianza: "dudosa", regla: "marca_codigo_variante", motivo: "sufijo_modelo" });
+    const m = matchListings(ml({ title: "Ecovacs Deebot T30", brand: "Ecovacs" }), other("Ecovacs Deebot T30 Hyper"));
+    expect(m).toMatchObject({ confidence: "doubtful", rule: "brand_code_variant", reason: "model_suffix" });
   });
-  it("structural guard: the same suffix word on both sides stays alta", () => {
-    const m = matchListings(ml({ titulo: "Ecovacs Deebot T30 Hyper", marca: "Ecovacs" }), other("Ecovacs Deebot T30 Hyper"));
-    expect(m).toMatchObject({ confianza: "alta" });
+  it("structural guard: the same suffix word on both sides stays high", () => {
+    const m = matchListings(ml({ title: "Ecovacs Deebot T30 Hyper", brand: "Ecovacs" }), other("Ecovacs Deebot T30 Hyper"));
+    expect(m).toMatchObject({ confidence: "high" });
   });
-  it("control: colour and punctuated descriptors after the code stay alta", () => {
-    expect(matchListings(mlX("Xiaomi S40C Negro"), otherX("Xiaomi S40C"))?.confianza).toBe("alta");
-    expect(matchListings(mlX("Xiaomi S40C, mapeo láser"), otherX("Xiaomi S40C"))?.confianza).toBe("alta");
+  it("control: colour and punctuated descriptors after the code stay high", () => {
+    expect(matchListings(mlX("Xiaomi S40C Negro"), otherX("Xiaomi S40C"))?.confidence).toBe("high");
+    expect(matchListings(mlX("Xiaomi S40C, mapeo láser"), otherX("Xiaomi S40C"))?.confidence).toBe("high");
   });
 });
 
 describe("fix round 1: condition (finding 4)", () => {
   it("lowers a refurbished unit", () => {
     const m = matchListings(mlX("Xiaomi Robot Vacuum S40C", 329999), otherX("Xiaomi Robot Vacuum S40C Reacondicionado", 300000));
-    expect(m).toMatchObject({ confianza: "dudosa", motivo: "condicion" });
+    expect(m).toMatchObject({ confidence: "doubtful", reason: "condition" });
   });
   it("lowers when the ML side is the used one", () => {
-    expect(matchListings(mlX("Xiaomi S40C Usado", 329999), otherX("Xiaomi S40C", 329999))).toMatchObject({ confianza: "dudosa", motivo: "condicion" });
+    expect(matchListings(mlX("Xiaomi S40C Usado", 329999), otherX("Xiaomi S40C", 329999))).toMatchObject({ confidence: "doubtful", reason: "condition" });
   });
   it.each(["Xiaomi S40C Reacondicionada", "Xiaomi S40C Open Box", "Xiaomi S40C Exhibición", "Xiaomi S40C Outlet", "Xiaomi S40C usado"])(
     "detects condition words in %s",
@@ -233,33 +233,33 @@ describe("fix round 1: condition (finding 4)", () => {
 
 describe("fix round 1: GTIN cross-check (finding 5)", () => {
   const g = "6941812700000";
-  it("equal GTIN with conflicting brands is dudosa", () => {
-    const m = matchListings(ml({ titulo: "Xiaomi S40C", marca: "Xiaomi", gtin: g }, 329999), other({ titulo: "Samsung S40C", marca: "Samsung", gtin: g }, 329999));
-    expect(m).toMatchObject({ confianza: "dudosa", regla: "gtin", motivo: "marca_conflicto" });
+  it("equal GTIN with conflicting brands is doubtful", () => {
+    const m = matchListings(ml({ title: "Xiaomi S40C", brand: "Xiaomi", gtin: g }, 329999), other({ title: "Samsung S40C", brand: "Samsung", gtin: g }, 329999));
+    expect(m).toMatchObject({ confidence: "doubtful", rule: "gtin", reason: "brand_conflict" });
   });
-  it("equal GTIN with codes that share nothing is dudosa", () => {
-    const m = matchListings(ml({ titulo: "Xiaomi S40C", marca: "Xiaomi", gtin: g }, 329999), other({ titulo: "Xiaomi X10", gtin: g }, 329999));
-    expect(m).toMatchObject({ confianza: "dudosa", regla: "gtin", motivo: "codigo_conflicto" });
+  it("equal GTIN with codes that share nothing is doubtful", () => {
+    const m = matchListings(ml({ title: "Xiaomi S40C", brand: "Xiaomi", gtin: g }, 329999), other({ title: "Xiaomi X10", gtin: g }, 329999));
+    expect(m).toMatchObject({ confidence: "doubtful", rule: "gtin", reason: "code_conflict" });
   });
   it("control: a side without brand or code does not block the GTIN rule", () => {
-    expect(matchListings(ml({ titulo: "Xiaomi S40C", marca: "Xiaomi", gtin: g }, 329999), other({ titulo: "Aspiradora robot", gtin: g }, 329999))).toMatchObject({ confianza: "alta", regla: "gtin" });
-    expect(matchListings(ml({ titulo: "Xiaomi S40C", marca: "Xiaomi", gtin: g }, 329999), other({ titulo: "Aspiradora Xiaomi S40C", gtin: g }, 329999))).toMatchObject({ confianza: "alta", regla: "gtin" });
+    expect(matchListings(ml({ title: "Xiaomi S40C", brand: "Xiaomi", gtin: g }, 329999), other({ title: "Aspiradora robot", gtin: g }, 329999))).toMatchObject({ confidence: "high", rule: "gtin" });
+    expect(matchListings(ml({ title: "Xiaomi S40C", brand: "Xiaomi", gtin: g }, 329999), other({ title: "Aspiradora Xiaomi S40C", gtin: g }, 329999))).toMatchObject({ confidence: "high", rule: "gtin" });
   });
 });
 
 describe("fix round 1: bundle vs bare unit (finding 6)", () => {
   it("lowers a bundle against the bare unit", () => {
-    const m = matchListings(ml({ titulo: "Electrolux ERB80 con base de autolimpieza", marca: "Electrolux" }, 329999), other("Electrolux ERB80", 329999));
-    expect(m).toMatchObject({ confianza: "dudosa", motivo: "bundle" });
-    const r = matchListings(ml({ titulo: "Electrolux ERB80", marca: "Electrolux" }, 329999), other("Electrolux ERB80 + dock", 329999));
-    expect(r).toMatchObject({ confianza: "dudosa", motivo: "bundle" });
+    const m = matchListings(ml({ title: "Electrolux ERB80 con base de autolimpieza", brand: "Electrolux" }, 329999), other("Electrolux ERB80", 329999));
+    expect(m).toMatchObject({ confidence: "doubtful", reason: "bundle" });
+    const r = matchListings(ml({ title: "Electrolux ERB80", brand: "Electrolux" }, 329999), other("Electrolux ERB80 + dock", 329999));
+    expect(r).toMatchObject({ confidence: "doubtful", reason: "bundle" });
   });
   it("control: bundle on both sides is unaffected", () => {
     const m = matchListings(
-      ml({ titulo: "Electrolux ERB80 con base de autolimpieza", marca: "Electrolux" }, 329999),
+      ml({ title: "Electrolux ERB80 con base de autolimpieza", brand: "Electrolux" }, 329999),
       other("Electrolux ERB80 con base de autolimpieza", 329999),
     );
-    expect(m).toMatchObject({ confianza: "alta", regla: "marca_codigo_variante" });
+    expect(m).toMatchObject({ confidence: "high", rule: "brand_code_variant" });
   });
   it("detects bundle words only after con, y or +", () => {
     expect(hasBundleWords("Electrolux ERB80 con base")).toBe(true);
@@ -274,23 +274,23 @@ describe("fix round 2: variant, suffix and brand guards on GTIN matches", () => 
   const g = "6941812700000";
   it("lowers a shared GTIN when one title carries a variant word (T30 vs T30 Omni)", () => {
     const m = matchListings(
-      ml({ titulo: "Ecovacs Deebot T30", marca: "Ecovacs", gtin: g }, 329999),
-      other({ titulo: "Ecovacs Deebot T30 Omni", gtin: g }, 329999),
+      ml({ title: "Ecovacs Deebot T30", brand: "Ecovacs", gtin: g }, 329999),
+      other({ title: "Ecovacs Deebot T30 Omni", gtin: g }, 329999),
     );
-    expect(m).toMatchObject({ confianza: "dudosa", regla: "gtin" });
+    expect(m).toMatchObject({ confidence: "doubtful", rule: "gtin" });
   });
   it("lowers a shared GTIN when the brand appears only in one title (Xiaomi vs Roborock)", () => {
     const m = matchListings(
-      ml({ titulo: "Xiaomi S40C", marca: "Xiaomi", gtin: g }, 329999),
-      other({ titulo: "Roborock S40C", marca: null, gtin: g }, 329999),
+      ml({ title: "Xiaomi S40C", brand: "Xiaomi", gtin: g }, 329999),
+      other({ title: "Roborock S40C", brand: null, gtin: g }, 329999),
     );
-    expect(m).toMatchObject({ confianza: "dudosa", regla: "gtin", motivo: "marca_conflicto" });
+    expect(m).toMatchObject({ confidence: "doubtful", rule: "gtin", reason: "brand_conflict" });
   });
-  it("control: same GTIN with the brand repeated in the other title stays alta", () => {
+  it("control: same GTIN with the brand repeated in the other title stays high", () => {
     const m = matchListings(
-      ml({ titulo: "Xiaomi Robot Vacuum S40C", marca: "Xiaomi", gtin: g }, 329999),
-      other({ titulo: "Aspiradora Robot Xiaomi Robot Vacuum S40C Negra", gtin: g }, 329999),
+      ml({ title: "Xiaomi Robot Vacuum S40C", brand: "Xiaomi", gtin: g }, 329999),
+      other({ title: "Aspiradora Robot Xiaomi Robot Vacuum S40C Negra", gtin: g }, 329999),
     );
-    expect(m).toMatchObject({ confianza: "alta", regla: "gtin" });
+    expect(m).toMatchObject({ confidence: "high", rule: "gtin" });
   });
 });

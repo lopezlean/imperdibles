@@ -28,7 +28,7 @@ describe("parseCandidateList", () => {
 
   it("keeps the 10/11 run ids and order", () => {
     const list = parseCandidateList(load("valid-2026-11-10.json"));
-    expect(list.candidatos.map((c) => c.candidato_id)).toEqual([
+    expect(list.candidates.map((c) => c.candidate_id)).toEqual([
       "2026-11-10-aspiradoras-robot-060000:SMARTLIFE:RVCL050",
       "2026-11-10-aspiradoras-robot-060000:XIAOMI:S40C",
       "2026-11-10-aspiradoras-robot-060000:XIAOMI:H50PRO",
@@ -37,18 +37,18 @@ describe("parseCandidateList", () => {
   });
 
   it.each([
-    ["invalid-missing-titulo.json", "candidatos.0.titulo"],
-    ["invalid-float-price.json", "candidatos.0.ml.precio_ars"],
-    ["invalid-dudosa.json", "candidatos.0.confianza"],
+    ["invalid-missing-titulo.json", "candidates.0.title"],
+    ["invalid-float-price.json", "candidates.0.ml.price_ars"],
+    ["invalid-dudosa.json", "candidates.0.confidence"],
     ["invalid-version-2.json", "version"],
-    ["invalid-no-rivals.json", "candidatos.0.otras"],
-    ["invalid-unsorted-rivals.json", "candidatos.0.otras"],
-    ["invalid-unsorted-candidates.json", "candidatos"],
-    ["invalid-diferencia-ars.json", "candidatos.0.diferencia_ars"],
-    ["invalid-ml-store.json", "candidatos.0.ml.tienda"],
-    ["invalid-ml-in-otras.json", "candidatos.0.otras.0.tienda"],
-    ["invalid-observado-no-zone.json", "candidatos.0.ml.observado_en"],
-    ["invalid-fecha.json", "fecha"],
+    ["invalid-no-rivals.json", "candidates.0.others"],
+    ["invalid-unsorted-rivals.json", "candidates.0.others"],
+    ["invalid-unsorted-candidates.json", "candidates"],
+    ["invalid-diferencia-ars.json", "candidates.0.difference_ars"],
+    ["invalid-ml-store.json", "candidates.0.ml.store"],
+    ["invalid-ml-in-otras.json", "candidates.0.others.0.store"],
+    ["invalid-observado-no-zone.json", "candidates.0.ml.observed_at"],
+    ["invalid-fecha.json", "run_date"],
   ])("rejects %s at %s", (file, path) => {
     expect(() => parseCandidateList(load(file))).toThrow(new RegExp(escape(path)));
     expect(() => parseCandidateList(load(file))).toThrow(ContractError);

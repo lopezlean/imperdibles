@@ -5,38 +5,38 @@ import { parseCandidateList, type Candidate } from "../../../src/contract/candid
 import { barWidthPct, buildCardTree, type CardNode } from "../../../src/output/card/tree.js";
 import { TOKENS } from "../../../src/output/design-tokens.js";
 
-const opts = { fecha: "2026-11-10" };
+const opts = { run_date: "2026-11-10" };
 
 function load(n: string) {
   return parseCandidateList(JSON.parse(readFileSync(path.join(process.cwd(), "fixtures", "lista-candidatos", n), "utf8")));
 }
 
-function offer(tienda: string, precio: number) {
+function offer(store: string, price: number) {
   return {
-    tienda,
-    titulo_listado: "x",
-    url: `https://example.test/${tienda}`,
-    precio_ars: precio,
-    observado_en: "2026-11-10T06:12:00-03:00",
-    ref_externa: tienda,
-    vendedor: null,
+    store,
+    listing_title: "x",
+    url: `https://example.test/${store}`,
+    price_ars: price,
+    observed_at: "2026-11-10T06:12:00-03:00",
+    external_ref: store,
+    seller: null,
   };
 }
 
-function candidate(titulo: string, ml: number, rivals: [string, number][]): Candidate {
-  const otras = [...rivals].sort((a, b) => a[1] - b[1]).map(([t, p]) => offer(t, p));
+function candidate(title: string, ml: number, rivals: [string, number][]): Candidate {
+  const others = [...rivals].sort((a, b) => a[1] - b[1]).map(([t, p]) => offer(t, p));
   return {
-    candidato_id: "c",
-    modelo_id: "m",
-    marca: "Marca",
-    titulo,
-    imagen_url: null,
-    ml: { ...offer("ml", ml), tienda: "ml" as const, ml_product_id: "p", ml_seller_id: "s" },
-    otras,
-    diferencia_ars: otras[0]!.precio_ars - ml,
-    diferencia_pct: 0,
-    confianza: "alta",
-    regla_emparejado: "marca_codigo_variante",
+    candidate_id: "c",
+    model_id: "m",
+    brand: "Marca",
+    title,
+    image_url: null,
+    ml: { ...offer("ml", ml), store: "ml" as const, ml_product_id: "p", ml_seller_id: "s" },
+    others,
+    difference_ars: others[0]!.price_ars - ml,
+    difference_pct: 0,
+    confidence: "high",
+    match_rule: "brand_code_variant",
   };
 }
 
@@ -74,7 +74,7 @@ describe("barWidthPct", () => {
 
 describe("buildCardTree", () => {
   const one = candidate("Xiaomi Robot Vacuum S40C", 329999, [["fravega", 399999]]);
-  const three = load("valid-three-rivals.json").candidatos[0]!;
+  const three = load("valid-three-rivals.json").candidates[0]!;
   const treeOne = buildCardTree(one, opts);
   const tree3 = buildCardTree(three, opts);
 

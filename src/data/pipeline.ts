@@ -14,7 +14,7 @@ export type PipelineDeps = {
   catalog: MlCatalog;
   primary: StoreAdapter;
   secondary: StoreAdapter[];
-  rejected: (modeloId: string) => Promise<Set<string>>;
+  rejected: (modelId: string) => Promise<Set<string>>;
   now: () => Date;
   log: (event: string, data: Record<string, unknown>) => void;
 };
@@ -24,36 +24,36 @@ export type PipelineResult = {
   listings: Listing[];
   models: ModelRow[];
   matches: MatchRow[];
-  estado: "ok" | "parcial";
-  skipped: { modelo_id: string | null; reason: string }[];
+  status: "ok" | "partial";
+  skipped: { model_id: string | null; reason: string }[];
   alerts: OwnerAlert[];
 };
 
-type PrimaryEntry = { listing: Listing; marca: string; code: string; modelo_id: string };
-type Rival = { listing: Listing; regla: "gtin" | "marca_codigo_variante" };
+type PrimaryEntry = { listing: Listing; brand: string; code: string; model_id: string };
+type Rival = { listing: Listing; rule: "gtin" | "brand_code_variant" };
 
-const rivalKey = (l: Listing) => `${l.tienda}:${l.ref_externa}`;
+const rivalKey = (l: Listing) => `${l.store}:${l.external_ref}`;
 
-function mlListing(product: MlProduct, offer: MlOffer, observado_en: string): Listing {
+function mlListing(product: MlProduct, offer: MlOffer, observed_at: string): Listing {
   return {
-    tienda: "ml",
-    titulo: product.titulo,
-    marca: product.marca,
-    modelo: product.modelo,
+    store: "ml",
+    title: product.title,
+    brand: product.brand,
+    model: product.model,
     gtin: product.gtin,
-    precio_ars: offer.precio_ars,
-    ref_externa: offer.item_id,
+    price_ars: offer.price_ars,
+    external_ref: offer.item_id,
     url: product.url,
-    vendedor: offer.seller_id,
-    condicion: offer.condicion,
-    observado_en,
+    seller: offer.seller_id,
+    item_condition: offer.item_condition,
+    observed_at,
   };
 }
 
 /** Reads the primary store, finds each model in the ML catalog, matches rivals and applies the threshold. */
 export async function runPipeline(
   deps: PipelineDeps,
-  input: { corrida_id: string; fecha: string; category: Category; umbral_pct: number },
+  input: { run_id: string; run_date: string; category: Category; threshold_pct: number },
 ): Promise<PipelineResult> {
   const listings = new Map<string, Listing>();
   const models: ModelRow[] = [];
@@ -68,21 +68,21 @@ export async function runPipeline(
     const key = rivalKey(l);
     if (!listings.has(key)) listings.set(key, l);
   };
-  const skip = (modelo_id: string | null, reason: string) => {
-    skipped.push({ modelo_id, reason });
-    deps.log("model_skipped", { modelo_id, reason });
+  const skip = (model_id: string | null, reason: string) => {
+    skipped.push({ model_id, reason });
+    deps.log("model_skipped", { model_id, reason });
   };
-  const alertStore = (tienda: string) => {
-    if (!alerts.some((a) => a.kind === "store_format_error" && a.tienda === tienda)) alerts.push({ kind: "store_format_error", tienda });
+  const alertStore = (store: string) => {
+    if (!alerts.some((a) => a.kind === "store_format_error" && a.store === store)) alerts.push({ kind: "store_format_error", store });
   };
 
-  // 1. Primary store: first page of every term, deduped by ref_externa.
+  // 1. Primary store: first page of every term, deduped by external_ref.
   const found = new Map<string, Listing>();
   try {
-    for (const term of input.category.terminos) {
+    for (const term of input.category.terms) {
       for (const l of await deps.primary.search(term)) {
         record(l);
-        if (!found.has(l.ref_externa)) found.set(l.ref_externa, l);
+        if (!found.has(l.external_ref)) found.set(l.external_ref, l);
       }
     }
   } catch (error) {
@@ -94,32 +94,32 @@ export async function runPipeline(
   // 2. One entry per model: the cheapest primary listing.
   const entries = new Map<string, PrimaryEntry>();
   for (const l of found.values()) {
-    const code = extractModelCodes(l.titulo)[0];
+    const code = extractModelCodes(l.title)[0];
     if (code === undefined) {
       skip(null, "no_model_code");
       continue;
     }
-    if (l.marca === null || l.marca.trim() === "") {
+    if (l.brand === null || l.brand.trim() === "") {
       skip(null, "no_brand");
       continue;
     }
-    const modelo_id = `${normalizeBrand(l.marca)}:${code}`;
-    const current = entries.get(modelo_id);
-    if (current === undefined || l.precio_ars < current.listing.precio_ars) entries.set(modelo_id, { listing: l, marca: l.marca, code, modelo_id });
+    const model_id = `${normalizeBrand(l.brand)}:${code}`;
+    const current = entries.get(model_id);
+    if (current === undefined || l.price_ars < current.listing.price_ars) entries.set(model_id, { listing: l, brand: l.brand, code, model_id });
   }
 
   async function processModel(entry: PrimaryEntry): Promise<void> {
-    const { listing, marca, code, modelo_id } = entry;
-    const term = `${marca} ${code}`;
+    const { listing, brand, code, model_id } = entry;
+    const term = `${brand} ${code}`;
     const modelRow: ModelRow = {
-      id: modelo_id,
-      categoria: input.category.id,
-      marca,
-      codigo_modelo: code,
+      id: model_id,
+      category: input.category.id,
+      brand,
+      model_code: code,
       gtin: listing.gtin,
       ml_product_id: null,
-      titulo: listing.titulo,
-      imagen_url: null,
+      title: listing.title,
+      image_url: null,
     };
     const rows: MatchRow[] = [];
 
@@ -127,39 +127,39 @@ export async function runPipeline(
     const pick = pickCatalogProduct(listing, await deps.catalog.searchProducts(term));
     if (pick.product === null) {
       models.push(modelRow);
-      matches.push({ modelo_id, tienda: listing.tienda, ref_externa: listing.ref_externa, match: { confianza: "dudosa", regla: "parcial", evidencia: {}, motivo: pick.reason } });
-      deps.log("model_unmatched", { modelo_id, reason: pick.reason });
+      matches.push({ model_id, store: listing.store, external_ref: listing.external_ref, match: { confidence: "doubtful", rule: "partial", evidence: {}, reason: pick.reason } });
+      deps.log("model_unmatched", { model_id, reason: pick.reason });
       return;
     }
     const { product } = pick;
     modelRow.ml_product_id = product.id;
     modelRow.gtin = listing.gtin ?? product.gtin;
-    modelRow.imagen_url = product.imagen_url;
+    modelRow.image_url = product.image_url;
 
     // 4. Offers of every condition are recorded; only the cheapest new one prices the model.
     const offers = await deps.catalog.getOffers(product.id);
-    const observado_en = artIso(deps.now());
-    for (const o of offers) record(mlListing(product, o, observado_en));
+    const observed_at = artIso(deps.now());
+    for (const o of offers) record(mlListing(product, o, observed_at));
     const best = cheapestNewOffer(offers);
     if (best === null) {
       models.push(modelRow);
-      skip(modelo_id, "sin_ofertas_nuevas");
+      skip(model_id, "no_new_offers");
       return;
     }
-    const priced: MlProduct = { ...product, precio_ars: best.precio_ars };
-    const rejected = await deps.rejected(modelo_id);
+    const priced: MlProduct = { ...product, price_ars: best.price_ars };
+    const rejected = await deps.rejected(model_id);
     const rivals: Rival[] = [];
 
     // 6. Primary listing again, now with the ML price (price guard).
     const primaryMatch: Match | null = matchListings(priced, listing);
     if (primaryMatch !== null) {
-      rows.push({ modelo_id, tienda: listing.tienda, ref_externa: listing.ref_externa, match: primaryMatch });
-      if (primaryMatch.confianza === "alta" && primaryMatch.regla !== "parcial" && !rejected.has(rivalKey(listing))) {
-        rivals.push({ listing, regla: primaryMatch.regla });
+      rows.push({ model_id, store: listing.store, external_ref: listing.external_ref, match: primaryMatch });
+      if (primaryMatch.confidence === "high" && primaryMatch.rule !== "partial" && !rejected.has(rivalKey(listing))) {
+        rivals.push({ listing, rule: primaryMatch.rule });
       }
     }
 
-    // 5. Secondary stores: cheapest alta per store.
+    // 5. Secondary stores: cheapest high per store.
     for (const store of deps.secondary) {
       if (droppedStores.has(store.id)) continue;
       let read: Listing[];
@@ -170,7 +170,7 @@ export async function runPipeline(
         droppedStores.add(store.id);
         partial = true;
         alertStore(store.id);
-        deps.log("store_dropped", { tienda: store.id, reason: error.message });
+        deps.log("store_dropped", { store: store.id, reason: error.message });
         continue;
       }
       let cheapest: Rival | null = null;
@@ -179,9 +179,9 @@ export async function runPipeline(
         if (rejected.has(rivalKey(l))) continue;
         const m = matchListings(priced, l);
         if (m === null) continue;
-        rows.push({ modelo_id, tienda: l.tienda, ref_externa: l.ref_externa, match: m });
-        if (m.confianza === "alta" && m.regla !== "parcial" && (cheapest === null || l.precio_ars < cheapest.listing.precio_ars)) {
-          cheapest = { listing: l, regla: m.regla };
+        rows.push({ model_id, store: l.store, external_ref: l.external_ref, match: m });
+        if (m.confidence === "high" && m.rule !== "partial" && (cheapest === null || l.price_ars < cheapest.listing.price_ars)) {
+          cheapest = { listing: l, rule: m.rule };
         }
       }
       if (cheapest !== null) rivals.push(cheapest);
@@ -191,31 +191,31 @@ export async function runPipeline(
     matches.push(...rows);
     if (rivals.length === 0) return;
     groups.push({
-      modelo_id,
-      marca,
-      titulo: product.titulo,
-      imagen_url: product.imagen_url,
+      model_id,
+      brand,
+      title: product.title,
+      image_url: product.image_url,
       ml: {
-        tienda: "ml",
-        titulo_listado: product.titulo,
+        store: "ml",
+        listing_title: product.title,
         url: product.url,
-        precio_ars: best.precio_ars,
-        observado_en,
-        ref_externa: best.item_id,
-        vendedor: best.seller_id,
+        price_ars: best.price_ars,
+        observed_at,
+        external_ref: best.item_id,
+        seller: best.seller_id,
         ml_product_id: product.id,
         ml_seller_id: best.seller_id,
       },
-      otras: rivals.map((r) => ({
-        regla: r.regla,
+      others: rivals.map((r) => ({
+        rule: r.rule,
         offer: {
-          tienda: r.listing.tienda,
-          titulo_listado: r.listing.titulo,
+          store: r.listing.store,
+          listing_title: r.listing.title,
           url: r.listing.url,
-          precio_ars: r.listing.precio_ars,
-          observado_en: r.listing.observado_en,
-          ref_externa: r.listing.ref_externa,
-          vendedor: r.listing.vendedor,
+          price_ars: r.listing.price_ars,
+          observed_at: r.listing.observed_at,
+          external_ref: r.listing.external_ref,
+          seller: r.listing.seller,
         },
       })),
     });
@@ -228,17 +228,17 @@ export async function runPipeline(
     } catch (error) {
       if (error instanceof BudgetExhaustedError) {
         partial = true;
-        deps.log("budget_exhausted", { stage: "model", modelo_id: entry.modelo_id });
-        for (const rest of queue.slice(i)) skip(rest.modelo_id, "budget_exhausted");
+        deps.log("budget_exhausted", { stage: "model", model_id: entry.model_id });
+        for (const rest of queue.slice(i)) skip(rest.model_id, "budget_exhausted");
         break;
       }
       if (error instanceof UpstreamError) {
         partial = true;
-        skip(entry.modelo_id, "upstream_error");
-      } else if (error instanceof StoreFormatError && error.tienda === "ml") {
+        skip(entry.model_id, "upstream_error");
+      } else if (error instanceof StoreFormatError && error.store === "ml") {
         partial = true;
         alertStore("ml");
-        skip(entry.modelo_id, "ml_format_error");
+        skip(entry.model_id, "ml_format_error");
       } else {
         throw error;
       }
@@ -246,33 +246,33 @@ export async function runPipeline(
   }
 
   const list = buildCandidateList({
-    corrida_id: input.corrida_id,
-    fecha: input.fecha,
-    categoria: input.category.id,
-    umbral_pct: input.umbral_pct,
+    run_id: input.run_id,
+    run_date: input.run_date,
+    category: input.category.id,
+    threshold_pct: input.threshold_pct,
     groups,
   });
-  return { list, listings: [...listings.values()], models, matches, estado: partial ? "parcial" : "ok", skipped, alerts };
+  return { list, listings: [...listings.values()], models, matches, status: partial ? "partial" : "ok", skipped, alerts };
 }
 
 /**
  * The reads revalidation (Task 14) repeats for each candidate: the ML offers and, per rival store,
- * the search by "<marca> <codigo_modelo>". Used by the recording script so one recording replays both runs.
+ * the search by "<brand> <model_code>". Used by the recording script so one recording replays both runs.
  */
 export async function revalidationReads(
   deps: { catalog: MlCatalog; stores: StoreAdapter[] },
   result: Pick<PipelineResult, "list" | "models">,
 ): Promise<void> {
-  const codes = new Map(result.models.map((m) => [m.id, m.codigo_modelo]));
-  for (const c of result.list.candidatos) {
+  const codes = new Map(result.models.map((m) => [m.id, m.model_code]));
+  for (const c of result.list.candidates) {
     await deps.catalog.getOffers(c.ml.ml_product_id);
-    const code = codes.get(c.modelo_id);
+    const code = codes.get(c.model_id);
     if (code === undefined) continue;
-    for (const store of rivalStores(c, deps.stores)) await store.search(`${c.marca} ${code}`);
+    for (const store of rivalStores(c, deps.stores)) await store.search(`${c.brand} ${code}`);
   }
 }
 
 function rivalStores(c: Candidate, stores: StoreAdapter[]): StoreAdapter[] {
-  const ids = new Set(c.otras.map((o) => o.tienda));
+  const ids = new Set(c.others.map((o) => o.store));
   return stores.filter((s) => ids.has(s.id));
 }

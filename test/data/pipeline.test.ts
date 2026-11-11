@@ -24,8 +24,8 @@ const itemsUrl = (id: string) => `${ML}/products/${id}/items`;
 const PHILCO_ID = "PHILCO:PHRA26N";
 const PHILCO_REF = "/p/aspiradora-robot-trapeadora-philco-limpieza-sense-antichoque-con-app-phra26n-60505/";
 const NOW = new Date("2026-11-10T09:00:00Z"); // 06:00 ART
-const CATEGORY = { id: "aspiradoras-robot", nombre: "Aspiradoras robot", terminos: ["aspiradora robot"] };
-const INPUT = { corrida_id: "run-1", fecha: "2026-11-10", category: CATEGORY, umbral_pct: 15 };
+const CATEGORY = { id: "aspiradoras-robot", name: "Aspiradoras robot", terms: ["aspiradora robot"] };
+const INPUT = { run_id: "run-1", run_date: "2026-11-10", category: CATEGORY, threshold_pct: 15 };
 
 // Replay composed from the real Frávega listing and synthetic (-derived, fake ids) ML responses.
 function composedRoutes(): Map<string, () => Response> {
@@ -63,7 +63,7 @@ function setup(
     routes?: Map<string, () => Response>;
     budget?: number;
     secondary?: StoreAdapter[];
-    rejected?: (modeloId: string) => Set<string>;
+    rejected?: (modelId: string) => Set<string>;
     wrapCatalog?: (c: MlCatalog) => MlCatalog;
     wrapPrimary?: (p: StoreAdapter) => StoreAdapter;
   } = {},
@@ -75,7 +75,7 @@ function setup(
   const fravega = createFravegaAdapter({
     http,
     now: () => NOW,
-    onRejected: (tienda, rejected) => log("seller_rejected", { tienda, count: rejected.length }),
+    onRejected: (store, rejected) => log("seller_rejected", { store, count: rejected.length }),
   });
   const deps: PipelineDeps = {
     catalog: opts.wrapCatalog ? opts.wrapCatalog(catalog) : catalog,
@@ -88,21 +88,21 @@ function setup(
   return { deps, logs, http, catalog };
 }
 
-function listing(over: Partial<Listing> & Pick<Listing, "tienda" | "ref_externa" | "titulo" | "precio_ars">): Listing {
+function listing(over: Partial<Listing> & Pick<Listing, "store" | "external_ref" | "title" | "price_ars">): Listing {
   return {
-    marca: null,
-    modelo: null,
+    brand: null,
+    model: null,
     gtin: null,
-    url: `https://${over.tienda}.example.test${over.ref_externa}`,
-    vendedor: over.tienda,
-    condicion: null,
-    observado_en: "2026-11-10T06:00:00-03:00",
+    url: `https://${over.store}.example.test${over.external_ref}`,
+    seller: over.store,
+    item_condition: null,
+    observed_at: "2026-11-10T06:00:00-03:00",
     ...over,
   };
 }
 
-const philcoRival = (tienda: string, ref: string, price: number) =>
-  listing({ tienda, ref_externa: ref, titulo: "Aspiradora Robot Philco PHRA26N", marca: "Philco", gtin: "7796962017233", precio_ars: price });
+const philcoRival = (store: string, ref: string, price: number) =>
+  listing({ store, external_ref: ref, title: "Aspiradora Robot Philco PHRA26N", brand: "Philco", gtin: "7796962017233", price_ars: price });
 
 function fakeStore(id: string, search: (term: string) => Listing[] | Error): StoreAdapter & { terms: string[] } {
   const terms: string[] = [];
@@ -123,103 +123,103 @@ describe("runPipeline against the composed replay", () => {
     const { deps } = setup();
     const r = await runPipeline(deps, INPUT);
     expect(() => parseCandidateList(r.list)).not.toThrow();
-    expect(r.estado).toBe("ok");
+    expect(r.status).toBe("ok");
     expect(r.skipped).toEqual([]);
-    expect(r.list.modelos_comparados).toBe(2); // Philco and iRobot have a rival; Smartlife has no catalog product
-    expect(r.list.candidatos.map((c) => c.modelo_id)).toEqual([PHILCO_ID]); // iRobot is only ~4% cheaper
-    const c = r.list.candidatos[0]!;
-    expect(c.ml).toMatchObject({ precio_ars: 119999, ref_externa: "MLA90000112", ml_product_id: "MLA00000011", ml_seller_id: "2001" });
-    expect(c.otras.map((o) => [o.tienda, o.precio_ars])).toEqual([["fravega", 163999]]);
-    expect(c.regla_emparejado).toBe("gtin");
+    expect(r.list.models_compared).toBe(2); // Philco and iRobot have a rival; Smartlife has no catalog product
+    expect(r.list.candidates.map((c) => c.model_id)).toEqual([PHILCO_ID]); // iRobot is only ~4% cheaper
+    const c = r.list.candidates[0]!;
+    expect(c.ml).toMatchObject({ price_ars: 119999, external_ref: "MLA90000112", ml_product_id: "MLA00000011", ml_seller_id: "2001" });
+    expect(c.others.map((o) => [o.store, o.price_ars])).toEqual([["fravega", 163999]]);
+    expect(c.match_rule).toBe("gtin");
   });
 
-  it("records the model rows and a dudosa parcial match when the catalog has no product", async () => {
+  it("records the model rows and a doubtful partial match when the catalog has no product", async () => {
     const { deps } = setup();
     const r = await runPipeline(deps, INPUT);
     expect(r.models.map((m) => m.id).sort()).toEqual(["IROBOT:M611330", PHILCO_ID, "SMARTLIFE:SLRVCL050"]);
     const philco = r.models.find((m) => m.id === PHILCO_ID)!;
-    expect(philco).toMatchObject({ categoria: "aspiradoras-robot", marca: "Philco", codigo_modelo: "PHRA26N", ml_product_id: "MLA00000011", gtin: "7796962017233" });
-    const smart = r.matches.find((m) => m.modelo_id === "SMARTLIFE:SLRVCL050")!;
-    expect(smart.match).toMatchObject({ confianza: "dudosa", regla: "parcial", motivo: "no_alta" });
-    expect(smart.tienda).toBe("fravega");
+    expect(philco).toMatchObject({ category: "aspiradoras-robot", brand: "Philco", model_code: "PHRA26N", ml_product_id: "MLA00000011", gtin: "7796962017233" });
+    const smart = r.matches.find((m) => m.model_id === "SMARTLIFE:SLRVCL050")!;
+    expect(smart.match).toMatchObject({ confidence: "doubtful", rule: "partial", reason: "no_high" });
+    expect(smart.store).toBe("fravega");
     expect(r.models.find((m) => m.id === "SMARTLIFE:SLRVCL050")!.ml_product_id).toBeNull();
-    const philcoMatch = r.matches.find((m) => m.modelo_id === PHILCO_ID)!;
-    expect(philcoMatch.match).toMatchObject({ confianza: "alta", regla: "gtin" });
+    const philcoMatch = r.matches.find((m) => m.model_id === PHILCO_ID)!;
+    expect(philcoMatch.match).toMatchObject({ confidence: "high", rule: "gtin" });
   });
 
   it("records ML offers of every condition as listings but prices candidates with new offers only", async () => {
     const { deps } = setup();
     const r = await runPipeline(deps, INPUT);
-    const ml = r.listings.filter((l) => l.tienda === "ml" && l.modelo === "PHRA26N");
-    expect(ml.map((l) => [l.ref_externa, l.condicion, l.precio_ars]).sort()).toEqual([
+    const ml = r.listings.filter((l) => l.store === "ml" && l.model === "PHRA26N");
+    expect(ml.map((l) => [l.external_ref, l.item_condition, l.price_ars]).sort()).toEqual([
       ["MLA90000111", "used", 89999],
       ["MLA90000112", "new", 119999],
       ["MLA90000113", "new", 124999],
     ]);
-    expect(r.list.candidatos[0]!.ml.precio_ars).toBe(119999); // not the used 89999
+    expect(r.list.candidates[0]!.ml.price_ars).toBe(119999); // not the used 89999
   });
 
   it("returns every price read (primary, secondary and ML offers, kept or not) in listings", async () => {
     const cetrogar = fakeStore("cetrogar", (term) =>
       term === "Philco PHRA26N"
-        ? [philcoRival("cetrogar", "/philco-a", 159999), listing({ tienda: "cetrogar", ref_externa: "/otro", titulo: "Heladera no relacionada", precio_ars: 500000 })]
+        ? [philcoRival("cetrogar", "/philco-a", 159999), listing({ store: "cetrogar", external_ref: "/otro", title: "Heladera no relacionada", price_ars: 500000 })]
         : [],
     );
     const { deps } = setup({ secondary: [cetrogar] });
     const r = await runPipeline(deps, INPUT);
-    const by = (t: string) => r.listings.filter((l) => l.tienda === t);
+    const by = (t: string) => r.listings.filter((l) => l.store === t);
     expect(by("fravega")).toHaveLength(3); // the three sold by Frávega, kept or not as candidates
     expect(by("ml")).toHaveLength(4); // 3 Philco offers + 1 iRobot offer
-    expect(by("cetrogar").map((l) => l.ref_externa).sort()).toEqual(["/otro", "/philco-a"]);
-    const keys = r.listings.map((l) => `${l.tienda}:${l.ref_externa}`);
+    expect(by("cetrogar").map((l) => l.external_ref).sort()).toEqual(["/otro", "/philco-a"]);
+    const keys = r.listings.map((l) => `${l.store}:${l.external_ref}`);
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it("keeps the cheapest alta per secondary store and sorts rivals ascending", async () => {
+  it("keeps the cheapest high per secondary store and sorts rivals ascending", async () => {
     const cetrogar = fakeStore("cetrogar", () => [philcoRival("cetrogar", "/a", 170000), philcoRival("cetrogar", "/b", 150000)]);
     const { deps } = setup({ secondary: [cetrogar] });
     const r = await runPipeline(deps, INPUT);
-    const c = r.list.candidatos[0]!;
-    expect(c.otras.map((o) => [o.tienda, o.precio_ars])).toEqual([["cetrogar", 150000], ["fravega", 163999]]);
-    expect(c.diferencia_ars).toBe(150000 - 119999);
+    const c = r.list.candidates[0]!;
+    expect(c.others.map((o) => [o.store, o.price_ars])).toEqual([["cetrogar", 150000], ["fravega", 163999]]);
+    expect(c.difference_ars).toBe(150000 - 119999);
     expect(cetrogar.terms).toContain("Philco PHRA26N");
   });
 
-  it("never proposes a rival marked rechazado", async () => {
+  it("never proposes a rival marked rejected", async () => {
     const cetrogar = fakeStore("cetrogar", () => [philcoRival("cetrogar", "/a", 150000)]);
     const rejected = (id: string) => (id === PHILCO_ID ? new Set([`fravega:${PHILCO_REF}`, "cetrogar:/a"]) : new Set<string>());
     const { deps } = setup({ secondary: [cetrogar], rejected });
     const r = await runPipeline(deps, INPUT);
-    expect(r.list.candidatos).toEqual([]);
-    expect(r.list.modelos_comparados).toBe(1); // only iRobot still has a rival
+    expect(r.list.candidates).toEqual([]);
+    expect(r.list.models_compared).toBe(1); // only iRobot still has a rival
     const rejectedOnly = await runPipeline(setup({ secondary: [cetrogar], rejected: () => new Set(["cetrogar:/a"]) }).deps, INPUT);
-    expect(rejectedOnly.list.candidatos[0]!.otras.map((o) => o.tienda)).toEqual(["fravega"]);
+    expect(rejectedOnly.list.candidates[0]!.others.map((o) => o.store)).toEqual(["fravega"]);
   });
 
   it("logs seller_rejected with the rejected count when an adapter reports rejections", async () => {
     const { deps, logs } = setup();
     await runPipeline(deps, INPUT);
-    expect(logs).toContainEqual({ event: "seller_rejected", data: { tienda: "fravega", count: 12 } });
+    expect(logs).toContainEqual({ event: "seller_rejected", data: { store: "fravega", count: 12 } });
   });
 
-  it("finishes parcial with the models read so far when the budget runs out", async () => {
+  it("finishes partial with the models read so far when the budget runs out", async () => {
     // 1 Frávega page + Philco search and items + iRobot search = 4; the iRobot offers read has no budget left.
     const { deps, http } = setup({ budget: 4 });
     const r = await runPipeline(deps, INPUT);
     expect(http.used()).toBe(4);
-    expect(r.estado).toBe("parcial");
-    expect(r.list.candidatos.map((c) => c.modelo_id)).toEqual([PHILCO_ID]);
+    expect(r.status).toBe("partial");
+    expect(r.list.candidates.map((c) => c.model_id)).toEqual([PHILCO_ID]);
     expect(r.skipped).toEqual([
-      { modelo_id: "IROBOT:M611330", reason: "budget_exhausted" },
-      { modelo_id: "SMARTLIFE:SLRVCL050", reason: "budget_exhausted" },
+      { model_id: "IROBOT:M611330", reason: "budget_exhausted" },
+      { model_id: "SMARTLIFE:SLRVCL050", reason: "budget_exhausted" },
     ]);
   });
 
-  it("returns an empty parcial run when the budget runs out reading the primary store", async () => {
+  it("returns an empty partial run when the budget runs out reading the primary store", async () => {
     const { deps } = setup({ budget: 0 });
     const r = await runPipeline(deps, INPUT);
-    expect(r.estado).toBe("parcial");
-    expect(r.list.candidatos).toEqual([]);
+    expect(r.status).toBe("partial");
+    expect(r.list.candidates).toEqual([]);
     expect(r.listings).toEqual([]);
   });
 
@@ -234,30 +234,30 @@ describe("runPipeline against the composed replay", () => {
       }),
     });
     const r = await runPipeline(deps, INPUT);
-    expect(r.estado).toBe("parcial");
-    expect(r.skipped).toEqual([{ modelo_id: PHILCO_ID, reason: "upstream_error" }]);
-    expect(r.matches.some((m) => m.modelo_id === "IROBOT:M611330")).toBe(true);
+    expect(r.status).toBe("partial");
+    expect(r.skipped).toEqual([{ model_id: PHILCO_ID, reason: "upstream_error" }]);
+    expect(r.matches.some((m) => m.model_id === "IROBOT:M611330")).toBe(true);
     expect(r.models.some((m) => m.id === PHILCO_ID)).toBe(false);
-    expect(r.list.modelos_comparados).toBe(1);
+    expect(r.list.models_compared).toBe(1);
   });
 
   it("skips a model with no new ML offers", async () => {
     const routes = composedRoutes();
     routes.set(itemsUrl("MLA00000012"), () => new Response(mlJson("product-items-only-used-derived.json"), { status: 200 }));
     const r = await runPipeline(setup({ routes }).deps, INPUT);
-    expect(r.skipped).toEqual([{ modelo_id: "IROBOT:M611330", reason: "sin_ofertas_nuevas" }]);
-    expect(r.estado).toBe("ok");
-    expect(r.listings.filter((l) => l.tienda === "ml" && l.condicion === "used")).toHaveLength(2); // still recorded
+    expect(r.skipped).toEqual([{ model_id: "IROBOT:M611330", reason: "no_new_offers" }]);
+    expect(r.status).toBe("ok");
+    expect(r.listings.filter((l) => l.store === "ml" && l.item_condition === "used")).toHaveLength(2); // still recorded
   });
 
   it("drops a secondary store on StoreFormatError and emits store_format_error once", async () => {
     const broken = fakeStore("cetrogar", () => new StoreFormatError("cetrogar", "unrecognized page"));
     const { deps } = setup({ secondary: [broken] });
     const r = await runPipeline(deps, INPUT);
-    expect(r.estado).toBe("parcial");
-    expect(r.alerts).toEqual<OwnerAlert[]>([{ kind: "store_format_error", tienda: "cetrogar" }]);
+    expect(r.status).toBe("partial");
+    expect(r.alerts).toEqual<OwnerAlert[]>([{ kind: "store_format_error", store: "cetrogar" }]);
     expect(broken.terms).toHaveLength(1); // not queried again for the next models
-    expect(r.list.candidatos.map((c) => c.modelo_id)).toEqual([PHILCO_ID]);
+    expect(r.list.candidates.map((c) => c.model_id)).toEqual([PHILCO_ID]);
   });
 
   it("rethrows StoreFormatError from the primary store", async () => {
@@ -275,31 +275,31 @@ describe("runPipeline against the composed replay", () => {
   it("does not turn a BudgetExhaustedError from a secondary store into a skipped model with a rival missing", async () => {
     const exhausted = fakeStore("cetrogar", () => new BudgetExhaustedError());
     const r = await runPipeline(setup({ secondary: [exhausted] }).deps, INPUT);
-    expect(r.estado).toBe("parcial");
+    expect(r.status).toBe("partial");
     expect(r.skipped.map((s) => s.reason)).toEqual(["budget_exhausted", "budget_exhausted", "budget_exhausted"]);
-    expect(r.list.candidatos).toEqual([]);
+    expect(r.list.candidates).toEqual([]);
   });
 });
 
 describe("runPipeline primary reading", () => {
   const primaryOf = (items: Record<string, Listing[]>) => fakeStore("fravega", (t) => items[t] ?? []);
-  const fl = (ref: string, titulo: string, price: number, marca: string | null = "Philco") =>
-    listing({ tienda: "fravega", ref_externa: ref, titulo, marca, precio_ars: price });
+  const fl = (ref: string, title: string, price: number, brand: string | null = "Philco") =>
+    listing({ store: "fravega", external_ref: ref, title, brand, price_ars: price });
 
-  it("unions terms deduped by ref_externa, skips listings without code or brand, keeps the cheapest per model", async () => {
+  it("unions terms deduped by external_ref, skips listings without code or brand, keeps the cheapest per model", async () => {
     const primary = primaryOf({
       "aspiradora robot": [fl("/a", "Robot Philco PHRA26N", 200000), fl("/c", "Aspiradora robot generica", 90000)],
       "robot philco": [fl("/a", "Robot Philco PHRA26N", 200000), fl("/b", "Robot Philco PHRA26N negro", 180000), fl("/d", "Robot PHRA26N sin marca", 100000, null)],
     });
     const { deps } = setup({ wrapPrimary: () => primary, routes: composedRoutes() });
-    const r = await runPipeline(deps, { ...INPUT, category: { ...CATEGORY, terminos: ["aspiradora robot", "robot philco"] } });
+    const r = await runPipeline(deps, { ...INPUT, category: { ...CATEGORY, terms: ["aspiradora robot", "robot philco"] } });
     expect(primary.terms).toEqual(["aspiradora robot", "robot philco"]); // one page per term
     expect(r.skipped).toEqual([
-      { modelo_id: null, reason: "no_model_code" },
-      { modelo_id: null, reason: "no_brand" },
+      { model_id: null, reason: "no_model_code" },
+      { model_id: null, reason: "no_brand" },
     ]);
     expect(r.models).toHaveLength(1);
-    expect(r.listings.filter((l) => l.tienda === "fravega")).toHaveLength(4); // /a, /b, /c, /d once each
+    expect(r.listings.filter((l) => l.store === "fravega")).toHaveLength(4); // /a, /b, /c, /d once each
   });
 });
 
@@ -344,11 +344,11 @@ describe("recorded run", () => {
         now: () => now,
         log: () => {},
       };
-      const r = await runPipeline(deps, { ...INPUT, fecha: date });
+      const r = await runPipeline(deps, { ...INPUT, run_date: date });
       expect(() => parseCandidateList(r.list)).not.toThrow();
       expect({
-        comparados: r.list.modelos_comparados,
-        aprobados: r.list.candidatos.map((c) => [c.modelo_id, Math.floor(c.diferencia_pct * 10) / 10]),
+        comparados: r.list.models_compared,
+        aprobados: r.list.candidates.map((c) => [c.model_id, Math.floor(c.difference_pct * 10) / 10]),
       }).toMatchSnapshot();
     },
   );

@@ -13,11 +13,11 @@ async function main(): Promise<void> {
     const list = parseCandidateList(
       JSON.parse(readFileSync(path.join(process.cwd(), "fixtures", "lista-candidatos", name), "utf8")),
     );
-    for (const c of list.candidatos) {
+    for (const c of list.candidates) {
       n++;
       const file = path.join(OUT_DIR, `card-preview-${n}.png`);
-      writeFileSync(file, await renderCardPng(c, { fecha: list.fecha }));
-      console.log(`${file}  (${name}: ${c.titulo})`);
+      writeFileSync(file, await renderCardPng(c, { run_date: list.run_date }));
+      console.log(`${file}  (${name}: ${c.title})`);
     }
   }
 }

@@ -29,29 +29,29 @@ const telegram: TelegramClient = {
   sendPhoto: async () => ({ message_id: 1, file_id: "f" }),
 };
 
-const offer = (tienda: string, precio: number) => ({
-  tienda,
-  titulo_listado: "Robot",
-  url: `https://example.test/${tienda}`,
-  precio_ars: precio,
-  observado_en: "2026-11-10T10:00:00-03:00",
-  ref_externa: `${tienda}-1`,
-  vendedor: null,
+const offer = (store: string, price: number) => ({
+  store,
+  listing_title: "Robot",
+  url: `https://example.test/${store}`,
+  price_ars: price,
+  observed_at: "2026-11-10T10:00:00-03:00",
+  external_ref: `${store}-1`,
+  seller: null,
 });
 
 const payload = (i: number) =>
   JSON.stringify({
-    candidato_id: `c${i}`,
-    modelo_id: `m${i}`,
-    marca: "Fake",
-    titulo: `Robot aspirador ${i}`,
-    imagen_url: null,
+    candidate_id: `c${i}`,
+    model_id: `m${i}`,
+    brand: "Fake",
+    title: `Robot aspirador ${i}`,
+    image_url: null,
     ml: { ...offer("ml", 329999), ml_product_id: "MLA1", ml_seller_id: "1" },
-    otras: [offer("fravega", 399999)],
-    diferencia_ars: 70000,
-    diferencia_pct: 17.5,
-    confianza: "alta",
-    regla_emparejado: "gtin",
+    others: [offer("fravega", 399999)],
+    difference_ars: 70000,
+    difference_pct: 17.5,
+    confidence: "high",
+    match_rule: "gtin",
   });
 
 /** Median of CPU microseconds (user + system) over RUNS measured runs after WARMUP warm-ups; `prepare` is not measured. */
@@ -70,10 +70,10 @@ async function medianCpuUs(prepare: () => Promise<void>, action: () => Promise<u
 
 beforeAll(async () => {
   db = createSqliteClient();
-  await seedRun(db, { fecha: "2026-11-10", modeloIds: MODELS, corridaId: "r1" });
+  await seedRun(db, { run_date: "2026-11-10", modelIds: MODELS, runId: "r1" });
   for (const [i, m] of MODELS.entries()) {
     await db.run(
-      "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, enlace_afiliado, telegram_file_id, validado_en, telegram_mensaje_id) VALUES (?, 'r1', ?, ?, 'validado', ?, ?, ?, ?)",
+      "INSERT INTO candidates (id, run_id, model_id, payload, status, affiliate_link, telegram_file_id, validated_at, telegram_message_id) VALUES (?, 'r1', ?, ?, 'validated', ?, ?, ?, ?)",
       [`c${i}`, m, payload(i), LINK, `file-${i}`, FRESH, 200 + i],
     );
   }
@@ -88,17 +88,17 @@ beforeAll(async () => {
   deps = { db, env, now: () => NOW, telegram };
 });
 
-// Every run starts from the same full-work state: validado candidates, no salidas (publish) or one pendiente (webhook).
+// Every run starts from the same full-work state: validated candidates, no posts (publish) or one pending (webhook).
 const resetPublish = async () => {
-  await db.run("DELETE FROM salidas");
-  await db.run("UPDATE candidatos SET estado = 'validado', enlace_afiliado = ?, validado_en = ?", [LINK, FRESH]);
+  await db.run("DELETE FROM posts");
+  await db.run("UPDATE candidates SET status = 'validated', affiliate_link = ?, validated_at = ?", [LINK, FRESH]);
 };
 
 describe("Worker CPU budget (cap 8 ms median)", () => {
   it("webhook: a valid affiliate link reply", async () => {
     const resetWebhook = async () => {
-      await db.run("UPDATE candidatos SET estado = 'validado'");
-      await db.run("UPDATE candidatos SET estado = 'pendiente', enlace_afiliado = NULL, validado_en = NULL WHERE id = 'c0'");
+      await db.run("UPDATE candidates SET status = 'validated'");
+      await db.run("UPDATE candidates SET status = 'pending', affiliate_link = NULL, validated_at = NULL WHERE id = 'c0'");
     };
     const update = JSON.stringify({
       update_id: 1,
@@ -120,11 +120,11 @@ describe("Worker CPU budget (cap 8 ms median)", () => {
 
   it("14:00 cron: publish the capped 5 of 10 validated candidates and regenerate the pages", async () => {
     await resetPublish();
-    await db.run("DELETE FROM paginas");
+    await db.run("DELETE FROM pages");
     await handleScheduled("0 14 * * *", deps);
-    const done = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidatos WHERE estado = 'publicado'");
+    const done = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidates WHERE status = 'published'");
     expect(done[0]!.n).toBe(5);
-    const pages = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM paginas");
+    const pages = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM pages");
     expect(pages[0]!.n).toBeGreaterThan(0);
     const us = await medianCpuUs(resetPublish, () => handleScheduled("0 14 * * *", deps));
     console.log(`cpu median publish cron: ${us} us`);

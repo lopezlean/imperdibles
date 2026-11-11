@@ -1,6 +1,6 @@
 /** Spec-fixed copy and constants. Plain values only: Worker-safe, never read from a file at runtime. */
 
-/** Duplicates `tiendas.nombre` on purpose: the Worker must not read it per request. */
+/** Duplicates `stores.name` on purpose: the Worker must not read it per request. */
 export const STORE_NAMES: Record<string, string> = {
   ml: "Mercado Libre",
   fravega: "Frávega",
@@ -22,8 +22,8 @@ export const AFFILIATE_LEGEND =
 export const NOT_AFFILIATED = "imperdibles.ar no pertenece a Mercado Libre ni a las tiendas comparadas.";
 
 /** Page and card copy fixed by the confirmed design (Design reference appendix). Worker-safe. */
-export const PAGE_TITLE_HERO = (umbral: string): string =>
-  `Solo publicamos cuando Mercado Libre gana por ${umbral}% o más.`;
+export const PAGE_TITLE_HERO = (threshold: string): string =>
+  `Solo publicamos cuando Mercado Libre gana por ${threshold}% o más.`;
 
 export const HERO_LEAD =
   "Comparamos el mismo modelo en otras tiendas. Si la diferencia es chica, el producto no aparece.";
@@ -50,13 +50,13 @@ export const PRICES_NOTE = (fechaLarga: string, label: "lista" | "actual" = PRIC
 
 export const HOW_HEADING = "Cómo elegimos";
 
-export const HOW_STEPS = (umbral: string): { title: string; body: string }[] => [
+export const HOW_STEPS = (threshold: string): { title: string; body: string }[] => [
   {
     title: "El mismo modelo exacto",
     body: "Se compara el mismo modelo en Mercado Libre y en otras tiendas, no uno parecido.",
   },
   {
-    title: `Diferencia de ${umbral}% o más`,
+    title: `Diferencia de ${threshold}% o más`,
     body: "Con una diferencia menor, el producto no se publica.",
   },
   {

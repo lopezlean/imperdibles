@@ -65,9 +65,9 @@ function priceRow(opts: {
 
 const labelStyleOf = (s: Record<string, string | number>): Record<string, string | number> => ({ display: "flex", fontFamily: "Inter", ...s });
 
-export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
-  const rivals = [...c.otras].sort((a, b) => a.precio_ars - b.precio_ars).slice(0, MAX_RIVALS);
-  const max = Math.max(c.ml.precio_ars, ...rivals.map((r) => r.precio_ars));
+export function buildCardTree(c: Candidate, opts: { run_date: string }): CardNode {
+  const rivals = [...c.others].sort((a, b) => a.price_ars - b.price_ars).slice(0, MAX_RIVALS);
+  const max = Math.max(c.ml.price_ars, ...rivals.map((r) => r.price_ars));
   const compact = rivals.length >= 2;
 
   const header = node("div", flex({ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }), [
@@ -119,7 +119,7 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
         role: "ml",
         label: storeName("ml"),
         labelStyle: { fontSize: 22, fontWeight: 600, color: TOKENS.ink },
-        price: c.ml.precio_ars,
+        price: c.ml.price_ars,
         priceRole: "ml-price",
         priceStyle: { fontSize: 44, fontWeight: 700, color: TOKENS.ink },
         max,
@@ -128,9 +128,9 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
       ...rivals.map((r) =>
         priceRow({
           role: "rival",
-          label: storeName(r.tienda),
+          label: storeName(r.store),
           labelStyle: { fontSize: 22, fontWeight: 400, color: TOKENS.ink2 },
-          price: r.precio_ars,
+          price: r.price_ars,
           priceRole: "rival-price",
           priceStyle: { fontSize: compact ? 26 : 30, fontWeight: 500, color: TOKENS.ink2 },
           max,
@@ -147,7 +147,7 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
       node(
         "div",
         flex({ fontFamily: "Space Grotesk", fontWeight: 700, fontSize: compact ? 40 : 46, lineHeight: 1.1, letterSpacing: "-0.02em", color: TOKENS.ink }),
-        truncate(c.titulo, TITLE_MAX),
+        truncate(c.title, TITLE_MAX),
         { "data-role": "title" },
       ),
       prices,
@@ -155,8 +155,8 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
   ]);
 
   const footer = node("div", flex({ flexDirection: "row", justifyContent: "space-between", fontFamily: "Inter", fontSize: 20, color: TOKENS.ink2 }), [
-    node("div", { display: "flex" }, CARD_FOOTER(formatDateShort(opts.fecha))),
-    node("div", { display: "flex", fontWeight: 600, color: TOKENS.ink }, `${DIFFERENCE}: ${formatArs(c.diferencia_ars)}`),
+    node("div", { display: "flex" }, CARD_FOOTER(formatDateShort(opts.run_date))),
+    node("div", { display: "flex", fontWeight: 600, color: TOKENS.ink }, `${DIFFERENCE}: ${formatArs(c.difference_ars)}`),
   ]);
 
   return node(

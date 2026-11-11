@@ -36,14 +36,14 @@ describe("worker /healthz", () => {
 });
 
 describe("seedRun", () => {
-  it("inserts the rows candidatos foreign keys need", async () => {
+  it("inserts the rows candidates foreign keys need", async () => {
     const db = createSqliteClient();
-    const { corridaId } = await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1", "B:2"] });
+    const { runId } = await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1", "B:2"] });
     await db.run(
-      "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado) VALUES ('c1', ?, 'A:1', '{}', 'pendiente')",
-      [corridaId],
+      "INSERT INTO candidates (id, run_id, model_id, payload, status) VALUES ('c1', ?, 'A:1', '{}', 'pending')",
+      [runId],
     );
-    const rows = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM modelos");
+    const rows = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM models");
     expect(rows[0]?.n).toBe(2);
   });
 });

@@ -15,19 +15,19 @@ const price = z.number().int().positive();
 const isoWithZone = z.iso.datetime({ offset: true });
 
 const offerFields = {
-  tienda: z.string().min(1),
-  titulo_listado: z.string(),
+  store: z.string().min(1),
+  listing_title: z.string(),
   url: z.string().min(1),
-  precio_ars: price,
-  observado_en: isoWithZone,
-  ref_externa: z.string().min(1),
-  vendedor: z.string().nullable(),
+  price_ars: price,
+  observed_at: isoWithZone,
+  external_ref: z.string().min(1),
+  seller: z.string().nullable(),
 };
 
-/** Mercado Libre offer: `tienda === "ml"`, with product and seller ids. */
+/** Mercado Libre offer: `store === "ml"`, with product and seller ids. */
 const mlOfferSchema = z.object({
   ...offerFields,
-  tienda: z.literal("ml"),
+  store: z.literal("ml"),
   ml_product_id: z.string().min(1),
   ml_seller_id: z.string().min(1),
 });
@@ -35,7 +35,7 @@ const mlOfferSchema = z.object({
 /** Other-store offer: never "ml", never any `ml_*` key. */
 const otherOfferSchema = z.strictObject({
   ...offerFields,
-  tienda: z.string().min(1).refine((t) => t !== "ml", { message: 'must not be "ml"' }),
+  store: z.string().min(1).refine((t) => t !== "ml", { message: 'must not be "ml"' }),
 });
 
 /** Any offer, as seen by consumers: `ml_*` keys exist only on the Mercado Libre one. */
@@ -43,45 +43,45 @@ export const storeOfferSchema = z.union([mlOfferSchema, otherOfferSchema]);
 
 export const candidateSchema = z
   .object({
-    candidato_id: z.string().min(1),
-    modelo_id: z.string().min(1),
-    marca: z.string().min(1),
-    titulo: z.string().min(1),
-    imagen_url: z.string().nullable(),
+    candidate_id: z.string().min(1),
+    model_id: z.string().min(1),
+    brand: z.string().min(1),
+    title: z.string().min(1),
+    image_url: z.string().nullable(),
     ml: mlOfferSchema,
-    otras: z.array(otherOfferSchema).min(1),
-    diferencia_ars: z.number().int(),
-    diferencia_pct: z.number(),
-    confianza: z.literal("alta"),
-    regla_emparejado: z.enum(["gtin", "marca_codigo_variante"]),
+    others: z.array(otherOfferSchema).min(1),
+    difference_ars: z.number().int(),
+    difference_pct: z.number(),
+    confidence: z.literal("high"),
+    match_rule: z.enum(["gtin", "brand_code_variant"]),
   })
   .superRefine((c, ctx) => {
-    for (let i = 1; i < c.otras.length; i++) {
-      if (c.otras[i]!.precio_ars < c.otras[i - 1]!.precio_ars) {
-        ctx.addIssue({ code: "custom", path: ["otras"], message: "must be sorted by precio_ars ascending" });
+    for (let i = 1; i < c.others.length; i++) {
+      if (c.others[i]!.price_ars < c.others[i - 1]!.price_ars) {
+        ctx.addIssue({ code: "custom", path: ["others"], message: "must be sorted by price_ars ascending" });
         break;
       }
     }
-    const first = c.otras[0];
-    if (first && c.diferencia_ars !== first.precio_ars - c.ml.precio_ars) {
-      ctx.addIssue({ code: "custom", path: ["diferencia_ars"], message: "must equal otras[0].precio_ars - ml.precio_ars" });
+    const first = c.others[0];
+    if (first && c.difference_ars !== first.price_ars - c.ml.price_ars) {
+      ctx.addIssue({ code: "custom", path: ["difference_ars"], message: "must equal others[0].price_ars - ml.price_ars" });
     }
   });
 
 export const candidateListSchema = z
   .object({
     version: z.literal(1),
-    corrida_id: z.string().min(1),
-    fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    categoria: z.string().min(1),
-    umbral_pct: z.number().positive(),
-    modelos_comparados: z.number().int().nonnegative(),
-    candidatos: z.array(candidateSchema),
+    run_id: z.string().min(1),
+    run_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    category: z.string().min(1),
+    threshold_pct: z.number().positive(),
+    models_compared: z.number().int().nonnegative(),
+    candidates: z.array(candidateSchema),
   })
   .superRefine((l, ctx) => {
-    for (let i = 1; i < l.candidatos.length; i++) {
-      if (l.candidatos[i]!.diferencia_pct > l.candidatos[i - 1]!.diferencia_pct) {
-        ctx.addIssue({ code: "custom", path: ["candidatos"], message: "must be sorted by diferencia_pct descending" });
+    for (let i = 1; i < l.candidates.length; i++) {
+      if (l.candidates[i]!.difference_pct > l.candidates[i - 1]!.difference_pct) {
+        ctx.addIssue({ code: "custom", path: ["candidates"], message: "must be sorted by difference_pct descending" });
         break;
       }
     }

@@ -43,15 +43,15 @@ describe("searchProducts", () => {
     });
     expect(products).toEqual([
       {
-        tienda: "ml",
+        store: "ml",
         id: "MLA00000001",
-        titulo: "Xiaomi Robot Vacuum S40C",
-        marca: "Xiaomi",
-        modelo: "S40C",
+        title: "Xiaomi Robot Vacuum S40C",
+        brand: "Xiaomi",
+        model: "S40C",
         gtin: "0000000000001",
-        precio_ars: null,
+        price_ars: null,
         url: "https://www.mercadolibre.com.ar/p/MLA00000001",
-        imagen_url: null,
+        image_url: null,
       },
     ]);
   });
@@ -72,12 +72,12 @@ describe("getProduct", () => {
     const { catalog, get } = setup(json(200, { id: "MLA1", name: "Algo", permalink: "https://www.mercadolibre.com.ar/p/MLA1", attributes: [], pictures: [{ url: "https://img/x.jpg" }] }));
     const p = await catalog.getProduct("MLA1");
     expect(get.mock.calls[0]![0]).toBe(`${BASE}/products/MLA1`);
-    expect(p).toMatchObject({ id: "MLA1", marca: null, modelo: null, gtin: null, url: "https://www.mercadolibre.com.ar/p/MLA1", imagen_url: "https://img/x.jpg" });
+    expect(p).toMatchObject({ id: "MLA1", brand: null, model: null, gtin: null, url: "https://www.mercadolibre.com.ar/p/MLA1", image_url: "https://img/x.jpg" });
   });
 
   it("maps the derived product fixture", async () => {
     const { catalog } = setup(json(200, load("product-MLA00000001-derived.json")));
-    expect(await catalog.getProduct("MLA00000001")).toMatchObject({ marca: "Xiaomi", modelo: "S40C", gtin: "0000000000001" });
+    expect(await catalog.getProduct("MLA00000001")).toMatchObject({ brand: "Xiaomi", model: "S40C", gtin: "0000000000001" });
   });
 });
 
@@ -87,8 +87,8 @@ describe("getOffers and mapOffer", () => {
     const offers = await catalog.getOffers("MLA00000001");
     expect(get.mock.calls[0]![0]).toBe(`${BASE}/products/MLA00000001/items`);
     expect(offers).toEqual([
-      { item_id: "MLA90000001", seller_id: "1001", precio_ars: 329999, condicion: "new" },
-      { item_id: "MLA90000002", seller_id: "1002", precio_ars: 349999, condicion: "new" },
+      { item_id: "MLA90000001", seller_id: "1001", price_ars: 329999, item_condition: "new" },
+      { item_id: "MLA90000002", seller_id: "1002", price_ars: 349999, item_condition: "new" },
     ]);
   });
 
@@ -98,7 +98,7 @@ describe("getOffers and mapOffer", () => {
   });
 
   it("rounds the price up (ML never tilts toward a false pass)", () => {
-    expect(mapOffer({ item_id: "MLA1", seller_id: 5, price: 329999.5, condition: "new" }).precio_ars).toBe(330000);
+    expect(mapOffer({ item_id: "MLA1", seller_id: 5, price: 329999.5, condition: "new" }).price_ars).toBe(330000);
   });
 
   it("throws StoreFormatError on an offer without a usable price", () => {
@@ -111,11 +111,11 @@ describe("getOffers and mapOffer", () => {
 describe("cheapestNewOffer", () => {
   it("ignores used offers", () => {
     const offers = load("product-items-used-derived.json").results.map(mapOffer);
-    expect(cheapestNewOffer(offers)).toMatchObject({ condicion: "new", item_id: "MLA90000001", precio_ars: 329999 });
+    expect(cheapestNewOffer(offers)).toMatchObject({ item_condition: "new", item_id: "MLA90000001", price_ars: 329999 });
   });
   it("returns null for no offers or only used ones", () => {
     expect(cheapestNewOffer([])).toBeNull();
-    expect(cheapestNewOffer([{ item_id: "a", seller_id: "1", precio_ars: 1, condicion: "used" }])).toBeNull();
+    expect(cheapestNewOffer([{ item_id: "a", seller_id: "1", price_ars: 1, item_condition: "used" }])).toBeNull();
   });
 });
 

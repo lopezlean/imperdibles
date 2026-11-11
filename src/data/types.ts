@@ -1,19 +1,19 @@
 export type Comparable = {
-  tienda: string;
-  titulo: string;
-  marca: string | null;
-  modelo: string | null;
+  store: string;
+  title: string;
+  brand: string | null;
+  model: string | null;
   gtin: string | null;
-  precio_ars: number | null;
+  price_ars: number | null;
 };
 
 export type Listing = Comparable & {
-  ref_externa: string;
+  external_ref: string;
   url: string;
-  precio_ars: number;
-  vendedor: string | null;
-  condicion: string | null;
-  observado_en: string;
+  price_ars: number;
+  seller: string | null;
+  item_condition: string | null;
+  observed_at: string;
 };
 
 export interface StoreAdapter {
@@ -23,7 +23,7 @@ export interface StoreAdapter {
 
 export class StoreFormatError extends Error {
   constructor(
-    public tienda: string,
+    public store: string,
     message: string,
   ) {
     super(message);

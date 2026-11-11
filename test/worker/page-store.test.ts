@@ -16,53 +16,53 @@ const FRESH = "2026-11-10T11:05:00-03:00";
 type Db = ReturnType<typeof createSqliteClient>;
 let db: Db;
 
-function payloadFor(titulo: string, ml = 329999, rival = 399999): string {
-  const offer = (tienda: string, precio: number) => ({
-    tienda,
-    titulo_listado: titulo,
-    url: `https://example.test/${tienda}`,
-    precio_ars: precio,
-    observado_en: "2026-11-10T10:00:00-03:00",
-    ref_externa: `${tienda}-1`,
-    vendedor: null,
+function payloadFor(title: string, ml = 329999, rival = 399999): string {
+  const offer = (store: string, price: number) => ({
+    store,
+    listing_title: title,
+    url: `https://example.test/${store}`,
+    price_ars: price,
+    observed_at: "2026-11-10T10:00:00-03:00",
+    external_ref: `${store}-1`,
+    seller: null,
   });
   return JSON.stringify({
-    candidato_id: "x",
-    modelo_id: "x",
-    marca: "Fake",
-    titulo,
-    imagen_url: null,
+    candidate_id: "x",
+    model_id: "x",
+    brand: "Fake",
+    title,
+    image_url: null,
     ml: { ...offer("ml", ml), ml_product_id: "MLA1", ml_seller_id: "1" },
-    otras: [offer("fravega", rival)],
-    diferencia_ars: rival - ml,
-    diferencia_pct: 17.5,
-    confianza: "alta",
-    regla_emparejado: "gtin",
+    others: [offer("fravega", rival)],
+    difference_ars: rival - ml,
+    difference_pct: 17.5,
+    confidence: "high",
+    match_rule: "gtin",
   });
 }
 
 async function addCandidate(
   id: string,
-  corridaId: string,
-  modeloId: string,
-  o: { estado?: string; titulo?: string; ml?: number; rival?: number; link?: string | null; publishedAt?: string } = {},
+  runId: string,
+  modelId: string,
+  o: { status?: string; title?: string; ml?: number; rival?: number; link?: string | null; publishedAt?: string } = {},
 ) {
-  const estado = o.estado ?? "publicado";
+  const status = o.status ?? "published";
   await db.run(
-    "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, enlace_afiliado, telegram_file_id, validado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO candidates (id, run_id, model_id, payload, status, affiliate_link, telegram_file_id, validated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     [
       id,
-      corridaId,
-      modeloId,
-      payloadFor(o.titulo ?? `Robot ${id}`, o.ml, o.rival),
-      estado,
+      runId,
+      modelId,
+      payloadFor(o.title ?? `Robot ${id}`, o.ml, o.rival),
+      status,
       o.link === undefined ? `https://meli.la/${id}` : o.link,
       `file-${id}`,
       FRESH,
     ],
   );
   if (o.publishedAt) {
-    await db.run("INSERT INTO salidas (candidato_id, canal, mensaje_externo_id, publicado_en) VALUES (?, 'telegram_canal', '1', ?)", [
+    await db.run("INSERT INTO posts (candidate_id, channel, external_message_id, published_at) VALUES (?, 'telegram_channel', '1', ?)", [
       id,
       o.publishedAt,
     ]);
@@ -70,7 +70,7 @@ async function addCandidate(
 }
 
 const deps = (now: Date) => ({ db, now: () => now, channelUrl: CHANNEL_URL });
-const pageKeys = async () => (await db.all<{ clave: string }>("SELECT clave FROM paginas ORDER BY clave")).map((r) => r.clave);
+const pageKeys = async () => (await db.all<{ page_key: string }>("SELECT page_key FROM pages ORDER BY page_key")).map((r) => r.page_key);
 
 function workerDeps(now: Date, telegram?: TelegramClient): WorkerDeps {
   const env = {
@@ -102,15 +102,15 @@ beforeEach(() => {
 });
 
 describe("regeneratePages", () => {
-  it("writes hoy:<fecha> and archivo for the latest day with published candidates", async () => {
-    await seedRun(db, { fecha: "2026-11-09", modeloIds: ["A:0"], corridaId: "r0" });
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
-    await db.run("UPDATE corridas SET modelos_comparados = 37 WHERE id = 'r1'");
-    await addCandidate("c0", "r0", "A:0", { titulo: "Robot viejo" });
-    await addCandidate("c1", "r1", "A:1", { titulo: "Robot nuevo" });
+  it("writes today:<run_date> and archive for the latest day with published candidates", async () => {
+    await seedRun(db, { run_date: "2026-11-09", modelIds: ["A:0"], runId: "r0" });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
+    await db.run("UPDATE runs SET models_compared = 37 WHERE id = 'r1'");
+    await addCandidate("c0", "r0", "A:0", { title: "Robot viejo" });
+    await addCandidate("c1", "r1", "A:1", { title: "Robot nuevo" });
     await regeneratePages(deps(SAME_DAY));
-    expect(await pageKeys()).toEqual(["archivo", "hoy:2026-11-10"]);
-    const rows = await db.all<{ clave: string; html: string }>("SELECT clave, html FROM paginas");
+    expect(await pageKeys()).toEqual(["archive", "today:2026-11-10"]);
+    const rows = await db.all<{ page_key: string; html: string }>("SELECT page_key, html FROM pages");
     for (const r of rows) {
       expect(r.html).toContain("Robot nuevo");
       expect(r.html).not.toContain("Robot viejo");
@@ -118,33 +118,33 @@ describe("regeneratePages", () => {
       expect(r.html).toContain("Aspiradoras robot");
       expect(r.html).toContain("https://meli.la/c1");
     }
-    expect(rows.find((r) => r.clave === "hoy:2026-11-10")?.html).toContain("Los imperdibles de hoy");
-    expect(rows.find((r) => r.clave === "archivo")?.html).toContain("Los imperdibles del 10 de noviembre de 2026");
+    expect(rows.find((r) => r.page_key === "today:2026-11-10")?.html).toContain("Los imperdibles de hoy");
+    expect(rows.find((r) => r.page_key === "archive")?.html).toContain("Los imperdibles del 10 de noviembre de 2026");
   });
 
-  it("writes only archivo in mode none when nothing was ever published", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
-    await addCandidate("c1", "r1", "A:1", { estado: "validado" });
+  it("writes only archive in mode none when nothing was ever published", async () => {
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
+    await addCandidate("c1", "r1", "A:1", { status: "validated" });
     await regeneratePages(deps(SAME_DAY));
-    expect(await pageKeys()).toEqual(["archivo"]);
-    const [row] = await db.all<{ html: string }>("SELECT html FROM paginas");
+    expect(await pageKeys()).toEqual(["archive"]);
+    const [row] = await db.all<{ html: string }>("SELECT html FROM pages");
     expect(row?.html).toContain("Todavía no hay imperdibles publicados.");
   });
 
   it("ignores published candidates without an affiliate link", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
     await addCandidate("c1", "r1", "A:1", { link: null });
     await regeneratePages(deps(SAME_DAY));
-    expect(await pageKeys()).toEqual(["archivo"]);
+    expect(await pageKeys()).toEqual(["archive"]);
   });
 
   it("orders by descending percentage, then title", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1", "A:2", "A:3"], corridaId: "r1" });
-    await addCandidate("c1", "r1", "A:1", { titulo: "Zeta robot", ml: 80, rival: 100 }); // 20.0%
-    await addCandidate("c2", "r1", "A:2", { titulo: "Alfa robot", ml: 80, rival: 100 }); // 20.0%
-    await addCandidate("c3", "r1", "A:3", { titulo: "Mayor robot", ml: 50, rival: 100 }); // 50.0%
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1", "A:2", "A:3"], runId: "r1" });
+    await addCandidate("c1", "r1", "A:1", { title: "Zeta robot", ml: 80, rival: 100 }); // 20.0%
+    await addCandidate("c2", "r1", "A:2", { title: "Alfa robot", ml: 80, rival: 100 }); // 20.0%
+    await addCandidate("c3", "r1", "A:3", { title: "Mayor robot", ml: 50, rival: 100 }); // 50.0%
     await regeneratePages(deps(SAME_DAY));
-    const [row] = await db.all<{ html: string }>("SELECT html FROM paginas WHERE clave = 'archivo'");
+    const [row] = await db.all<{ html: string }>("SELECT html FROM pages WHERE page_key = 'archive'");
     const html = row?.html ?? "";
     const at = (t: string) => html.indexOf(t);
     expect(at("Mayor robot")).toBeGreaterThan(-1);
@@ -153,30 +153,30 @@ describe("regeneratePages", () => {
   });
 
   it("keeps only the earliest-published candidate per model", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
-    await addCandidate("c1", "r1", "A:1", { titulo: "Segundo", publishedAt: "2026-11-10T11:10:00-03:00" });
-    await addCandidate("c2", "r1", "A:1", { titulo: "Primero", publishedAt: "2026-11-10T11:05:00-03:00" });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
+    await addCandidate("c1", "r1", "A:1", { title: "Segundo", publishedAt: "2026-11-10T11:10:00-03:00" });
+    await addCandidate("c2", "r1", "A:1", { title: "Primero", publishedAt: "2026-11-10T11:05:00-03:00" });
     await regeneratePages(deps(SAME_DAY));
-    const [row] = await db.all<{ html: string }>("SELECT html FROM paginas WHERE clave = 'archivo'");
+    const [row] = await db.all<{ html: string }>("SELECT html FROM pages WHERE page_key = 'archive'");
     expect(row?.html).toContain("Primero");
     expect(row?.html).not.toContain("Segundo");
   });
 
   it("replaces the previous rows on a second run", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1", "A:2"], corridaId: "r1" });
-    await addCandidate("c1", "r1", "A:1", { titulo: "Primero" });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1", "A:2"], runId: "r1" });
+    await addCandidate("c1", "r1", "A:1", { title: "Primero" });
     await regeneratePages(deps(SAME_DAY));
-    await addCandidate("c2", "r1", "A:2", { titulo: "Segundo" });
+    await addCandidate("c2", "r1", "A:2", { title: "Segundo" });
     await regeneratePages(deps(SAME_DAY));
-    expect(await pageKeys()).toEqual(["archivo", "hoy:2026-11-10"]);
-    const [row] = await db.all<{ html: string }>("SELECT html FROM paginas WHERE clave = 'archivo'");
+    expect(await pageKeys()).toEqual(["archive", "today:2026-11-10"]);
+    const [row] = await db.all<{ html: string }>("SELECT html FROM pages WHERE page_key = 'archive'");
     expect(row?.html).toContain("Segundo");
   });
 
   it("writes nothing when rendering cannot complete", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
     await addCandidate("c1", "r1", "A:1");
-    await db.run("UPDATE config SET valor = '{not json' WHERE clave = 'categorias'");
+    await db.run("UPDATE config SET value = '{not json' WHERE name = 'categories'");
     await expect(regeneratePages(deps(SAME_DAY))).rejects.toThrow();
     expect(await pageKeys()).toEqual([]);
   });
@@ -194,8 +194,8 @@ describe("servePage", () => {
   });
 
   it("serves the day page after publication, the archive the next day", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
-    await addCandidate("c1", "r1", "A:1", { estado: "validado", publishedAt: undefined });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
+    await addCandidate("c1", "r1", "A:1", { status: "validated", publishedAt: undefined });
     const res = await publishNow(PUBLISH_AT);
     expect(res.status).toBe(200);
     expect(((await res.json()) as { published: string[] }).published).toEqual(["c1"]);
@@ -211,7 +211,7 @@ describe("servePage", () => {
   });
 
   it("issues exactly one SQL query on the normal path", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
     await addCandidate("c1", "r1", "A:1");
     await regeneratePages(deps(SAME_DAY));
     const all = vi.spyOn(db, "all");
@@ -243,15 +243,15 @@ describe("GET / route", () => {
 
 describe("page failure isolation", () => {
   it("keeps the publication when regenerating the page fails", async () => {
-    await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"], corridaId: "r1" });
-    await addCandidate("c1", "r1", "A:1", { estado: "validado" });
-    await db.run("DROP TABLE paginas");
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
+    await addCandidate("c1", "r1", "A:1", { status: "validated" });
+    await db.run("DROP TABLE pages");
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     const res = await publishNow(PUBLISH_AT);
     expect(res.status).toBe(200);
     expect(((await res.json()) as { published: string[] }).published).toEqual(["c1"]);
-    const [c] = await db.all<{ estado: string }>("SELECT estado FROM candidatos WHERE id = 'c1'");
-    expect(c?.estado).toBe("publicado");
+    const [c] = await db.all<{ status: string }>("SELECT status FROM candidates WHERE id = 'c1'");
+    expect(c?.status).toBe("published");
     expect(errors).toHaveBeenCalled();
     errors.mockRestore();
   });

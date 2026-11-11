@@ -28,15 +28,15 @@ const NOW = new Date("2026-11-10T12:00:00Z");
 const now = () => NOW;
 const plus = (ms: number) => new Date(NOW.getTime() + ms).toISOString();
 
-async function seed(db: ReturnType<typeof createSqliteClient>, expiraEn: string) {
-  await db.run("INSERT INTO tokens_ml (id, access_token, refresh_token, expira_en) VALUES (1, ?, ?, ?)", [
+async function seed(db: ReturnType<typeof createSqliteClient>, expiresAt: string) {
+  await db.run("INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, ?)", [
     "old-access",
     "old-refresh",
-    expiraEn,
+    expiresAt,
   ]);
 }
 const row = (db: ReturnType<typeof createSqliteClient>) =>
-  db.all<{ access_token: string; refresh_token: string; expira_en: string }>("SELECT * FROM tokens_ml");
+  db.all<{ access_token: string; refresh_token: string; expires_at: string }>("SELECT * FROM ml_tokens");
 const respond = (body: string, status = 200) =>
   vi.fn(async () => new Response(body, { status, headers: { "Content-Type": "application/json" } }));
 
@@ -73,7 +73,7 @@ describe("createTokenProvider", () => {
     expect(form.get("client_id")).toBe("123");
     expect(form.get("client_secret")).toBe("fake-client-secret");
     expect(await row(db)).toEqual([
-      { id: 1, access_token: ok.access_token, refresh_token: ok.refresh_token, expira_en: plus(21600_000) },
+      { id: 1, access_token: ok.access_token, refresh_token: ok.refresh_token, expires_at: plus(21600_000) },
     ]);
   });
 
@@ -89,7 +89,7 @@ describe("createTokenProvider", () => {
     expect(stored?.access_token).toBe(ok.access_token);
   });
 
-  it("throws MlAuthError(refresh_failed) on invalid_grant and leaves tokens_ml unchanged", async () => {
+  it("throws MlAuthError(refresh_failed) on invalid_grant and leaves ml_tokens unchanged", async () => {
     const db = createSqliteClient();
     await seed(db, plus(20 * 60_000));
     const before = await row(db);
@@ -101,7 +101,7 @@ describe("createTokenProvider", () => {
     expect(await row(db)).toEqual(before);
   });
 
-  it("throws MlAuthError(not_authorized) when tokens_ml is empty", async () => {
+  it("throws MlAuthError(not_authorized) when ml_tokens is empty", async () => {
     const db = createSqliteClient();
     const fetch = respond(okBody);
     const err = await createTokenProvider({ db, fetch, env, now })
@@ -131,7 +131,7 @@ describe("exchangeCode", () => {
     expect(form.get("code")).toBe("TG-fake-code");
     expect(form.get("redirect_uri")).toBe("https://imperdibles.ar");
     expect(await row(db)).toEqual([
-      { id: 1, access_token: ok.access_token, refresh_token: ok.refresh_token, expira_en: plus(21600_000) },
+      { id: 1, access_token: ok.access_token, refresh_token: ok.refresh_token, expires_at: plus(21600_000) },
     ]);
   });
 
