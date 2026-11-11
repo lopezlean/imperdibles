@@ -93,18 +93,24 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
     if (claim.changes !== 1) continue;
     attempted++;
 
+    let sent: { message_id: number };
     try {
-      const sent = await sendWithRetry(telegram, deps.channelId, row.telegram_file_id, buildChannelCaption(candidate, row.enlace_afiliado));
-      await db.run(
-        "INSERT INTO salidas (candidato_id, canal, mensaje_externo_id, publicado_en) VALUES (?, 'telegram_canal', ?, ?)",
-        [row.id, String(sent.message_id), artIso(deps.now())],
-      );
+      sent = await sendWithRetry(telegram, deps.channelId, row.telegram_file_id, buildChannelCaption(candidate, row.enlace_afiliado));
     } catch (e) {
       await db.run("UPDATE candidatos SET estado = 'validado' WHERE id = ? AND estado = 'publicado'", [row.id]);
       if (isInvalidFileId(e)) await db.run("UPDATE candidatos SET telegram_file_id = NULL WHERE id = ?", [row.id]);
       report.failed.push(row.id);
       await alertOwner(`No se pudo publicar ${candidate.titulo} en el canal. Queda validado y se reintenta en la próxima revalidación.`);
       continue;
+    }
+    // The post is out: from here the candidate stays publicado whatever happens, or the next call would repost it.
+    try {
+      await db.run(
+        "INSERT INTO salidas (candidato_id, canal, mensaje_externo_id, publicado_en) VALUES (?, 'telegram_canal', ?, ?)",
+        [row.id, String(sent.message_id), artIso(deps.now())],
+      );
+    } catch {
+      await alertOwner(`Se publicó ${candidate.titulo} en el canal, pero no se pudo registrar la salida. Queda publicado; no se reenvía.`);
     }
     report.published.push(row.id);
 

@@ -261,6 +261,29 @@ describe("publishValidated", () => {
     expect(await salidas("x_manual")).toEqual([]);
   });
 
+  it("keeps the candidate publicado and never reposts when the salidas insert fails after a successful send", async () => {
+    await addCandidate("c1", "r1", "m1");
+    const failing = {
+      all: db.all.bind(db),
+      run: (sql: string, params?: Parameters<typeof db.run>[1]) =>
+        sql.includes("INSERT INTO salidas") && sql.includes("'telegram_canal'")
+          ? Promise.reject(new Error("d1 unavailable"))
+          : db.run(sql, params),
+    };
+    const tg = fakeTelegram();
+    const report = await publishValidated({
+      db: failing, telegram: tg.client, channelId: CHANNEL, ownerChatId: OWNER, now: () => NOW, afterPublish: async () => {},
+    });
+    expect(report.failed).toEqual([]);
+    expect(report.published).toEqual(["c1"]);
+    expect((await estado("c1")).estado).toBe("publicado");
+    expect(tg.channelPhotos()).toHaveLength(1);
+    expect(tg.calls.some((c) => c.kind === "message" && c.text?.startsWith("No se pudo publicar"))).toBe(false);
+    const again = fakeTelegram();
+    await run(again.client);
+    expect(again.channelPhotos()).toHaveLength(0);
+  });
+
   it("calls afterPublish once when something was published, never otherwise", async () => {
     const after = vi.fn(async () => {});
     await run(fakeTelegram().client, after);
