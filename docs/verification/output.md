@@ -32,7 +32,9 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
   - D1 Free plan: 50 queries per Worker invocation (same limit as the subrequests). `db.batch()` counts as a single query, not one per statement.
   - CPU: 10 ms per HTTP request and per Cron Trigger; time waiting on network or D1 does not count.
   - Consequence: Fetch plus D1 calls together must stay under 50 per invocation (Telegram calls included); prefer batched or single-statement writes.
-- Result (CPU per invocation): PENDING OWNER.
+- Local smoke (Node + better-sqlite3, approximation only; `test/worker/cpu-budget.test.ts`, cap 8 ms median): webhook about 0.1 ms, 14:00 cron (10 publications plus page regeneration) about 1.3 ms, `GET /` about 0.1 ms.
+- Owner check after the next deploy: Cloudflare dashboard, Workers, imperdibles, Metrics, CPU time p99 for `/`, the webhook and the 14:00 UTC cron, all below 10 ms.
+- Result (CPU per invocation): PENDING OWNER (paste the p99 numbers here).
 - Fallback named by the spec: move the step that does not fit to the local job (page generation first).
 
 ## V-O3 X API
