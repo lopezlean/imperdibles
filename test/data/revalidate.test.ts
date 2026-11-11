@@ -1,11 +1,12 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { candidateSchema, type Candidate } from "../../src/contract/candidate-list.js";
 import type { LocalOutputHooks, OwnerAlert, RevalidationReport } from "../../src/contract/local-hooks.js";
-import { UpstreamError } from "../../src/data/http.js";
+import { BudgetExhaustedError, NetworkError, UpstreamError } from "../../src/data/http.js";
 import { MlAuthError } from "../../src/data/ml/auth.js";
 import type { MlCatalog, MlOffer } from "../../src/data/ml/catalog.js";
 import { revalidateChosen, runRevalidate } from "../../src/data/revalidate.js";
@@ -151,8 +152,11 @@ const okReads = (rivalPrice = 150000, mlPrice = 100000) =>
     stores: { fravega: { [FAKE_MODEL_TERM]: [listing("fravega", "/p/fake-aaa111-1", rivalPrice)] } },
   });
 
-async function revalidate(db: Db, f: ReturnType<typeof fakes>) {
+async function revalidateAll(db: Db, f: ReturnType<typeof fakes>) {
   return revalidateChosen({ db, catalog: f.catalog, stores: f.stores, config: await config(db), now: () => NOW });
+}
+async function revalidate(db: Db, f: ReturnType<typeof fakes>) {
+  return (await revalidateAll(db, f)).report;
 }
 
 describe("revalidateChosen", () => {
@@ -218,33 +222,106 @@ describe("revalidateChosen", () => {
     expect((await revalidate(db, f)).invalidated.map((i) => i.reason)).toEqual(["offer_missing"]);
   });
 
+  const untouched = async (db: Db, c: Candidate, before: Awaited<ReturnType<typeof stateOf>>) => expect(await stateOf(db, c.candidato_id)).toEqual(before);
+
   it.each([
-    ["an upstream error from the rival store", new UpstreamError(503, "https://example.test")],
-    ["a format error from the rival store", new StoreFormatError("fravega", "layout changed")],
-  ])("invalidates offer_missing on %s (a failed re-read never publishes)", async (_name, error) => {
+    ["a network failure reading ML", fakes({ offers: { MLA00000099: new NetworkError("fetch failed") }, stores: { fravega: { [FAKE_MODEL_TERM]: [listing("fravega", "/p/fake-aaa111-1", 150000)] } } })],
+    ["an upstream error reading ML", fakes({ offers: { MLA00000099: new UpstreamError(503, "https://api.mercadolibre.com/x") }, stores: { fravega: {} } })],
+    ["the request budget running out", fakes({ offers: { MLA00000099: new BudgetExhaustedError() }, stores: { fravega: {} } })],
+    ["an upstream error from the rival store", fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { fravega: { [FAKE_MODEL_TERM]: new UpstreamError(503, "https://example.test") } } })],
+    ["a missing adapter for the rival store", fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { cetrogar: {} } })],
+  ])("leaves a chosen candidate untouched and skipped on %s", async (_name, f) => {
+    const db = await setupDb();
+    const c = candidate();
+    await seedCandidate(db, c, { telegram_file_id: "AgACfile" });
+    const before = await stateOf(db, c.candidato_id);
+    const { report, skipped } = await revalidateAll(db, f);
+    expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
+    expect(skipped).toMatchObject([{ candidato_id: c.candidato_id, titulo: c.titulo, tienda: null }]);
+    expect(skipped[0]!.reason).not.toBe("");
+    await untouched(db, c, before);
+    expect(before).toMatchObject({ estado: "elegido", validado_en: null, telegram_file_id: "AgACfile" });
+  });
+
+  it("leaves the candidate untouched and names the store on a StoreFormatError", async () => {
     const db = await setupDb();
     const c = candidate();
     await seedCandidate(db, c);
-    const f = fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { fravega: { [FAKE_MODEL_TERM]: error } } });
-    expect((await revalidate(db, f)).invalidated).toEqual([{ candidato_id: c.candidato_id, titulo: c.titulo, reason: "offer_missing" }]);
+    const before = await stateOf(db, c.candidato_id);
+    const f = fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { fravega: { [FAKE_MODEL_TERM]: new StoreFormatError("fravega", "layout changed") } } });
+    const { report, skipped } = await revalidateAll(db, f);
+    expect(report.invalidated).toEqual([]);
+    expect(skipped).toMatchObject([{ candidato_id: c.candidato_id, tienda: "fravega" }]);
+    await untouched(db, c, before);
   });
 
-  it("invalidates offer_missing when the ML offers cannot be read, and when no adapter exists for the rival store", async () => {
+  it("does not validate on the remaining rival when another rival store fails to read", async () => {
+    const db = await setupDb();
+    await db.run("INSERT INTO tiendas (id, nombre) VALUES ('cetrogar', 'Cetrogar')");
+    const c = candidate({ rivals: [["fravega", "/p/fake-aaa111-1", 150000], ["cetrogar", "/p/fake-aaa111-c", 160000]] });
+    await seedCandidate(db, c);
+    const before = await stateOf(db, c.candidato_id);
+    const f = fakes({
+      offers: { MLA00000099: [offer(100000)] },
+      stores: {
+        fravega: { [FAKE_MODEL_TERM]: new UpstreamError(503, "https://example.test") },
+        cetrogar: { [FAKE_MODEL_TERM]: [listing("cetrogar", "/p/fake-aaa111-c", 160000)] },
+      },
+    });
+    const { report, skipped } = await revalidateAll(db, f);
+    expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
+    expect(skipped).toHaveLength(1);
+    await untouched(db, c, before);
+  });
+
+  it("keeps the old validado_en of a previously validated candidate whose re-read failed", async () => {
+    const db = await setupDb();
+    const c = candidate();
+    await seedCandidate(db, c, { estado: "validado", validado_en: "2026-11-10T09:00:00-03:00", telegram_file_id: "AgACfile" });
+    const before = await stateOf(db, c.candidato_id);
+    const f = fakes({ offers: { MLA00000099: new NetworkError("fetch failed") }, stores: { fravega: {} } });
+    const { skipped } = await revalidateAll(db, f);
+    expect(skipped).toHaveLength(1);
+    await untouched(db, c, before);
+    expect(before).toMatchObject({ estado: "validado", validado_en: "2026-11-10T09:00:00-03:00" });
+  });
+
+  it("still invalidates a candidate whose ML offer is confirmed gone even if a rival store fails", async () => {
+    const db = await setupDb();
+    const c = candidate();
+    await seedCandidate(db, c);
+    const f = fakes({ offers: { MLA00000099: [offer(90000, "used")] }, stores: { fravega: { [FAKE_MODEL_TERM]: new UpstreamError(503, "x") } } });
+    const { report, skipped } = await revalidateAll(db, f);
+    expect(report.invalidated.map((i) => i.reason)).toEqual(["offer_missing"]);
+    expect(skipped).toEqual([]);
+  });
+
+  it("validates the candidate that read fine and skips the one that did not, in the same run", async () => {
     const db = await setupDb();
     await seedModel(db, "FAKE:BBB222", "BBB222");
-    const a = candidate();
-    const b = candidate({ modelo: "FAKE:BBB222", rivals: [["cetrogar", "/p/fake-bbb222", 150000]] });
-    await seedCandidate(db, a);
-    await seedCandidate(db, b);
+    const good = candidate();
+    const bad = candidate({ modelo: "FAKE:BBB222", rivals: [["fravega", "/p/fake-bbb222-1", 150000]] });
+    await seedCandidate(db, good);
+    await seedCandidate(db, bad);
+    const beforeBad = await stateOf(db, bad.candidato_id);
     const f = fakes({
-      offers: { MLA00000099: new UpstreamError(500, "https://api.mercadolibre.com/products/MLA00000099/items") },
-      stores: { fravega: {} },
+      offers: { MLA00000099: [offer(100000)] },
+      stores: { fravega: { "Fake AAA111": [listing("fravega", "/p/fake-aaa111-1", 150000)], "Fake BBB222": new UpstreamError(500, "x") } },
     });
-    const report = await revalidate(db, f);
-    expect(report.invalidated.map((i) => [i.candidato_id, i.reason])).toEqual([
-      [a.candidato_id, "offer_missing"],
-      [b.candidato_id, "offer_missing"],
-    ]);
+    const { report, skipped } = await revalidateAll(db, f);
+    expect(report).toEqual({ fecha: "2026-11-10", validated: [good.candidato_id], invalidated: [] });
+    expect(skipped.map((k) => k.candidato_id)).toEqual([bad.candidato_id]);
+    expect((await stateOf(db, good.candidato_id)).estado).toBe("validado");
+    await untouched(db, bad, beforeBad);
+  });
+
+  it("saves the observations that were read even when the candidate is skipped", async () => {
+    const db = await setupDb();
+    await seedCandidate(db, candidate());
+    const f = fakes({ offers: { MLA00000099: [offer(100000)] }, stores: { fravega: { [FAKE_MODEL_TERM]: new UpstreamError(503, "x") } } });
+    await revalidateAll(db, f);
+    const n = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM observaciones_precio WHERE corrida_id = ?", [RUN]);
+    expect(n[0]!.n).toBe(1);
   });
 
   it("lets an authorization failure through and leaves the candidate untouched", async () => {
@@ -384,7 +461,7 @@ describe("revalidateChosen", () => {
     const db = await setupDb();
     await seedCandidate(db, candidate());
     const f = okReads();
-    const report = await revalidateChosen({ db, catalog: f.catalog, stores: f.stores, config: await config(db), now: () => new Date("2026-11-11T01:30:00Z") });
+    const { report } = await revalidateChosen({ db, catalog: f.catalog, stores: f.stores, config: await config(db), now: () => new Date("2026-11-11T01:30:00Z") });
     expect(report.fecha).toBe("2026-11-10");
     expect(report.validated).toHaveLength(1);
   });
@@ -464,7 +541,7 @@ describe("revalidateChosen", () => {
         return f.catalog.getOffers(id);
       },
     };
-    const report = await revalidateChosen({ db, catalog: slow, stores: f.stores, config: await config(db), now: () => NOW });
+    const { report } = await revalidateChosen({ db, catalog: slow, stores: f.stores, config: await config(db), now: () => NOW });
     expect(report).toEqual({ fecha: "2026-11-10", validated: [], invalidated: [] });
     expect((await stateOf(db, c.candidato_id)).estado).toBe("publicado");
   });
@@ -551,6 +628,7 @@ function setup(opts: { routes?: Routes; fetchImpl?: typeof fetch } = {}) {
 type Setup = ReturnType<typeof setup>;
 
 const PHILCO = `${RUN}:PHILCO:PHRA26N`;
+const logLine = (p: string) => JSON.parse(readFileSync(p, "utf8").trim().split("\n").at(-1)!) as Record<string, string>;
 async function collectAndChoose(s: Setup): Promise<void> {
   expect((await runDaily(s.deps, { force: false })).exitCode).toBe(0);
   await s.sqlite.run("UPDATE candidatos SET estado = 'elegido', telegram_file_id = 'AgACfile', enlace_afiliado = 'https://meli.la/abc' WHERE id = ?", [PHILCO]);
@@ -584,12 +662,29 @@ describe("imperdibles revalidar", () => {
     expect((await stateOf(s.sqlite, PHILCO)).estado).toBe("invalidado");
   });
 
-  it("invalidates offer_missing when the other store answers an error", async () => {
+  it("leaves the candidate untouched, logs it, alerts and exits 1 when the other store answers an error", async () => {
     const s = setup();
     await collectAndChoose(s);
+    const before = await stateOf(s.sqlite, PHILCO);
     s.routes.set(fravegaSearchUrl("Philco PHRA26N"), () => new Response("nope", { status: 500 }));
-    expect(await runRevalidate(s.deps)).toBe(0);
-    expect(s.hooks.reports[0]!.invalidated).toMatchObject([{ candidato_id: PHILCO, reason: "offer_missing" }]);
+    expect(await runRevalidate(s.deps)).toBe(1);
+    expect(await stateOf(s.sqlite, PHILCO)).toEqual(before);
+    expect(s.hooks.reports).toEqual([{ fecha: "2026-11-10", validated: [], invalidated: [] }]);
+    expect(s.hooks.alerts).toHaveLength(1);
+    expect(s.hooks.alerts[0]).toMatchObject({ kind: "run_failed", corrida_id: null });
+    expect(JSON.stringify(s.hooks.alerts[0])).toContain(PHILCO);
+    expect(readFileSync(s.logPath, "utf8")).toContain(PHILCO);
+    expect(s.err.join("")).toContain("sin cambios");
+  });
+
+  it("alerts store_format_error naming the store when the other store's page changed shape", async () => {
+    const s = setup();
+    await collectAndChoose(s);
+    const before = await stateOf(s.sqlite, PHILCO);
+    s.routes.set(fravegaSearchUrl("Philco PHRA26N"), () => new Response(read("fravega", "listing-broken-derived.html"), { status: 200 }));
+    expect(await runRevalidate(s.deps)).toBe(1);
+    expect(s.hooks.alerts).toEqual([{ kind: "store_format_error", tienda: "fravega" }]);
+    expect(await stateOf(s.sqlite, PHILCO)).toEqual(before);
   });
 
   it("reads nothing, but still reports an empty result, when nothing is chosen", async () => {
@@ -629,14 +724,33 @@ describe("imperdibles revalidar", () => {
     expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", corrida_id: null }]);
   });
 
-  it("invalidates the chosen candidate as offer_missing when the network is down (a failed re-read never publishes)", async () => {
+  it("leaves the chosen candidate untouched, alerts and exits 1 when the network is down", async () => {
+    const s = setup();
+    await collectAndChoose(s);
+    const before = await stateOf(s.sqlite, PHILCO);
+    s.deps.fetch = async () => {
+      throw new TypeError("fetch failed");
+    };
+    expect(await runRevalidate(s.deps)).toBe(1);
+    expect(await stateOf(s.sqlite, PHILCO)).toEqual(before);
+    expect(s.hooks.reports).toEqual([{ fecha: "2026-11-10", validated: [], invalidated: [] }]);
+    expect(s.hooks.alerts).toMatchObject([{ kind: "run_failed", corrida_id: null }]);
+    expect(logLine(s.logPath)).toMatchObject({ corrida_id: null, estado: "fallida" });
+    expect(logLine(s.logPath).error).toContain(PHILCO);
+  });
+
+  it("still reports the skipped candidates when the hook fails", async () => {
     const s = setup();
     await collectAndChoose(s);
     s.deps.fetch = async () => {
       throw new TypeError("fetch failed");
     };
-    expect(await runRevalidate(s.deps)).toBe(0);
-    expect(s.hooks.reports[0]!.invalidated).toMatchObject([{ candidato_id: PHILCO, reason: "offer_missing" }]);
+    s.hooks.onRevalidated = async () => {
+      throw new Error("hook down");
+    };
+    expect(await runRevalidate(s.deps)).toBe(1);
+    expect(readFileSync(s.logPath, "utf8")).toContain(PHILCO);
+    expect(s.hooks.alerts.length).toBeGreaterThanOrEqual(1);
   });
 
   it("does not let a failing notifyOwner hide the exit code", async () => {
@@ -663,5 +777,20 @@ describe("main", () => {
 
   it("documents revalidar in the usage text", () => {
     expect(USAGE).toContain("imperdibles revalidar");
+  });
+});
+
+describe("bin/imperdibles", () => {
+  it("creates var/ before running, because launchd does not create the log directory", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "imperdibles-bin-"));
+    mkdirSync(path.join(root, "bin"));
+    mkdirSync(path.join(root, "stub"));
+    copyFileSync(path.join(ROOT, "bin", "imperdibles"), path.join(root, "bin", "imperdibles"));
+    chmodSync(path.join(root, "bin", "imperdibles"), 0o755);
+    writeFileSync(path.join(root, "stub", "pnpm"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    expect(existsSync(path.join(root, "var"))).toBe(false);
+    const r = spawnSync(path.join(root, "bin", "imperdibles"), ["revalidar"], { env: { PATH: `${path.join(root, "stub")}:/usr/bin:/bin` } });
+    expect(r.status).toBe(0);
+    expect(existsSync(path.join(root, "var"))).toBe(true);
   });
 });

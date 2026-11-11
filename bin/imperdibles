@@ -1,2 +1,5 @@
 #!/usr/bin/env bash
-exec pnpm --silent --dir="$(dirname "$(realpath "$0")")/.." tsx src/local/cli.ts "$@"
+root="$(dirname "$(realpath "$0")")/.."
+# launchd opens its log files in var/ before running this and does not create the directory; var/ is git-ignored.
+mkdir -p "$root/var"
+exec pnpm --silent --dir="$root" tsx src/local/cli.ts "$@"

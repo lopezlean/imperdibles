@@ -5,6 +5,7 @@
   StartCalendarInterval uses the Mac's local time: the owner's Mac must be set to America/Argentina/Buenos_Aires.
   If the repository lives elsewhere, change the three absolute paths below.
   Do not install before docs/verification/data.md records V6 Store terms.
+  launchd opens the log files itself and does not create var/: run `mkdir -p var` in the repo before bootstrapping.
 -->
 <plist version="1.0">
 <dict>
