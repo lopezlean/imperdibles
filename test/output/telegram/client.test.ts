@@ -16,6 +16,16 @@ function fake(body: string, status = 200) {
 }
 
 describe("telegram client", () => {
+  it("calls fetch without a foreign this (Workers throws Illegal invocation otherwise)", async () => {
+    const strictFetch = function (this: unknown) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation");
+      return Promise.resolve(new Response(fx("send-photo-ok")));
+    } as unknown as typeof fetch;
+    const c = createTelegramClient({ token: TOKEN, fetch: strictFetch });
+    const r = await c.sendPhoto({ chat_id: "-100", photo: { fileId: "abc" }, caption: "hola" });
+    expect(r.message_id).toBe(101);
+  });
+
   it("sends a photo by file id as JSON and returns the largest size file_id", async () => {
     const { f, calls } = fake(fx("send-photo-ok"));
     const c = createTelegramClient({ token: TOKEN, fetch: f });

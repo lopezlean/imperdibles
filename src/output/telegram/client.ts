@@ -32,6 +32,8 @@ type ApiResponse = {
 };
 
 export function createTelegramClient(cfg: { token: string; fetch: typeof fetch }): TelegramClient {
+  // Never call it as cfg.fetch(...): in Workers the global fetch throws "Illegal invocation" with a foreign `this`.
+  const doFetch = cfg.fetch;
   // Never put the token or URL in an error: only method, status and description.
   async function call(method: string, body: FormData | Record<string, unknown>): Promise<NonNullable<ApiResponse["result"]>> {
     const init: RequestInit =
@@ -40,7 +42,7 @@ export function createTelegramClient(cfg: { token: string; fetch: typeof fetch }
         : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) };
     let res: Response;
     try {
-      res = await cfg.fetch(`https://api.telegram.org/bot${cfg.token}/${method}`, init);
+      res = await doFetch(`https://api.telegram.org/bot${cfg.token}/${method}`, init);
     } catch {
       throw new TelegramError(0, `${method}: network failure`);
     }

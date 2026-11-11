@@ -28,6 +28,13 @@ const url = (p: string) => `https://imperdibles.ar${p}`;
 const webhook = (headers: Record<string, string>, body = "{}", method = "POST") =>
   new Request(url("/telegram/webhook"), { method, headers, body: method === "POST" ? body : undefined });
 
+const VALID_PAYLOAD = JSON.stringify({
+  candidato_id: "c1", modelo_id: "A:1", marca: "Fake", titulo: "Aspiradora", imagen_url: null,
+  ml: { tienda: "ml", titulo_listado: "x", url: "https://e.test/ml", precio_ars: 329999, observado_en: "2026-11-10T10:00:00-03:00", ref_externa: "m", vendedor: null, ml_product_id: "MLA1", ml_seller_id: "1" },
+  otras: [{ tienda: "fravega", titulo_listado: "x", url: "https://e.test/f", precio_ars: 399999, observado_en: "2026-11-10T10:00:00-03:00", ref_externa: "f", vendedor: null }],
+  diferencia_ars: 70000, diferencia_pct: 17.5, confianza: "alta", regla_emparejado: "gtin",
+});
+
 beforeEach(() => {
   db = createSqliteClient();
   telegram = {
@@ -99,15 +106,9 @@ describe("POST /internal/publish-now", () => {
 
   it("200 with the report and publishes a validated candidate", async () => {
     const { corridaId } = await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"] });
-    const payload = JSON.stringify({
-      candidato_id: "c1", modelo_id: "A:1", marca: "Fake", titulo: "Aspiradora", imagen_url: null,
-      ml: { tienda: "ml", titulo_listado: "x", url: "https://e.test/ml", precio_ars: 329999, observado_en: "2026-11-10T10:00:00-03:00", ref_externa: "m", vendedor: null, ml_product_id: "MLA1", ml_seller_id: "1" },
-      otras: [{ tienda: "fravega", titulo_listado: "x", url: "https://e.test/f", precio_ars: 399999, observado_en: "2026-11-10T10:00:00-03:00", ref_externa: "f", vendedor: null }],
-      diferencia_ars: 70000, diferencia_pct: 17.5, confianza: "alta", regla_emparejado: "gtin",
-    });
     await db.run(
       "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, enlace_afiliado, telegram_file_id, validado_en) VALUES ('c1', ?, 'A:1', ?, 'validado', 'https://meli.la/2AbC', 'fid', '2026-11-10T10:50:00-03:00')",
-      [corridaId, payload],
+      [corridaId, VALID_PAYLOAD],
     );
     const res = await handleFetch(post("Bearer pub-secret"), deps());
     expect(res.status).toBe(200);
@@ -134,18 +135,17 @@ describe("handleScheduled", () => {
     expect(telegram.sendPhoto).not.toHaveBeenCalled();
   });
 
-  it("11:00 cron runs publishValidated and alerts on failure", async () => {
+  it("11:00 cron runs publishValidated: a validated candidate is posted to the channel", async () => {
     const { corridaId } = await seedRun(db, { fecha: "2026-11-10", modeloIds: ["A:1"] });
     await db.run(
-      "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, enlace_afiliado, telegram_file_id, validado_en) VALUES ('c1', ?, 'A:1', '{bad', 'validado', 'https://meli.la/2AbC', 'fid', '2026-11-10T10:50:00-03:00')",
-      [corridaId],
+      "INSERT INTO candidatos (id, corrida_id, modelo_id, payload, estado, enlace_afiliado, telegram_file_id, validado_en) VALUES ('c1', ?, 'A:1', ?, 'validado', 'https://meli.la/2AbC', 'fid', '2026-11-10T10:50:00-03:00')",
+      [corridaId, VALID_PAYLOAD],
     );
     await handleScheduled("0 14 * * *", deps());
-    // publishValidated ran: the unparsable candidate was reported failed and nothing was sent.
-    expect(telegram.sendPhoto).not.toHaveBeenCalled();
-    expect(telegram.sendMessage).not.toHaveBeenCalled();
+    const channelPosts = telegram.sendPhoto.mock.calls.filter(([p]) => p.chat_id === "-100");
+    expect(channelPosts).toHaveLength(1);
     const rows = await db.all<{ estado: string }>("SELECT estado FROM candidatos");
-    expect(rows[0]?.estado).toBe("validado");
+    expect(rows[0]?.estado).toBe("publicado");
   });
 
   it("rejects an unknown cron", async () => {

@@ -6,7 +6,7 @@ const split = (c: string[]) => ({ files: c.filter((x) => x.startsWith("/")), bar
 // Type-only imports are erased, so reachability uses the full closure and the shipped-code checks use the runtime one.
 const { files, bare } = split(importClosure("src/worker/index.ts"));
 const runtime = split(importClosure("src/worker/index.ts", { runtimeOnly: true }));
-const rel = (p: string) => files.some((f) => f.includes(`/`));
+const rel = (p: string) => files.some((f) => f.includes(`/${p}`));
 
 describe("Worker import closure", () => {
   // TODO(Task 13): add "src/output/page/render" and "src/output/html" once the page exists.
@@ -20,6 +20,11 @@ describe("Worker import closure", () => {
     "src/contract/",
   ])("reaches %s", (p) => {
     expect(rel(p)).toBe(true);
+  });
+
+  it("reachability check fails for a module that is not reached", () => {
+    expect(rel("src/output/card/render.ts")).toBe(false);
+    expect(rel("src/output/page/render.ts")).toBe(false);
   });
 
   it("reaches no forbidden package, node: module or card renderer", () => {
