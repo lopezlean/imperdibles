@@ -49,6 +49,23 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 - Result: PENDING OWNER.
 - Default: placeholder only ("Foto del producto"); `imagen_url` is ignored.
 
+## V-O5 Deploy and webhook
+
+- Status: PENDING OWNER.
+- Check: **Owner runs.** With `TELEGRAM_CHANNEL_ID` still pointing to the private test channel (Worker secret and `.env`), after the prerequisites above: `pnpm db:migrate:remote`, `pnpm worker:deploy`, route the custom domain `imperdibles.ar` to the Worker in the dashboard, then `pnpm telegram:set-webhook`. Expected last line: `Webhook was set`.
+- Result: PENDING OWNER.
+- Fallback: none named. If the expected line does not appear, paste the printed Telegram `description` and stop before the dry runs.
+
+## V-O5 Dry runs
+
+- Status: PENDING OWNER.
+- Check: **Owner runs**, at least two mornings before 20/11, with a real bot and the private test channel:
+  1. `imperdibles correr --forzar`: the shortlist with cards arrives.
+  2. Reply one link and one `rechazar`: both confirmations arrive.
+  3. `imperdibles revalidar` after 11:00: the test channel gets the post with the legend, and the owner gets the X material.
+  4. Reply to an old message: the explanation arrives.
+- Result: PENDING OWNER. The owner pastes each result and the agent records it here.
+
 ## V1 price label
 
 - V1 price label: PENDING OWNER. `PRICE_LABEL` in `src/output/copy.ts` is `"lista"` until `docs/verification/data.md` V1 is recorded; switch it there.
