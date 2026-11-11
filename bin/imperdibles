@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec pnpm --silent --dir="$(dirname "$(realpath "$0")")/.." tsx src/local/cli.ts "$@"

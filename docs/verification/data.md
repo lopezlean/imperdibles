@@ -55,3 +55,13 @@
 - Then, to record here: run `pnpm vitest run test/data/pipeline.test.ts` (the test "reproduces the recorded aspiradoras-robot run" stops being skipped and writes its snapshot under `test/data/__snapshots__/`; commit it), and note the models compared and the approved candidates next to the 4 of 9 from 10/11. Prices have moved since; the spec treats 4 of 9 as a value to confirm, not an assertion.
 - Result: pending.
 - Fallback: if the recording differs a lot from 4 of 9, the owner reviews the dudosa matches and their `motivo` in the run log before changing any rule.
+
+## V9 D1 rows per run
+
+- Status: PENDING OWNER. The owner has not run `imperdibles correr` against the real D1 yet, so the rows written per run (for the 100.000 rows/day D1 free quota) are unmeasured.
+- Owner runs: `pnpm imperdibles correr` once. Expected: exit 0, the stub hook line in stderr (or the shortlist on Telegram once output Task 6 is merged).
+- Then check the run: `pnpm wrangler d1 execute imperdibles --remote --command "SELECT id, estado, modelos_comparados, consultas_usadas FROM corridas ORDER BY iniciada_en DESC LIMIT 1"`.
+- Then count the rows written by that run (`<id>` from the previous query): `pnpm wrangler d1 execute imperdibles --remote --command "SELECT (SELECT COUNT(*) FROM observaciones_precio WHERE corrida_id = '<id>') AS observaciones, (SELECT COUNT(*) FROM candidatos WHERE corrida_id = '<id>') AS candidatos, (SELECT COUNT(*) FROM modelos) AS modelos, (SELECT COUNT(*) FROM emparejados) AS emparejados, (SELECT COUNT(*) FROM publicaciones_tienda) AS publicaciones"`. Rows written per run are about observaciones + candidatos + 1 (corridas) plus the upserts to publicaciones_tienda, modelos and emparejados; record the totals and compare with 100.000.
+- A second `pnpm imperdibles correr` the same day must print `Ya hay una corrida de hoy (<id>). Para repetirla: imperdibles correr --forzar` and exit 2 (also confirms `fecha` uses the ART date).
+- Result: pending.
+- Fallback: if one run writes more than a fraction of 100.000 rows, reduce `presupuesto_consultas` or the categories read per day.
