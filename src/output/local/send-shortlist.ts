@@ -7,10 +7,6 @@ const MAX_CANDIDATES = 10;
 
 export type RenderCard = (c: Candidate, opts: { fecha: string }) => Promise<Uint8Array>;
 
-// TODO(Task 4): replace with the real renderCardPng once the card design is confirmed.
-export const defaultRender: RenderCard = () =>
-  Promise.reject(new Error("card renderer not available yet (Task 4 on design hold)"));
-
 export type SendShortlistDeps = { db: SqlClient; telegram: TelegramClient; ownerChatId: string; render: RenderCard };
 
 /**

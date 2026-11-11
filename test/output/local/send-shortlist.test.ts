@@ -221,10 +221,10 @@ describe("createOutputHooks", () => {
       new Response(JSON.stringify({ ok: true, result: { message_id: 1, photo: [{ file_id: "f" }] } }))) as unknown as typeof fetch;
     const hooks = createOutputHooks({ db, env: env(), now: () => new Date(), fetch: fakeFetch });
     await hooks.notifyOwner({ kind: "ml_auth_required" });
-    const err = vi.spyOn(console, "error").mockImplementation(() => {});
-    // defaultRender rejects until Task 4, so the error is the send failure, never an env error.
-    await expect(hooks.onCandidatesReady(list)).rejects.toThrow(/No se pudo enviar/);
-    err.mockRestore();
+    // Real renderer, fake Telegram: the daily path never needs the Worker variables.
+    await expect(hooks.onCandidatesReady(list)).resolves.toBeUndefined();
+    const rows = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidatos WHERE telegram_mensaje_id IS NOT NULL");
+    expect(rows[0]!.n).toBeGreaterThan(0);
   });
 
   it("onRevalidated rejects naming the missing variables, never values", async () => {

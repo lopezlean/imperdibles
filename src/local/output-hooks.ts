@@ -1,7 +1,8 @@
 import type { LocalOutputHooks } from "../contract/local-hooks.js";
 import { renderOwnerAlert } from "../output/alerts.js";
 import { afterRevalidation } from "../output/local/after-revalidation.js";
-import { defaultRender, sendShortlist } from "../output/local/send-shortlist.js";
+import { renderCardPng } from "../output/card/render.js";
+import { sendShortlist } from "../output/local/send-shortlist.js";
 import { createTelegramClient } from "../output/telegram/client.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
 import type { LocalEnv } from "../shared/env.js";
@@ -21,7 +22,7 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
 
   return {
     async onCandidatesReady(list) {
-      const r = await sendShortlist({ db, telegram, ownerChatId, render: defaultRender }, list);
+      const r = await sendShortlist({ db, telegram, ownerChatId, render: renderCardPng }, list);
       if (r.sent === 0 && r.failed > 0) {
         throw new Error(`No se pudo enviar ninguno de los ${r.failed} candidatos de la lista de hoy.`);
       }
@@ -37,7 +38,7 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
           db,
           telegram,
           ownerChatId,
-          render: defaultRender,
+          render: renderCardPng,
           fetch: deps.fetch,
           workerBaseUrl: env.workerBaseUrl,
           publishSecret: env.publishNowSecret,

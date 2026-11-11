@@ -73,7 +73,7 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
   const header = node("div", flex({ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }), [
     node(
       "div",
-      flex({ flexDirection: "row", fontFamily: "Space Grotesk", fontWeight: 700, fontSize: 30, color: TOKENS.ink }),
+      flex({ flexDirection: "row", fontFamily: "Space Grotesk", fontWeight: 700, fontSize: 30, letterSpacing: "-0.02em", color: TOKENS.ink }),
       [node("span", { display: "flex" }, "imperdibles"), node("span", { display: "flex", color: TOKENS.accent }, ".ar")],
       { "data-role": "logo" },
     ),
@@ -83,6 +83,7 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
         fontFamily: "Space Grotesk",
         fontWeight: 700,
         fontSize: 30,
+        letterSpacing: "-0.01em",
         color: TOKENS.surface,
         background: TOKENS.accent,
         padding: "10px 22px",
@@ -145,7 +146,7 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
     node("div", flex({ flexDirection: "column", gap: 28, width: COLUMN_WIDTH }), [
       node(
         "div",
-        flex({ fontFamily: "Space Grotesk", fontWeight: 700, fontSize: 46, lineHeight: 1.1, color: TOKENS.ink }),
+        flex({ fontFamily: "Space Grotesk", fontWeight: 700, fontSize: compact ? 40 : 46, lineHeight: 1.1, letterSpacing: "-0.02em", color: TOKENS.ink }),
         truncate(c.titulo, TITLE_MAX),
         { "data-role": "title" },
       ),
@@ -163,6 +164,7 @@ export function buildCardTree(c: Candidate, opts: { fecha: string }): CardNode {
     flex({
       flexDirection: "column",
       justifyContent: "space-between",
+      boxSizing: "border-box",
       width: WIDTH,
       height: HEIGHT,
       padding: `56px ${PADDING_X}px`,

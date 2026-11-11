@@ -66,6 +66,13 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
   4. Reply to an old message: the explanation arrives.
 - Result: PENDING OWNER. The owner pastes each result and the agent records it here.
 
+## V-O7 Card review
+
+- Status: PENDING OWNER.
+- Check: **Owner runs** `pnpm card:preview` and compares each `var/card-preview-<n>.png` (1200x675) against the confirmed artboard `docs/design/Tarjeta.dc.html`: logo and badge, photo placeholder, title, price bars, footer and difference line, for both the one-rival and the three-rival fixtures.
+- Result: PENDING OWNER.
+- Fallback: the owner lists what differs and the agent adjusts `src/output/card/tree.ts`.
+
 ## V1 price label
 
 - V1 price label: PENDING OWNER. `PRICE_LABEL` in `src/output/copy.ts` is `"lista"` until `docs/verification/data.md` V1 is recorded; switch it there.
