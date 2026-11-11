@@ -81,7 +81,7 @@ describe("buildCardTree", () => {
   it("one rival", () => {
     expect(treeOne).toMatchSnapshot();
     expect(textOf(treeOne)).toContain("17,5% menos");
-    expect(textOf(treeOne)).toContain("Mismo modelo, precio de lista al 10/11/2026");
+    expect(textOf(treeOne)).toContain("Mismo modelo, precio actual al 10/11/2026");
     expect(textOf(treeOne)).toContain("Diferencia: $70.000");
     expect(barWidths(treeOne)).toEqual([82.5, 100]);
     expect(rivalNames(treeOne)).toEqual(["Frávega"]);

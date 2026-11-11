@@ -286,7 +286,7 @@ exports[`buildCardTree > one rival 1`] = `
           "children": [
             {
               "props": {
-                "children": "Mismo modelo, precio de lista al 10/11/2026",
+                "children": "Mismo modelo, precio actual al 10/11/2026",
                 "style": {
                   "display": "flex",
                 },
@@ -755,7 +755,7 @@ exports[`buildCardTree > three rivals 1`] = `
           "children": [
             {
               "props": {
-                "children": "Mismo modelo, precio de lista al 10/11/2026",
+                "children": "Mismo modelo, precio actual al 10/11/2026",
                 "style": {
                   "display": "flex",
                 },

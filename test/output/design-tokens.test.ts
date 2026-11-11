@@ -81,7 +81,7 @@ describe("design copy", () => {
     expect(IN_ML).toBe("en Mercado Libre");
     expect(DIFFERENCE).toBe("Diferencia");
     expect(PCT_BADGE("19,7")).toBe("19,7% menos");
-    expect(CARD_FOOTER("10/11/2026")).toBe("Mismo modelo, precio de lista al 10/11/2026");
+    expect(CARD_FOOTER("10/11/2026")).toBe("Mismo modelo, precio actual al 10/11/2026");
   });
 
   it("conjugates the price label in the note and the card footer", () => {
@@ -97,7 +97,7 @@ describe("design copy", () => {
 
   it("fills the price note with the long date", () => {
     expect(PRICES_NOTE("10 de noviembre de 2026")).toBe(
-      "Precios de lista al 10 de noviembre de 2026, sin envío ni cuotas.",
+      "Precios actuales al 10 de noviembre de 2026, sin envío ni cuotas.",
     );
   });
 

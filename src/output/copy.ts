@@ -13,8 +13,8 @@ export function storeName(id: string): string {
   return Object.hasOwn(STORE_NAMES, id) ? STORE_NAMES[id]! : id;
 }
 
-// TODO(V1): docs/verification/data.md V1 is PENDING OWNER; switch here once recorded.
-export const PRICE_LABEL: "lista" | "actual" = "lista" as "lista" | "actual";
+// V1 (docs/verification/data.md): the pipeline compares ML's selling `price`, never `original_price`, so the label is "actual".
+export const PRICE_LABEL: "lista" | "actual" = "actual" as "lista" | "actual";
 
 export const AFFILIATE_LEGEND =
   "Los enlaces a Mercado Libre son de afiliado: recibimos una comisión por cada compra, sin costo adicional.";

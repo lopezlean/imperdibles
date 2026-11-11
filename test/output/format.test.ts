@@ -85,7 +85,7 @@ describe("copy", () => {
     expect(storeName("tienda-nueva")).toBe("tienda-nueva");
   });
   it("carries the spec-fixed legends", () => {
-    expect(PRICE_LABEL).toBe("lista");
+    expect(PRICE_LABEL).toBe("actual");
     expect(AFFILIATE_LEGEND).toBe(
       "Los enlaces a Mercado Libre son de afiliado: recibimos una comisión por cada compra, sin costo adicional.",
     );

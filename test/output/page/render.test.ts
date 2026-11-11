@@ -69,7 +69,7 @@ describe("renderHomePage", () => {
     expect(html).toContain("Aspiradoras robot · 10 de noviembre de 2026");
     expect(html).toContain("9 modelos comparados");
     expect(html).toContain("4 publicados");
-    expect(html).toContain("Precios de lista al 10 de noviembre de 2026, sin envío ni cuotas.");
+    expect(html).toContain("Precios actuales al 10 de noviembre de 2026, sin envío ni cuotas.");
     for (const id of ["hoy", "como", "canal"]) expect(html).toContain(`id="${id}"`);
   });
 
@@ -95,7 +95,7 @@ describe("renderHomePage", () => {
     const a = renderHomePage({ ...i, mode: "archive", run_date: "2026-11-09" });
     expect(a).toContain("Los imperdibles del 9 de noviembre de 2026");
     expect(a).toContain("Aspiradoras robot · 9 de noviembre de 2026");
-    expect(a).toContain("Precios de lista al 9 de noviembre de 2026");
+    expect(a).toContain("Precios actuales al 9 de noviembre de 2026");
   });
 
   it("omits the category and separator when the name is null", () => {

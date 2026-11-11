@@ -13,13 +13,17 @@
 
 ## V1 Previous/list price in catalog offers
 
-- Status: PENDING OWNER. Needs `pnpm verify:ml "xiaomi s40c"` (prints whether `original_price`, `regular_amount` or `base_price` appear in the offers).
+- Status: DONE 2026-11-11.
+- Check: `pnpm verify:ml "xiaomi s40c"` found 5 catalog products, all answering `/products/{id}/items` with 404 `No winners found` (no offers). `pnpm verify:ml "aspiradora robot"` used `MLA44716485` with 3 offers: `original_price` present, `regular_amount` and `base_price` absent.
 - Fallback named by the spec: if none appears, the public legend says "precio actual" instead of "precio de lista".
-- PRICE_LABEL: PENDING OWNER (write `PRICE_LABEL: actual` or `PRICE_LABEL: lista` as the last line of this section once known; the output plan reads it).
+- Ruling (owner, 2026-11-11): although `original_price` appears, the pipeline compares ML's selling `price` (possibly discounted) and never reads `original_price`, so calling it "precio de lista" would mislabel discounted offers. The label is "actual".
+- Follow-up: some modelos have no catalog offers at all (S40C on 2026-11-11); `getOffers` now returns `[]` on that 404 so the model is skipped as having no offers instead of failing the run.
+- PRICE_LABEL: actual
 
 ## V2 ML rate limits
 
-- Status: PENDING OWNER. Headers containing `ratelimit` or `retry` are printed by `pnpm verify:ml "xiaomi s40c"`.
+- Status: DONE 2026-11-11. Headers containing `ratelimit` or `retry` are printed by `pnpm verify:ml "xiaomi s40c"`.
+- Result: 2026-11-11, 13 calls across two `verify:ml` runs: no `ratelimit`/`retry` headers and no 429. `query_budget` stays at 150.
 - If no headers appear, keep `query_budget` at 150. If any 429 appeared while recording, owner lowers it to 100: `pnpm wrangler d1 execute imperdibles --remote --command "UPDATE config SET value='100' WHERE name='query_budget'"`.
 
 ## V3 Refresh token single use
