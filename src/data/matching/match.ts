@@ -153,7 +153,11 @@ export function matchListings(ml: Comparable, other: Comparable): Match | null {
 
   const sufML = extractCodeSuffixWords(ml.title);
   const sufOther = extractCodeSuffixWords(other.title);
-  const diff = [...sufML.filter((w) => !sufOther.includes(w)), ...sufOther.filter((w) => !sufML.includes(w))];
+  // The brand written after the code ("Atar21c1pi Atma") is not a different model.
+  const brandWords = new Set([ml.brand, other.brand].flatMap((b) => (b ? normalizeWords(b) : [])));
+  const diff = [...sufML.filter((w) => !sufOther.includes(w)), ...sufOther.filter((w) => !sufML.includes(w))].filter(
+    (w) => !brandWords.has(w),
+  );
   if (diff.length > 0) lower("model_suffix", { suffixes: diff });
 
   const pa = ml.price_ars;
@@ -179,6 +183,8 @@ export function pickCatalogProduct(
     if (match?.confidence === "high") highs.push({ product, match });
   }
   if (highs.length === 0) return { product: null, reason: "no_high" };
-  if (highs.length > 1) return { product: null, reason: "multiple_high" };
-  return highs[0]!;
+  if (highs.length === 1) return highs[0]!;
+  // Several catalog products for the same model: a single shared GTIN is the stronger evidence.
+  const byGtin = highs.filter((h) => h.match.rule === "gtin");
+  return byGtin.length === 1 ? byGtin[0]! : { product: null, reason: "multiple_high" };
 }

@@ -375,3 +375,56 @@ describe("GTIN lists", () => {
     expect(matchListings(padded, fravegaE10)?.rule).toBe("gtin");
   });
 });
+
+// Real ML catalog results on 2026-11-11 for models that ended no_high although the GTIN is shared.
+describe("false negatives from the 2026-11-11 run", () => {
+  const product = (id: string, s: { title: string; brand: string; model: string; gtin?: string | null }): MlProduct => ({
+    ...ml(s),
+    id,
+    url: "https://example.test/p",
+    image_url: null,
+  });
+
+  it("does not read 'Filtro HEPA' in a feature list as an accessory (Ultracomb AS-6061)", () => {
+    const easy = other({ title: "Aspiradora Robot 120 W 0,65 L Gris AS-6061 Ultracomb", brand: "Ultracomb", gtin: "7790368297220" }, 229995);
+    const robot = ml({ title: "Aspiradora Robot Ultracomb AS-6061 1600Pa Filtro HEPA 60min 650ml Modos Auto Punto Fijo", brand: "Ultracomb", model: "AS-6061", gtin: "7790368297220" });
+    expect(matchListings(robot, easy)).toMatchObject({ confidence: "high", rule: "gtin" });
+  });
+
+  it("does not read 'Filtro Hepa' after a comma as an accessory (Electrolux ERB62)", () => {
+    const fravega = other({ title: "Aspiradora Robot Electrolux 4 en 1 Wi-Fi Experience Mapeo Inteligente ERB62", brand: "Electrolux", gtin: "7909569501665" }, 499999);
+    const robot = ml({ title: "Aspiradora Robot Electrolux 4 En 1 Wi-fi Experience Mapeo Inteligente Blanca, Google Home, Alexa, Filtro Hepa Erb62", brand: "Electrolux", model: "ERB62", gtin: "07909569501665" });
+    expect(matchListings(robot, fravega)).toMatchObject({ confidence: "high", rule: "gtin" });
+  });
+
+  it("still treats a title that starts with 'Filtro HEPA' as an accessory", () => {
+    expect(hasAccessoryWords("Filtro HEPA Aspiradora Robot Electrolux ERB62")).toBe(true);
+  });
+
+  it("does not count 'Mapeo' after the code as a different model (Smartlife SL-RVCL050)", () => {
+    const fravega = other({ title: "Aspiradora Robot Smartlife con Sensor Láser SL-RVCL050", brand: "Smartlife", gtin: "7798081281502" }, 329999);
+    const robot = ml({ title: "Aspiradora Robot Smartlife RVCL050 Mapeo Laser Barre y Trapea", brand: "Smartlife", model: "SL-RVCL050", gtin: "07798081281502" });
+    expect(matchListings(robot, fravega)).toMatchObject({ confidence: "high", rule: "gtin" });
+  });
+
+  describe("Atma ATAR21C1PI", () => {
+    const jumbo = other({ title: "Aspiradora Robot Atar21c1pi Atma", brand: "ATMA", gtin: "7798192369120" }, 439999);
+    const byGtin = product("MLA20033508", { title: "Aspiradora Robot Atma Atar21c1pi - Trapeadora - Anti-choque Color Blanco", brand: "Atma", model: "ATAR21C1PI", gtin: "7798192369120" });
+    const noGtin = product("MLA79828952", { title: "Aspiradora Robot Atma Atar21c1pi Trapeadora Y Anti-choque Gris", brand: "Atma", model: "ATAR21C1PI" });
+    const otherGtin = product("MLA18642318", { title: "Aspiradora Trapeadora Robot Atma ATAR21C1PI Blanca", brand: "Atma", model: "ATAR21C1PI", gtin: "7798105029219, 17798192369127" });
+
+    it("does not count the brand written after the code as a suffix", () => {
+      expect(matchListings(byGtin, jumbo)).toMatchObject({ confidence: "high", rule: "gtin" });
+      expect(matchListings(noGtin, jumbo)).toMatchObject({ confidence: "high", rule: "brand_code_variant" });
+    });
+
+    it("picks the GTIN match when a code-only match is also high", () => {
+      expect(pickCatalogProduct(jumbo, [otherGtin, noGtin, byGtin]).product?.id).toBe("MLA20033508");
+    });
+
+    it("stays multiple_high when two products match on GTIN", () => {
+      const twin = { ...byGtin, id: "MLA2" };
+      expect(pickCatalogProduct(jumbo, [byGtin, twin])).toMatchObject({ product: null, reason: "multiple_high" });
+    });
+  });
+});

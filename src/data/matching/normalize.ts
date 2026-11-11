@@ -25,7 +25,7 @@ const HARMLESS_SUFFIX_WORDS: ReadonlySet<string> = new Set([
   "NEGRO", "NEGRA", "BLANCO", "BLANCA", "GRIS", "AZUL", "ROJO", "ROJA", "VERDE", "ROSA",
   "PLATA", "PLATEADO", "PLATEADA", "DORADO", "DORADA", "BEIGE",
   // Generic descriptors stores append after the code ("Xiaomi S40C Láser"); they never name a different model.
-  "LASER", "LIDAR", "WIFI", "ROBOT", "ASPIRADORA", "TRAPEADORA",
+  "LASER", "LIDAR", "WIFI", "ROBOT", "ASPIRADORA", "TRAPEADORA", "MAPEO",
 ]);
 
 function stripAccents(s: string): string {
@@ -114,11 +114,16 @@ function wordsWithPlus(title: string): string[] {
 const isBundleAt = (words: string[], i: number) =>
   BUNDLE_WORDS.has(words[i]!) && i > 0 && BUNDLE_LINKS.has(words[i - 1]!);
 
+// "Filtro HEPA" inside a robot's feature list names a part it has, not the product sold; a title that
+// starts with it still sells the filter.
+const isFeatureFilterAt = (words: string[], i: number) =>
+  i > 0 && (words[i] === "FILTRO" || words[i] === "FILTROS") && words[i + 1] === "HEPA";
+
 export function hasAccessoryWords(title: string): boolean {
   const words = wordsWithPlus(title);
   if (words.length === 0) return false;
   if (words[0] === "BASE") return true;
-  return words.some((w, i) => ACCESSORY_WORDS.has(w) && !isBundleAt(words, i));
+  return words.some((w, i) => ACCESSORY_WORDS.has(w) && !isBundleAt(words, i) && !isFeatureFilterAt(words, i));
 }
 
 // "con base", "y estacion", "+ dock": the title sells the unit together with the extra.
