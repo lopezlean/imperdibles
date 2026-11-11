@@ -78,3 +78,17 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 ## V1 price label
 
 - V1 price label: PENDING OWNER. `PRICE_LABEL` in `src/output/copy.ts` is `"lista"` until `docs/verification/data.md` V1 is recorded; switch it there.
+
+## V-O8 Recorded run
+
+- Status: PENDING OWNER.
+- Check: **Owner runs** `pnpm fixtures:record run aspiradoras-robot` with real Mercado Libre credentials, commits the resulting `fixtures/runs/<date>-aspiradoras-robot` directory, then `pnpm vitest run test/e2e`. The recorded-run block of `test/e2e/full-run.test.ts` stops skipping itself (`skipped: fixtures/runs has no recording (owner records it with real ML credentials)`) and must pass.
+- Result: PENDING OWNER.
+- Fallback: if the recording lacks the revalidation reads (for example the Frávega search by model code), record again; the composed-replay end-to-end test keeps covering the flow meanwhile.
+
+## V-O6 Go-live
+
+- Status: PENDING OWNER (deadline 24/11/2026).
+- Check: **Owner runs**, in this order: (1) declare the site, the Telegram channel and the X account in the affiliate program; (2) `pnpm wrangler secret put TELEGRAM_CHANNEL_ID` with the public channel id; (3) set `TELEGRAM_CHANNEL_URL` in `wrangler.toml` to the public channel link (replacing the placeholder) and run `pnpm worker:deploy`; (4) first real morning: the shortlist arrives, paste the links, the 11:00 post appears in the channel and the page shows "Los imperdibles de hoy".
+- Result: PENDING OWNER. The owner pastes each result and the agent records it here.
+- Fallback: none named; if a step fails, paste the printed error and stop.
