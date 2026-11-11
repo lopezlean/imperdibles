@@ -1,4 +1,4 @@
-# Roadmap: imperdibles.ar
+# Roadmap: imperdibles.com.ar
 
 Actualizado el 10/11/2026. Reemplaza el plan de fases de `idea.md` en los puntos que las pruebas invalidaron.
 
@@ -26,7 +26,7 @@ Alcance con ese tiempo:
 
 - Núcleo primero: Frávega como única tienda y una categoría por corrida, hasta que la lista de candidatos funcione de punta a punta.
 - Después se suman dos tiendas más y la rotación de categorías, que pasan de la Fase 2 a esta fase.
-- Página única en imperdibles.ar con las ofertas del día. Sirve como medio declarable en el programa de afiliados y adelanta la indexación; las páginas por producto siguen en la Fase 3.
+- Página única en imperdibles.com.ar con las ofertas del día. Sirve como medio declarable en el programa de afiliados y adelanta la indexación; las páginas por producto siguen en la Fase 3.
 - Publicación automática en Telegram. La de X queda sujeta a verificar los límites y el costo de su API; si no cierra, se publica a mano.
 - La tarjeta es una plantilla única, sin variantes.
 
@@ -41,7 +41,7 @@ Calendario:
 |---|---|---|
 | Hasta el 15/11 | Verificaciones de la API; recolector y filtro generando la lista de candidatos | Declarar medios, condición fiscal, crear el canal y el bot de Telegram |
 | Hasta el 20/11 | Lista corta diaria, tarjeta y publicación en Telegram; corridas de prueba sin publicar | Revisar tarjetas y candidatos, ajustar el umbral |
-| Hasta el 24/11 | Dos tiendas más, rotación de categorías, página única en imperdibles.ar | Publicar las primeras ofertas reales, verificar la API de X |
+| Hasta el 24/11 | Dos tiendas más, rotación de categorías, página única en imperdibles.com.ar | Publicar las primeras ofertas reales, verificar la API de X |
 | 25 al 27/11 | Corridas diarias reales, solo correcciones | Pegar links de afiliado cada mañana, publicar en X |
 
 Antes de construir:
@@ -71,7 +71,7 @@ Para construir, en este orden:
 ## Fase 3: web y doble sello (desde enero de 2027)
 
 - Sello "precio más bajo en 30 días", con el historial propio acumulado desde la Fase 1.
-- Sitio imperdibles.ar con las ofertas del día y una página por producto, pensado para buscadores.
+- Sitio imperdibles.com.ar con las ofertas del día y una página por producto, pensado para buscadores.
 - Gráfica de historial por producto.
 
 ## Decisiones abiertas

@@ -105,7 +105,7 @@ describe("Worker CPU budget (cap 8 ms median)", () => {
       message: { message_id: 501, chat: { id: 42, type: "private" }, text: LINK, reply_to_message: { message_id: 200 } },
     });
     const req = () =>
-      new Request("https://imperdibles.ar/telegram/webhook", {
+      new Request("https://imperdibles.com.ar/telegram/webhook", {
         method: "POST",
         headers: { "X-Telegram-Bot-Api-Secret-Token": "hook-secret" },
         body: update,
@@ -132,10 +132,10 @@ describe("Worker CPU budget (cap 8 ms median)", () => {
   });
 
   it("GET /: serves the stored page with 5 published items", async () => {
-    const res = await handleFetch(new Request("https://imperdibles.ar/"), deps);
+    const res = await handleFetch(new Request("https://imperdibles.com.ar/"), deps);
     expect(res.status).toBe(200);
     expect(await res.text()).toContain("Robot aspirador 0");
-    const us = await medianCpuUs(async () => {}, async () => (await handleFetch(new Request("https://imperdibles.ar/"), deps)).text());
+    const us = await medianCpuUs(async () => {}, async () => (await handleFetch(new Request("https://imperdibles.com.ar/"), deps)).text());
     console.log(`cpu median GET /: ${us} us`);
     expect(us).toBeLessThan(CAP_US);
   });

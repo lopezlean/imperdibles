@@ -19,7 +19,7 @@ export const PRICE_LABEL: "lista" | "actual" = "lista" as "lista" | "actual";
 export const AFFILIATE_LEGEND =
   "Los enlaces a Mercado Libre son de afiliado: recibimos una comisión por cada compra, sin costo adicional.";
 
-export const NOT_AFFILIATED = "imperdibles.ar no pertenece a Mercado Libre ni a las tiendas comparadas.";
+export const NOT_AFFILIATED = "imperdibles.com.ar no pertenece a Mercado Libre ni a las tiendas comparadas.";
 
 /** Page and card copy fixed by the confirmed design (Design reference appendix). Worker-safe. */
 export const PAGE_TITLE_HERO = (threshold: string): string =>

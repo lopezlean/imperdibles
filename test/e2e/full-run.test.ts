@@ -39,7 +39,7 @@ const SKIP_RECORDED = "skipped: fixtures/runs has no recording (owner records it
 const ENV: LocalEnv = {
   mlAppId: "fake-app-id",
   mlClientSecret: "fake-client-secret",
-  mlRedirectUri: "https://imperdibles.ar",
+  mlRedirectUri: "https://imperdibles.com.ar",
   cfAccountId: "fake-account",
   cfApiToken: "fake-cf-token",
   d1DatabaseId: "fake-db",

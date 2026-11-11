@@ -19,18 +19,18 @@ function makeDeps(): WorkerDeps {
 
 describe("worker /healthz", () => {
   it("answers 200 ok after querying the database", async () => {
-    const res = await handleFetch(new Request("https://imperdibles.ar/healthz"), makeDeps());
+    const res = await handleFetch(new Request("https://imperdibles.com.ar/healthz"), makeDeps());
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("ok");
   });
 
   it("answers 404 for any other path", async () => {
-    const res = await handleFetch(new Request("https://imperdibles.ar/nada"), makeDeps());
+    const res = await handleFetch(new Request("https://imperdibles.com.ar/nada"), makeDeps());
     expect(res.status).toBe(404);
   });
 
   it("answers 405 for non-GET on /healthz", async () => {
-    const res = await handleFetch(new Request("https://imperdibles.ar/healthz", { method: "POST" }), makeDeps());
+    const res = await handleFetch(new Request("https://imperdibles.com.ar/healthz", { method: "POST" }), makeDeps());
     expect(res.status).toBe(405);
   });
 });

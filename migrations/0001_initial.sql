@@ -1,4 +1,4 @@
--- imperdibles.ar phase 1: initial schema (spec section 4, "Modelo de datos").
+-- imperdibles.com.ar phase 1: initial schema (spec section 4, "Modelo de datos").
 -- Prices are integer pesos. Dates are ISO 8601 text.
 
 CREATE TABLE stores (

@@ -6,7 +6,7 @@ exports[`renderHomePage > matches the snapshot (not the check) 1`] = `
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>imperdibles.ar</title>
+<title>imperdibles.com.ar</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
 body{margin:0}
@@ -153,7 +153,7 @@ Abrir el canal</a>
 
 <footer style="max-width: 1120px; margin: 0 auto; padding: 0 24px 56px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #5B6472">
 <p style="margin: 0">Los enlaces a Mercado Libre son de afiliado: recibimos una comisión por cada compra, sin costo adicional.</p>
-<p style="margin: 0">imperdibles.ar no pertenece a Mercado Libre ni a las tiendas comparadas.</p>
+<p style="margin: 0">imperdibles.com.ar no pertenece a Mercado Libre ni a las tiendas comparadas.</p>
 </footer>
 
 </div>

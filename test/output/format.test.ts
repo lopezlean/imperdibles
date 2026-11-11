@@ -89,6 +89,6 @@ describe("copy", () => {
     expect(AFFILIATE_LEGEND).toBe(
       "Los enlaces a Mercado Libre son de afiliado: recibimos una comisión por cada compra, sin costo adicional.",
     );
-    expect(NOT_AFFILIATED).toBe("imperdibles.ar no pertenece a Mercado Libre ni a las tiendas comparadas.");
+    expect(NOT_AFFILIATED).toBe("imperdibles.com.ar no pertenece a Mercado Libre ni a las tiendas comparadas.");
   });
 });

@@ -14,7 +14,7 @@ const ok = JSON.parse(okBody) as { access_token: string; refresh_token: string }
 const env: LocalEnv = {
   mlAppId: "123",
   mlClientSecret: "fake-client-secret",
-  mlRedirectUri: "https://imperdibles.ar",
+  mlRedirectUri: "https://imperdibles.com.ar",
   cfAccountId: "",
   cfApiToken: "",
   d1DatabaseId: "",
@@ -42,8 +42,8 @@ const respond = (body: string, status = 200) =>
 
 describe("authorizationUrl", () => {
   it("builds the authorization URL", () => {
-    expect(authorizationUrl({ mlAppId: "123", mlRedirectUri: "https://imperdibles.ar" })).toBe(
-      "https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=123&redirect_uri=https%3A%2F%2Fimperdibles.ar",
+    expect(authorizationUrl({ mlAppId: "123", mlRedirectUri: "https://imperdibles.com.ar" })).toBe(
+      "https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=123&redirect_uri=https%3A%2F%2Fimperdibles.com.ar",
     );
   });
 });
@@ -129,7 +129,7 @@ describe("exchangeCode", () => {
     const form = new URLSearchParams((fetch.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
     expect(form.get("grant_type")).toBe("authorization_code");
     expect(form.get("code")).toBe("TG-fake-code");
-    expect(form.get("redirect_uri")).toBe("https://imperdibles.ar");
+    expect(form.get("redirect_uri")).toBe("https://imperdibles.com.ar");
     expect(await row(db)).toEqual([
       { id: 1, access_token: ok.access_token, refresh_token: ok.refresh_token, expires_at: plus(21600_000) },
     ]);

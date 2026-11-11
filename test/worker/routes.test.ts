@@ -24,7 +24,7 @@ function deps(over: Partial<Env> = {}): WorkerDeps {
   return { db, env, now: () => NOW, telegram };
 }
 
-const url = (p: string) => `https://imperdibles.ar${p}`;
+const url = (p: string) => `https://imperdibles.com.ar${p}`;
 const webhook = (headers: Record<string, string>, body = "{}", method = "POST") =>
   new Request(url("/telegram/webhook"), { method, headers, body: method === "POST" ? body : undefined });
 

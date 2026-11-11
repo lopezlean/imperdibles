@@ -562,7 +562,7 @@ const SECRETS = { token: "tok-SECRET-access", clientSecret: "client-SECRET-value
 const ENV: LocalEnv = {
   mlAppId: "app-id",
   mlClientSecret: SECRETS.clientSecret,
-  mlRedirectUri: "https://imperdibles.ar",
+  mlRedirectUri: "https://imperdibles.com.ar",
   cfAccountId: "acct",
   cfApiToken: SECRETS.cfToken,
   d1DatabaseId: "db",

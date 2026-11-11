@@ -92,10 +92,10 @@ const fakeTelegram = (): TelegramClient =>
 
 const publishNow = (now: Date, tg = fakeTelegram()) =>
   handleFetch(
-    new Request("https://imperdibles.ar/internal/publish-now", { method: "POST", headers: { Authorization: "Bearer pub-secret" } }),
+    new Request("https://imperdibles.com.ar/internal/publish-now", { method: "POST", headers: { Authorization: "Bearer pub-secret" } }),
     workerDeps(now, tg),
   );
-const getHome = (now: Date, method = "GET") => handleFetch(new Request("https://imperdibles.ar/", { method }), workerDeps(now));
+const getHome = (now: Date, method = "GET") => handleFetch(new Request("https://imperdibles.com.ar/", { method }), workerDeps(now));
 
 beforeEach(() => {
   db = createSqliteClient();

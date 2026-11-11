@@ -4,7 +4,7 @@ import { DATA_ENV_KEYS, MissingEnvError, loadLocalEnv } from "../../src/shared/e
 const full = {
   ML_APP_ID: "app-id-value",
   ML_CLIENT_SECRET: "secret-value",
-  ML_REDIRECT_URI: "https://imperdibles.ar",
+  ML_REDIRECT_URI: "https://imperdibles.com.ar",
   CLOUDFLARE_ACCOUNT_ID: "acc-value",
   CLOUDFLARE_API_TOKEN: "token-value",
   D1_DATABASE_ID: "db-value",

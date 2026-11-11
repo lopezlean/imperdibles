@@ -50,12 +50,12 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 - Status: PENDING OWNER.
 - Check: owner confirms whether the affiliate program terms allow catalog photos.
 - Result: PENDING OWNER.
-- Default: placeholder only ("Foto del producto"); `imagen_url` is ignored.
+- Default: placeholder only ("Foto del producto"); `image_url` is ignored.
 
 ## V-O5 Deploy and webhook
 
 - Status: PENDING OWNER.
-- Check: **Owner runs.** With `TELEGRAM_CHANNEL_ID` still pointing to the private test channel (Worker secret and `.env`), after the prerequisites above: `pnpm db:migrate:remote`, `pnpm worker:deploy`, route the custom domain `imperdibles.ar` to the Worker in the dashboard, then `pnpm telegram:set-webhook`. Expected last line: `Webhook was set`.
+- Check: **Owner runs.** With `TELEGRAM_CHANNEL_ID` still pointing to the private test channel (Worker secret and `.env`), after the prerequisites above: `pnpm db:migrate:remote`, `pnpm worker:deploy`, route the custom domain `imperdibles.com.ar` to the Worker in the dashboard, then `pnpm telegram:set-webhook`. Expected last line: `Webhook was set`.
 - Result: PENDING OWNER.
 - Fallback: none named. If the expected line does not appear, paste the printed Telegram `description` and stop before the dry runs.
 

@@ -54,7 +54,7 @@ describe("renderHomePage", () => {
   it("renders the document shell", () => {
     expect(html.startsWith("<!doctype html>")).toBe(true);
     expect(html).toContain('<html lang="es">');
-    expect(html).toContain("<title>imperdibles.ar</title>");
+    expect(html).toContain("<title>imperdibles.com.ar</title>");
     expect(html).toContain('name="viewport"');
     expect(html).toContain("fonts.googleapis.com/css2?family=Inter");
     expect(html).toContain("#C2410C");

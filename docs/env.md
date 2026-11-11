@@ -17,7 +17,7 @@ PUBLISH_NOW_SECRET=
 WORKER_BASE_URL=
 ```
 
-`ML_REDIRECT_URI` takes the value `https://imperdibles.ar`.
+`ML_REDIRECT_URI` takes the value `https://imperdibles.com.ar`.
 
 ## Owner step: create the D1 database
 

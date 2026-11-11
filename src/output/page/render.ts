@@ -133,7 +133,7 @@ export function renderHomePage(input: PageInput): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>imperdibles.ar</title>
+<title>imperdibles.com.ar</title>
 <link href="${FONTS}" rel="stylesheet">
 <style>
 body{margin:0}
