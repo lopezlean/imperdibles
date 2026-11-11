@@ -1,0 +1,99 @@
+import { candidateSchema } from "../../contract/candidate-list.js";
+import type { RevalidationReport } from "../../contract/local-hooks.js";
+import { loadConfig } from "../../shared/config.js";
+import type { SqlClient } from "../../shared/db/sql-client.js";
+import { artDate, artTime } from "../../shared/time.js";
+import { formatThreshold } from "../format.js";
+import type { TelegramClient } from "../telegram/client.js";
+import type { RenderCard } from "./send-shortlist.js";
+
+export type AfterRevalidationDeps = {
+  db: SqlClient;
+  telegram: TelegramClient;
+  ownerChatId: string;
+  render: RenderCard;
+  fetch: typeof fetch;
+  workerBaseUrl: string;
+  publishSecret: string;
+  now: () => Date;
+};
+
+const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+
+/** `H:MM` or `HH:MM` to a zero-padded `HH:MM`, so the comparison is lexicographic and safe. */
+const padTime = (t: string): string => t.trim().padStart(5, "0");
+
+/**
+ * Runs after the data pipeline revalidated the chosen candidates: tells the owner what dropped, re-uploads cards
+ * whose prices changed, and asks the Worker to publish when the publication hour has passed and something is pending.
+ * Every owner message and every re-upload is isolated, so one failure never blocks the rest.
+ */
+export async function afterRevalidation(deps: AfterRevalidationDeps, report: RevalidationReport): Promise<void> {
+  const { db, telegram, ownerChatId, render } = deps;
+  const now = deps.now();
+  const config = await loadConfig(db);
+
+  const tell = async (text: string): Promise<void> => {
+    try {
+      await telegram.sendMessage({ chat_id: ownerChatId, text });
+    } catch (e) {
+      console.error(`after-revalidation: owner message failed: ${errText(e)}`);
+    }
+  };
+
+  for (const inv of report.invalidated) {
+    await tell(
+      inv.reason === "below_threshold"
+        ? `No se publica ${inv.titulo}: el precio cambió y ya no pasa el ${formatThreshold(config.umbral_pct)}%.`
+        : `No se publica ${inv.titulo}: la oferta ya no está disponible.`,
+    );
+  }
+
+  const fecha = artDate(now);
+  const stale = await db.all<{ id: string; payload: string }>(
+    `SELECT c.id, c.payload FROM candidatos c JOIN corridas r ON r.id = c.corrida_id
+     WHERE r.fecha = ? AND c.estado = 'validado' AND c.telegram_file_id IS NULL`,
+    [fecha],
+  );
+  for (const row of stale) {
+    let titulo = row.id;
+    try {
+      const candidate = candidateSchema.parse(JSON.parse(row.payload));
+      titulo = candidate.titulo;
+      const png = await render(candidate, { fecha });
+      const sent = await telegram.sendPhoto({
+        chat_id: ownerChatId,
+        photo: { png },
+        caption: `Tarjeta actualizada: ${titulo}`,
+      });
+      await db.run("UPDATE candidatos SET telegram_file_id = ? WHERE id = ?", [sent.file_id, row.id]);
+    } catch (e) {
+      console.error(`after-revalidation: re-upload of ${row.id} failed: ${errText(e)}`);
+      await tell(`No se pudo actualizar la tarjeta de ${titulo}. Revisar antes de publicar.`);
+    }
+  }
+
+  if (artTime(now) < padTime(config.hora_publicacion)) return;
+
+  let pending = report.validated.length > 0;
+  if (!pending) {
+    const rows = await db.all<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM candidatos c JOIN corridas r ON r.id = c.corrida_id
+       WHERE r.fecha = ? AND c.estado = 'validado'
+         AND NOT EXISTS (SELECT 1 FROM salidas s WHERE s.candidato_id = c.id AND s.canal = 'telegram_canal')`,
+      [fecha],
+    );
+    pending = (rows[0]?.n ?? 0) > 0;
+  }
+  if (!pending) return;
+
+  const url = `${deps.workerBaseUrl.replace(/\/$/, "")}/internal/publish-now`;
+  const doFetch = deps.fetch; // never deps.fetch(...): a foreign `this` breaks the global fetch
+  try {
+    const res = await doFetch(url, { method: "POST", headers: { Authorization: `Bearer ${deps.publishSecret}` } });
+    if (!res.ok) throw new Error(`publish-now answered ${res.status}`);
+  } catch (e) {
+    console.error(`after-revalidation: publish-now failed: ${errText(e)}`);
+    await tell("No se pudo pedir la publicación inmediata. Revisar el Worker o publicar más tarde.");
+  }
+}

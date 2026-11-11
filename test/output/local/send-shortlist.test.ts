@@ -168,8 +168,8 @@ const env = (over: Partial<LocalEnv> = {}): LocalEnv => ({
   telegramBotToken: "123:SECRET-TOKEN",
   telegramOwnerChatId: OWNER,
   telegramChannelId: "",
-  publishNowSecret: "",
-  workerBaseUrl: "",
+  publishNowSecret: "publish-secret",
+  workerBaseUrl: "https://worker.example",
   ...over,
 });
 
@@ -187,6 +187,10 @@ describe("createOutputHooks", () => {
     expect(() => createOutputHooks({ db, env: env({ telegramOwnerChatId: "" }), now: () => new Date(), fetch })).toThrow(
       /TELEGRAM_OWNER_CHAT_ID/,
     );
+    const mk = (over: Partial<LocalEnv>) => () => createOutputHooks({ db, env: env(over), now: () => new Date(), fetch });
+    expect(mk({ workerBaseUrl: "" })).toThrow(/WORKER_BASE_URL/);
+    expect(mk({ publishNowSecret: "" })).toThrow(/PUBLISH_NOW_SECRET/);
+    expect(mk({ publishNowSecret: "" })).not.toThrow(/publish-secret/);
   });
 
   it("onCandidatesReady rejects when every candidate failed to send", async () => {
