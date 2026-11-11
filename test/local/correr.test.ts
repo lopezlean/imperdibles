@@ -177,7 +177,7 @@ describe("imperdibles correr", () => {
     ]);
     const empty = () => new Response("[]", { status: 200 });
     for (const host of ["jumbo", "easy", "coppel"]) {
-      for (const term of ["Philco%20PHRA26N", "Irobot%20M611330"]) routes.set(`https://www.${host}.com.ar/api/catalog_system/pub/products/search?ft=${term}&_from=0&_to=49`, empty);
+      for (const term of ["Philco%20PHRA26N", "Irobot%20M611330", "aspiradora%20robot"]) routes.set(`https://www.${host}.com.ar/api/catalog_system/pub/products/search?ft=${term}&_from=0&_to=49`, empty);
     }
     routes.set(jumboSearchUrl("Philco PHRA26N"), () => new Response(jumbo, { status: 206 }));
     const s = setup({ sqlite, routes });

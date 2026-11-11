@@ -12,8 +12,8 @@ import { StoreFormatError, type Listing, type StoreAdapter } from "./types.js";
 
 export type PipelineDeps = {
   catalog: MlCatalog;
-  primary: StoreAdapter;
-  secondary: StoreAdapter[];
+  /** Every enabled store, in priority order; each is a model source and a rival. */
+  stores: StoreAdapter[];
   rejected: (modelId: string) => Promise<Set<string>>;
   now: () => Date;
   log: (event: string, data: Record<string, unknown>) => void;
@@ -29,7 +29,7 @@ export type PipelineResult = {
   alerts: OwnerAlert[];
 };
 
-type PrimaryEntry = { listing: Listing; brand: string; code: string; model_id: string };
+type ModelEntry = { listing: Listing; brand: string; code: string; model_id: string; byStore: Map<string, Listing[]> };
 
 // One extra ML query when the first has no high match: the store's own spelling of the code if it differs, else the code alone.
 function fallbackQuery(listing: Listing, code: string): string {
@@ -56,7 +56,7 @@ function mlListing(product: MlProduct, offer: MlOffer, observed_at: string): Lis
   };
 }
 
-/** Reads the primary store, finds each model in the ML catalog, matches rivals and applies the threshold. */
+/** Reads every enabled store, finds each model in the ML catalog, matches rivals and applies the threshold. */
 export async function runPipeline(
   deps: PipelineDeps,
   input: { run_id: string; run_date: string; category: Category; threshold_pct: number },
@@ -82,23 +82,36 @@ export async function runPipeline(
     if (!alerts.some((a) => a.kind === "store_format_error" && a.store === store)) alerts.push({ kind: "store_format_error", store });
   };
 
-  // 1. Primary store: first page of every term, deduped by external_ref.
+  // 1. Every enabled store: all pages of every term, deduped per store by external_ref.
   const found = new Map<string, Listing>();
-  try {
-    for (const term of input.category.terms) {
-      for (const l of await deps.primary.search(term)) {
-        record(l);
-        if (!found.has(l.external_ref)) found.set(l.external_ref, l);
+  const storeErrors: StoreFormatError[] = [];
+  collect: for (const store of deps.stores) {
+    try {
+      for (const term of input.category.terms) {
+        for (const l of await store.search(term)) {
+          record(l);
+          if (!found.has(rivalKey(l))) found.set(rivalKey(l), l);
+        }
       }
+    } catch (error) {
+      if (error instanceof BudgetExhaustedError) {
+        partial = true;
+        deps.log("budget_exhausted", { stage: "stores", store: store.id });
+        break collect;
+      }
+      if (!(error instanceof StoreFormatError)) throw error;
+      storeErrors.push(error);
+      droppedStores.add(store.id);
+      partial = true;
+      alertStore(store.id);
+      deps.log("store_dropped", { store: store.id, reason: error.message });
     }
-  } catch (error) {
-    if (!(error instanceof BudgetExhaustedError)) throw error;
-    partial = true;
-    deps.log("budget_exhausted", { stage: "primary" });
   }
+  // A single broken store (or all of them) leaves nothing to compare: fail the run as before.
+  if (storeErrors.length > 0 && droppedStores.size === deps.stores.length) throw storeErrors[0];
 
-  // 2. One entry per model: the cheapest primary listing.
-  const entries = new Map<string, PrimaryEntry>();
+  // 2. One entry per model, whatever store lists it: the cheapest listing represents it, every store's listings are kept.
+  const entries = new Map<string, ModelEntry>();
   for (const l of found.values()) {
     const code = extractModelCodes(l.title)[0];
     if (code === undefined) {
@@ -111,11 +124,16 @@ export async function runPipeline(
     }
     const model_id = `${normalizeBrand(l.brand)}:${code}`;
     const current = entries.get(model_id);
-    if (current === undefined || l.price_ars < current.listing.price_ars) entries.set(model_id, { listing: l, brand: l.brand, code, model_id });
+    if (current === undefined) {
+      entries.set(model_id, { listing: l, brand: l.brand, code, model_id, byStore: new Map([[l.store, [l]]]) });
+      continue;
+    }
+    current.byStore.set(l.store, [...(current.byStore.get(l.store) ?? []), l]);
+    if (l.price_ars < current.listing.price_ars) Object.assign(current, { listing: l, brand: l.brand });
   }
 
-  async function processModel(entry: PrimaryEntry): Promise<void> {
-    const { listing, brand, code, model_id } = entry;
+  async function processModel(entry: ModelEntry): Promise<void> {
+    const { listing, brand, code, model_id, byStore } = entry;
     const term = `${brand} ${code}`;
     const modelRow: ModelRow = {
       id: model_id,
@@ -159,28 +177,21 @@ export async function runPipeline(
     const rejected = await deps.rejected(model_id);
     const rivals: Rival[] = [];
 
-    // 6. Primary listing again, now with the ML price (price guard).
-    const primaryMatch: Match | null = matchListings(priced, listing);
-    if (primaryMatch !== null) {
-      rows.push({ model_id, store: listing.store, external_ref: listing.external_ref, match: primaryMatch });
-      if (primaryMatch.confidence === "high" && primaryMatch.rule !== "partial" && !rejected.has(rivalKey(listing))) {
-        rivals.push({ listing, rule: primaryMatch.rule });
-      }
-    }
-
-    // 5. Secondary stores: cheapest high per store.
-    for (const store of deps.secondary) {
+    // 5. Per store: its own listings of the model, else a per-model search; cheapest high per store.
+    for (const store of deps.stores) {
       if (droppedStores.has(store.id)) continue;
-      let read: Listing[];
-      try {
-        read = await store.search(term);
-      } catch (error) {
-        if (!(error instanceof StoreFormatError)) throw error;
-        droppedStores.add(store.id);
-        partial = true;
-        alertStore(store.id);
-        deps.log("store_dropped", { store: store.id, reason: error.message });
-        continue;
+      let read = byStore.get(store.id);
+      if (read === undefined) {
+        try {
+          read = await store.search(term);
+        } catch (error) {
+          if (!(error instanceof StoreFormatError)) throw error;
+          droppedStores.add(store.id);
+          partial = true;
+          alertStore(store.id);
+          deps.log("store_dropped", { store: store.id, reason: error.message });
+          continue;
+        }
       }
       let cheapest: Rival | null = null;
       for (const l of read) {
@@ -230,14 +241,15 @@ export async function runPipeline(
     });
   }
 
-  const queue = [...entries.values()];
+  // Models listed by more stores first (stable: ties keep store and discovery order), so a tight budget goes to the likeliest comparisons.
+  const queue = [...entries.values()].sort((x, y) => y.byStore.size - x.byStore.size);
   for (const [i, entry] of queue.entries()) {
     try {
       await processModel(entry);
     } catch (error) {
       if (error instanceof BudgetExhaustedError) {
         partial = true;
-        deps.log("budget_exhausted", { stage: "model", model_id: entry.model_id });
+        deps.log("budget_exhausted", { stage: "model", model_id: entry.model_id, unprocessed: queue.length - i });
         for (const rest of queue.slice(i)) skip(rest.model_id, "budget_exhausted");
         break;
       }

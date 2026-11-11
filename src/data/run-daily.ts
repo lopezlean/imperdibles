@@ -104,8 +104,7 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     const result = await runPipeline(
       {
         catalog: createMlCatalog({ http, token }),
-        primary: createFravegaAdapter({ http, now: deps.now, onRejected }),
-        secondary: await enabledSecondaryStores(db, { http, now: deps.now, onRejected }),
+        stores: [createFravegaAdapter({ http, now: deps.now, onRejected }), ...(await enabledSecondaryStores(db, { http, now: deps.now, onRejected }))],
         rejected: (modelId) => rejectedRefs(db, modelId),
         now: deps.now,
         log: (event, data) => deps.stderr(`[${event}] ${JSON.stringify(data)}\n`),

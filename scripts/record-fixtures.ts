@@ -94,8 +94,7 @@ async function recordRun(categoryId: string): Promise<void> {
   const result = await runPipeline(
     {
       catalog,
-      primary,
-      secondary: [],
+      stores: [primary],
       rejected: async () => new Set(), // recordings must not depend on the state of the database
       now,
       log: (event, data) => console.log(`run: ${event} ${JSON.stringify(data)}`),

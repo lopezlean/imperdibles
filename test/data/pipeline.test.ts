@@ -82,8 +82,7 @@ function setup(
   });
   const deps: PipelineDeps = {
     catalog: opts.wrapCatalog ? opts.wrapCatalog(catalog) : catalog,
-    primary: opts.wrapPrimary ? opts.wrapPrimary(fravega) : fravega,
-    secondary: opts.secondary ?? [],
+    stores: [opts.wrapPrimary ? opts.wrapPrimary(fravega) : fravega, ...(opts.secondary ?? [])],
     rejected: async (id) => opts.rejected?.(id) ?? new Set(),
     now: () => NOW,
     log,
@@ -120,6 +119,9 @@ function fakeStore(id: string, search: (term: string) => Listing[] | Error): Sto
     },
   };
 }
+
+// Real stores answer the per-model term with that model's listings and the category term with other products.
+const onlyPhilcoTerm = (items: () => Listing[]) => (term: string) => (term === "Philco PHRA26N" ? items() : []);
 
 describe("runPipeline against the composed replay", () => {
   it("builds a valid candidate list priced with the cheapest new ML offer", async () => {
@@ -179,7 +181,7 @@ describe("runPipeline against the composed replay", () => {
   });
 
   it("keeps the cheapest high per secondary store and sorts rivals ascending", async () => {
-    const cetrogar = fakeStore("cetrogar", () => [philcoRival("cetrogar", "/a", 170000), philcoRival("cetrogar", "/b", 150000)]);
+    const cetrogar = fakeStore("cetrogar", onlyPhilcoTerm(() => [philcoRival("cetrogar", "/a", 170000), philcoRival("cetrogar", "/b", 150000)]));
     const { deps } = setup({ secondary: [cetrogar] });
     const r = await runPipeline(deps, INPUT);
     const c = r.list.candidates[0]!;
@@ -189,7 +191,7 @@ describe("runPipeline against the composed replay", () => {
   });
 
   it("never proposes a rival marked rejected", async () => {
-    const cetrogar = fakeStore("cetrogar", () => [philcoRival("cetrogar", "/a", 150000)]);
+    const cetrogar = fakeStore("cetrogar", onlyPhilcoTerm(() => [philcoRival("cetrogar", "/a", 150000)]));
     const rejected = (id: string) => (id === PHILCO_ID ? new Set([`fravega:${PHILCO_REF}`, "cetrogar:/a"]) : new Set<string>());
     const { deps } = setup({ secondary: [cetrogar], rejected });
     const r = await runPipeline(deps, INPUT);
@@ -367,7 +369,7 @@ describe("runPipeline ML fallback query", () => {
 
 describe("revalidationReads", () => {
   it("re-reads the ML offers and each rival store for every candidate", async () => {
-    const cetrogar = fakeStore("cetrogar", () => [philcoRival("cetrogar", "/a", 150000)]);
+    const cetrogar = fakeStore("cetrogar", onlyPhilcoTerm(() => [philcoRival("cetrogar", "/a", 150000)]));
     const { deps, catalog } = setup({ secondary: [cetrogar] });
     const r = await runPipeline(deps, INPUT);
     const offerReads: string[] = [];
@@ -400,8 +402,7 @@ describe("recorded run", () => {
       const http = createBudgetedHttp({ fetch: createReplayFetch(dir), budget: 10_000, sleep: async () => {} });
       const deps: PipelineDeps = {
         catalog: createMlCatalog({ http, token: fakeToken }),
-        primary: createFravegaAdapter({ http, now: () => now, pages: 1 }),
-        secondary: [],
+        stores: [createFravegaAdapter({ http, now: () => now, pages: 1 })],
         rejected: async () => new Set(),
         now: () => now,
         log: () => {},
@@ -414,4 +415,62 @@ describe("recorded run", () => {
       }).toMatchSnapshot();
     },
   );
+});
+
+describe("runPipeline with every store as a model source", () => {
+  const empty = () => fakeStore("fravega", () => []);
+  const CAT = "aspiradora robot";
+  const withCategory = (items: Listing[], perModel: Listing[] = items) => (t: string) => (t === CAT ? items : t === "Philco PHRA26N" ? perModel : []);
+
+  it("builds models from a store that is not Frávega", async () => {
+    const cetrogar = fakeStore("cetrogar", withCategory([philcoRival("cetrogar", "/a", 150000)]));
+    const r = await runPipeline(setup({ wrapPrimary: empty, secondary: [cetrogar] }).deps, INPUT);
+    expect(r.models.map((m) => m.id)).toEqual([PHILCO_ID]);
+    expect(r.list.candidates.map((c) => [c.model_id, c.others.map((o) => o.store)])).toEqual([[PHILCO_ID, ["cetrogar"]]]);
+  });
+
+  it("merges a model listed by two stores into one with both rivals, without searching either again", async () => {
+    const fravega = fakeStore("fravega", (t) => (t === CAT ? [philcoRival("fravega", "/f", 163999)] : []));
+    const cetrogar = fakeStore("cetrogar", withCategory([philcoRival("cetrogar", "/a", 150000)]));
+    const r = await runPipeline(setup({ wrapPrimary: () => fravega, secondary: [cetrogar] }).deps, INPUT);
+    expect(r.models.filter((m) => m.id === PHILCO_ID)).toHaveLength(1);
+    expect(r.list.candidates[0]!.others.map((o) => [o.store, o.price_ars])).toEqual([["cetrogar", 150000], ["fravega", 163999]]);
+    expect(fravega.terms).toEqual([CAT]);
+    expect(cetrogar.terms).toEqual([CAT]);
+  });
+
+  it("searches only the stores that did not list the model", async () => {
+    const fravega = fakeStore("fravega", (t) => (t === CAT ? [philcoRival("fravega", "/f", 163999)] : []));
+    const cetrogar = fakeStore("cetrogar", withCategory([], [philcoRival("cetrogar", "/a", 150000)]));
+    const r = await runPipeline(setup({ wrapPrimary: () => fravega, secondary: [cetrogar] }).deps, INPUT);
+    expect(fravega.terms).toEqual([CAT]);
+    expect(cetrogar.terms).toEqual([CAT, "Philco PHRA26N"]);
+    expect(r.list.candidates[0]!.others.map((o) => o.store)).toEqual(["cetrogar", "fravega"]);
+  });
+
+  it("processes models listed by more stores first", async () => {
+    const solo = listing({ store: "fravega", external_ref: "/s", title: "Aspiradora Robot Smartlife SL-RVCL050", brand: "Smartlife", price_ars: 100000 });
+    const fravega = fakeStore("fravega", (t) => (t === CAT ? [solo, philcoRival("fravega", "/f", 163999)] : []));
+    const cetrogar = fakeStore("cetrogar", withCategory([philcoRival("cetrogar", "/a", 150000)]));
+    const r = await runPipeline(setup({ wrapPrimary: () => fravega, secondary: [cetrogar] }).deps, INPUT);
+    expect(r.models.map((m) => m.id)).toEqual([PHILCO_ID, "SMARTLIFE:SLRVCL050"]);
+  });
+
+  it("stops cleanly mid-models when the budget runs out and logs it", async () => {
+    // fravega page 1 + Philco search + Philco items = 3; the next model has no budget for its ML search.
+    const fravega = fakeStore("fravega", (t) => (t === CAT ? [philcoRival("fravega", "/f", 163999), listing({ store: "fravega", external_ref: "/i", title: "Aspiradora iRobot M611330 Braava Jet M6 Black", brand: "Irobot", price_ars: 100000 })] : []));
+    const cetrogar = fakeStore("cetrogar", withCategory([philcoRival("cetrogar", "/a", 150000)]));
+    const { deps, logs } = setup({ budget: 2, wrapPrimary: () => fravega, secondary: [cetrogar] });
+    const r = await runPipeline(deps, INPUT);
+    expect(r.status).toBe("partial");
+    expect(r.skipped).toEqual([{ model_id: "IROBOT:M611330", reason: "budget_exhausted" }]);
+    expect(r.list.candidates.map((c) => c.model_id)).toEqual([PHILCO_ID]);
+    expect(logs.some((l) => l.event === "budget_exhausted" && l.data.stage === "model")).toBe(true);
+  });
+
+  it("rethrows a store format error only when every store is broken", async () => {
+    const a = fakeStore("fravega", () => new StoreFormatError("fravega", "x"));
+    const b = fakeStore("cetrogar", () => new StoreFormatError("cetrogar", "y"));
+    await expect(runPipeline(setup({ wrapPrimary: () => a, secondary: [b] }).deps, INPUT)).rejects.toBeInstanceOf(StoreFormatError);
+  });
 });
