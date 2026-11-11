@@ -1,0 +1,795 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildCardTree > one rival 1`] = `
+{
+  "props": {
+    "children": [
+      {
+        "props": {
+          "children": [
+            {
+              "props": {
+                "children": [
+                  {
+                    "props": {
+                      "children": "imperdibles",
+                      "style": {
+                        "display": "flex",
+                      },
+                    },
+                    "type": "span",
+                  },
+                  {
+                    "props": {
+                      "children": ".ar",
+                      "style": {
+                        "color": "#C2410C",
+                        "display": "flex",
+                      },
+                    },
+                    "type": "span",
+                  },
+                ],
+                "data-role": "logo",
+                "style": {
+                  "color": "#0E1116",
+                  "display": "flex",
+                  "flexDirection": "row",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 30,
+                  "fontWeight": 700,
+                },
+              },
+              "type": "div",
+            },
+            {
+              "props": {
+                "children": "17,5% menos",
+                "data-role": "badge",
+                "style": {
+                  "background": "#C2410C",
+                  "borderRadius": 999,
+                  "color": "#FFFFFF",
+                  "display": "flex",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 30,
+                  "fontWeight": 700,
+                  "padding": "10px 22px",
+                },
+              },
+              "type": "div",
+            },
+          ],
+          "style": {
+            "alignItems": "center",
+            "display": "flex",
+            "flexDirection": "row",
+            "justifyContent": "space-between",
+          },
+        },
+        "type": "div",
+      },
+      {
+        "props": {
+          "children": [
+            {
+              "props": {
+                "children": "Foto del producto",
+                "data-role": "photo",
+                "style": {
+                  "alignItems": "center",
+                  "background": "#E3E6EB",
+                  "borderRadius": 20,
+                  "color": "#5B6472",
+                  "display": "flex",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "height": 260,
+                  "justifyContent": "center",
+                  "width": 260,
+                },
+              },
+              "type": "div",
+            },
+            {
+              "props": {
+                "children": [
+                  {
+                    "props": {
+                      "children": "Xiaomi Robot Vacuum S40C",
+                      "data-role": "title",
+                      "style": {
+                        "color": "#0E1116",
+                        "display": "flex",
+                        "fontFamily": "Space Grotesk",
+                        "fontSize": 46,
+                        "fontWeight": 700,
+                        "lineHeight": 1.1,
+                      },
+                    },
+                    "type": "div",
+                  },
+                  {
+                    "props": {
+                      "children": [
+                        {
+                          "props": {
+                            "children": [
+                              {
+                                "props": {
+                                  "children": [
+                                    {
+                                      "props": {
+                                        "children": "Mercado Libre",
+                                        "data-role": "ml-name",
+                                        "style": {
+                                          "color": "#0E1116",
+                                          "display": "flex",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 22,
+                                          "fontWeight": 600,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                    {
+                                      "props": {
+                                        "children": "$329.999",
+                                        "data-role": "ml-price",
+                                        "style": {
+                                          "color": "#0E1116",
+                                          "display": "flex",
+                                          "fontFamily": "Space Grotesk",
+                                          "fontSize": 44,
+                                          "fontWeight": 700,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                  ],
+                                  "style": {
+                                    "alignItems": "baseline",
+                                    "display": "flex",
+                                    "flexDirection": "row",
+                                    "justifyContent": "space-between",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                              {
+                                "props": {
+                                  "data-role": "bar",
+                                  "style": {
+                                    "background": "#0E1116",
+                                    "borderRadius": 999,
+                                    "display": "flex",
+                                    "height": 18,
+                                    "width": "82.5%",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                            ],
+                            "data-role": "ml",
+                            "style": {
+                              "display": "flex",
+                              "flexDirection": "column",
+                              "gap": 6,
+                              "width": 764,
+                            },
+                          },
+                          "type": "div",
+                        },
+                        {
+                          "props": {
+                            "children": [
+                              {
+                                "props": {
+                                  "children": [
+                                    {
+                                      "props": {
+                                        "children": "Frávega",
+                                        "data-role": "rival-name",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 22,
+                                          "fontWeight": 400,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                    {
+                                      "props": {
+                                        "children": "$399.999",
+                                        "data-role": "rival-price",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Space Grotesk",
+                                          "fontSize": 30,
+                                          "fontWeight": 500,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                  ],
+                                  "style": {
+                                    "alignItems": "baseline",
+                                    "display": "flex",
+                                    "flexDirection": "row",
+                                    "justifyContent": "space-between",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                              {
+                                "props": {
+                                  "data-role": "bar",
+                                  "style": {
+                                    "background": "#B4BBC6",
+                                    "borderRadius": 999,
+                                    "display": "flex",
+                                    "height": 18,
+                                    "width": "100%",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                            ],
+                            "data-role": "rival",
+                            "style": {
+                              "display": "flex",
+                              "flexDirection": "column",
+                              "gap": 6,
+                              "width": 764,
+                            },
+                          },
+                          "type": "div",
+                        },
+                      ],
+                      "data-role": "prices",
+                      "style": {
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "gap": 14,
+                      },
+                    },
+                    "type": "div",
+                  },
+                ],
+                "style": {
+                  "display": "flex",
+                  "flexDirection": "column",
+                  "gap": 28,
+                  "width": 764,
+                },
+              },
+              "type": "div",
+            },
+          ],
+          "style": {
+            "alignItems": "center",
+            "display": "flex",
+            "flexDirection": "row",
+            "gap": 48,
+          },
+        },
+        "type": "div",
+      },
+      {
+        "props": {
+          "children": [
+            {
+              "props": {
+                "children": "Mismo modelo, precio de lista al 10/11/2026",
+                "style": {
+                  "display": "flex",
+                },
+              },
+              "type": "div",
+            },
+            {
+              "props": {
+                "children": "Diferencia: $70.000",
+                "style": {
+                  "color": "#0E1116",
+                  "display": "flex",
+                  "fontWeight": 600,
+                },
+              },
+              "type": "div",
+            },
+          ],
+          "style": {
+            "color": "#3A4350",
+            "display": "flex",
+            "flexDirection": "row",
+            "fontFamily": "Inter",
+            "fontSize": 20,
+            "justifyContent": "space-between",
+          },
+        },
+        "type": "div",
+      },
+    ],
+    "style": {
+      "background": "#F4F5F7",
+      "display": "flex",
+      "flexDirection": "column",
+      "fontFamily": "Inter",
+      "height": 675,
+      "justifyContent": "space-between",
+      "padding": "56px 64px",
+      "width": 1200,
+    },
+  },
+  "type": "div",
+}
+`;
+
+exports[`buildCardTree > three rivals 1`] = `
+{
+  "props": {
+    "children": [
+      {
+        "props": {
+          "children": [
+            {
+              "props": {
+                "children": [
+                  {
+                    "props": {
+                      "children": "imperdibles",
+                      "style": {
+                        "display": "flex",
+                      },
+                    },
+                    "type": "span",
+                  },
+                  {
+                    "props": {
+                      "children": ".ar",
+                      "style": {
+                        "color": "#C2410C",
+                        "display": "flex",
+                      },
+                    },
+                    "type": "span",
+                  },
+                ],
+                "data-role": "logo",
+                "style": {
+                  "color": "#0E1116",
+                  "display": "flex",
+                  "flexDirection": "row",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 30,
+                  "fontWeight": 700,
+                },
+              },
+              "type": "div",
+            },
+            {
+              "props": {
+                "children": "17,5% menos",
+                "data-role": "badge",
+                "style": {
+                  "background": "#C2410C",
+                  "borderRadius": 999,
+                  "color": "#FFFFFF",
+                  "display": "flex",
+                  "fontFamily": "Space Grotesk",
+                  "fontSize": 30,
+                  "fontWeight": 700,
+                  "padding": "10px 22px",
+                },
+              },
+              "type": "div",
+            },
+          ],
+          "style": {
+            "alignItems": "center",
+            "display": "flex",
+            "flexDirection": "row",
+            "justifyContent": "space-between",
+          },
+        },
+        "type": "div",
+      },
+      {
+        "props": {
+          "children": [
+            {
+              "props": {
+                "children": "Foto del producto",
+                "data-role": "photo",
+                "style": {
+                  "alignItems": "center",
+                  "background": "#E3E6EB",
+                  "borderRadius": 20,
+                  "color": "#5B6472",
+                  "display": "flex",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "height": 260,
+                  "justifyContent": "center",
+                  "width": 260,
+                },
+              },
+              "type": "div",
+            },
+            {
+              "props": {
+                "children": [
+                  {
+                    "props": {
+                      "children": "Xiaomi Robot Vacuum S40C aspiradora robot con mapeo láser, …",
+                      "data-role": "title",
+                      "style": {
+                        "color": "#0E1116",
+                        "display": "flex",
+                        "fontFamily": "Space Grotesk",
+                        "fontSize": 46,
+                        "fontWeight": 700,
+                        "lineHeight": 1.1,
+                      },
+                    },
+                    "type": "div",
+                  },
+                  {
+                    "props": {
+                      "children": [
+                        {
+                          "props": {
+                            "children": [
+                              {
+                                "props": {
+                                  "children": [
+                                    {
+                                      "props": {
+                                        "children": "Mercado Libre",
+                                        "data-role": "ml-name",
+                                        "style": {
+                                          "color": "#0E1116",
+                                          "display": "flex",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 22,
+                                          "fontWeight": 600,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                    {
+                                      "props": {
+                                        "children": "$329.999",
+                                        "data-role": "ml-price",
+                                        "style": {
+                                          "color": "#0E1116",
+                                          "display": "flex",
+                                          "fontFamily": "Space Grotesk",
+                                          "fontSize": 44,
+                                          "fontWeight": 700,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                  ],
+                                  "style": {
+                                    "alignItems": "baseline",
+                                    "display": "flex",
+                                    "flexDirection": "row",
+                                    "justifyContent": "space-between",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                              {
+                                "props": {
+                                  "data-role": "bar",
+                                  "style": {
+                                    "background": "#0E1116",
+                                    "borderRadius": 999,
+                                    "display": "flex",
+                                    "height": 18,
+                                    "width": "78.6%",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                            ],
+                            "data-role": "ml",
+                            "style": {
+                              "display": "flex",
+                              "flexDirection": "column",
+                              "gap": 6,
+                              "width": 764,
+                            },
+                          },
+                          "type": "div",
+                        },
+                        {
+                          "props": {
+                            "children": [
+                              {
+                                "props": {
+                                  "children": [
+                                    {
+                                      "props": {
+                                        "children": "Frávega",
+                                        "data-role": "rival-name",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 22,
+                                          "fontWeight": 400,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                    {
+                                      "props": {
+                                        "children": "$399.999",
+                                        "data-role": "rival-price",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Space Grotesk",
+                                          "fontSize": 26,
+                                          "fontWeight": 500,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                  ],
+                                  "style": {
+                                    "alignItems": "baseline",
+                                    "display": "flex",
+                                    "flexDirection": "row",
+                                    "justifyContent": "space-between",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                              {
+                                "props": {
+                                  "data-role": "bar",
+                                  "style": {
+                                    "background": "#B4BBC6",
+                                    "borderRadius": 999,
+                                    "display": "flex",
+                                    "height": 18,
+                                    "width": "95.2%",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                            ],
+                            "data-role": "rival",
+                            "style": {
+                              "display": "flex",
+                              "flexDirection": "column",
+                              "gap": 6,
+                              "width": 764,
+                            },
+                          },
+                          "type": "div",
+                        },
+                        {
+                          "props": {
+                            "children": [
+                              {
+                                "props": {
+                                  "children": [
+                                    {
+                                      "props": {
+                                        "children": "Cetrogar",
+                                        "data-role": "rival-name",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 22,
+                                          "fontWeight": 400,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                    {
+                                      "props": {
+                                        "children": "$409.999",
+                                        "data-role": "rival-price",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Space Grotesk",
+                                          "fontSize": 26,
+                                          "fontWeight": 500,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                  ],
+                                  "style": {
+                                    "alignItems": "baseline",
+                                    "display": "flex",
+                                    "flexDirection": "row",
+                                    "justifyContent": "space-between",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                              {
+                                "props": {
+                                  "data-role": "bar",
+                                  "style": {
+                                    "background": "#B4BBC6",
+                                    "borderRadius": 999,
+                                    "display": "flex",
+                                    "height": 18,
+                                    "width": "97.6%",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                            ],
+                            "data-role": "rival",
+                            "style": {
+                              "display": "flex",
+                              "flexDirection": "column",
+                              "gap": 6,
+                              "width": 764,
+                            },
+                          },
+                          "type": "div",
+                        },
+                        {
+                          "props": {
+                            "children": [
+                              {
+                                "props": {
+                                  "children": [
+                                    {
+                                      "props": {
+                                        "children": "Musimundo",
+                                        "data-role": "rival-name",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 22,
+                                          "fontWeight": 400,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                    {
+                                      "props": {
+                                        "children": "$419.999",
+                                        "data-role": "rival-price",
+                                        "style": {
+                                          "color": "#3A4350",
+                                          "display": "flex",
+                                          "fontFamily": "Space Grotesk",
+                                          "fontSize": 26,
+                                          "fontWeight": 500,
+                                        },
+                                      },
+                                      "type": "div",
+                                    },
+                                  ],
+                                  "style": {
+                                    "alignItems": "baseline",
+                                    "display": "flex",
+                                    "flexDirection": "row",
+                                    "justifyContent": "space-between",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                              {
+                                "props": {
+                                  "data-role": "bar",
+                                  "style": {
+                                    "background": "#B4BBC6",
+                                    "borderRadius": 999,
+                                    "display": "flex",
+                                    "height": 18,
+                                    "width": "100%",
+                                  },
+                                },
+                                "type": "div",
+                              },
+                            ],
+                            "data-role": "rival",
+                            "style": {
+                              "display": "flex",
+                              "flexDirection": "column",
+                              "gap": 6,
+                              "width": 764,
+                            },
+                          },
+                          "type": "div",
+                        },
+                      ],
+                      "data-role": "prices",
+                      "style": {
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "gap": 10,
+                      },
+                    },
+                    "type": "div",
+                  },
+                ],
+                "style": {
+                  "display": "flex",
+                  "flexDirection": "column",
+                  "gap": 28,
+                  "width": 764,
+                },
+              },
+              "type": "div",
+            },
+          ],
+          "style": {
+            "alignItems": "center",
+            "display": "flex",
+            "flexDirection": "row",
+            "gap": 48,
+          },
+        },
+        "type": "div",
+      },
+      {
+        "props": {
+          "children": [
+            {
+              "props": {
+                "children": "Mismo modelo, precio de lista al 10/11/2026",
+                "style": {
+                  "display": "flex",
+                },
+              },
+              "type": "div",
+            },
+            {
+              "props": {
+                "children": "Diferencia: $70.000",
+                "style": {
+                  "color": "#0E1116",
+                  "display": "flex",
+                  "fontWeight": 600,
+                },
+              },
+              "type": "div",
+            },
+          ],
+          "style": {
+            "color": "#3A4350",
+            "display": "flex",
+            "flexDirection": "row",
+            "fontFamily": "Inter",
+            "fontSize": 20,
+            "justifyContent": "space-between",
+          },
+        },
+        "type": "div",
+      },
+    ],
+    "style": {
+      "background": "#F4F5F7",
+      "display": "flex",
+      "flexDirection": "column",
+      "fontFamily": "Inter",
+      "height": 675,
+      "justifyContent": "space-between",
+      "padding": "56px 64px",
+      "width": 1200,
+    },
+  },
+  "type": "div",
+}
+`;
