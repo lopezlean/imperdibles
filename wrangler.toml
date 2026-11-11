@@ -7,3 +7,6 @@ binding = "DB"
 database_name = "imperdibles"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 migrations_dir = "migrations"
+
+[vars]
+TELEGRAM_CHANNEL_URL = "https://t.me/REPLACE_WITH_CHANNEL"
