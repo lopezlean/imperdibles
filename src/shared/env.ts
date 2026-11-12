@@ -10,6 +10,10 @@ export type LocalEnv = {
   telegramChannelId: string;
   publishNowSecret: string;
   workerBaseUrl: string;
+  tgApiId: string;
+  tgApiHash: string;
+  tgSession: string;
+  tgSourceChannelId: string;
   anthropicApiKey: string;
   anthropicModel: string;
 };
@@ -30,7 +34,16 @@ export const BASE_ENV_KEYS: readonly (keyof LocalEnv)[] = [
 ];
 
 /** Opt-in: required only by the coupon pipeline (ANTHROPIC_MODEL is optional, it has a default). */
-export const COUPON_ENV_KEYS: readonly (keyof LocalEnv)[] = ["anthropicApiKey"];
+export const COUPON_ENV_KEYS: readonly (keyof LocalEnv)[] = [
+  "telegramBotToken",
+  "telegramOwnerChatId",
+  "telegramChannelId",
+  "tgApiId",
+  "tgApiHash",
+  "tgSession",
+  "tgSourceChannelId",
+  "anthropicApiKey",
+];
 
 export const DATA_ENV_KEYS: readonly (keyof LocalEnv)[] = [
   "mlAppId",
@@ -53,6 +66,10 @@ const VAR_NAMES: Record<keyof LocalEnv, string> = {
   telegramChannelId: "TELEGRAM_CHANNEL_ID",
   publishNowSecret: "PUBLISH_NOW_SECRET",
   workerBaseUrl: "WORKER_BASE_URL",
+  tgApiId: "TELEGRAM_API_ID",
+  tgApiHash: "TELEGRAM_API_HASH",
+  tgSession: "TELEGRAM_SESSION",
+  tgSourceChannelId: "TELEGRAM_SOURCE_CHANNEL_ID",
   anthropicApiKey: "ANTHROPIC_API_KEY",
   anthropicModel: "ANTHROPIC_MODEL",
 };

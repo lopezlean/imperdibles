@@ -85,4 +85,32 @@ describe("loadLocalEnv", () => {
     expect(env.anthropicModel).toBe("m");
     expect(() => loadLocalEnv(full, [...BASE_ENV_KEYS, ...COUPON_ENV_KEYS])).toThrow(/ANTHROPIC_API_KEY/);
   });
+
+  it("COUPON_ENV_KEYS lists only the absent coupon names, never values", () => {
+    let err: unknown;
+    try {
+      loadLocalEnv({ ...full, TELEGRAM_API_ID: "123456", TELEGRAM_SESSION: "session-value" }, COUPON_ENV_KEYS);
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(MissingEnvError);
+    expect((err as MissingEnvError).names).toEqual([
+      "TELEGRAM_API_HASH",
+      "TELEGRAM_SOURCE_CHANNEL_ID",
+      "ANTHROPIC_API_KEY",
+    ]);
+    expect((err as Error).message).not.toContain("session-value");
+  });
+
+  it("reads the Telegram user-session keys and keeps them out of the default required list", () => {
+    const env = loadLocalEnv({
+      ...full,
+      TELEGRAM_API_ID: "1",
+      TELEGRAM_API_HASH: "h",
+      TELEGRAM_SESSION: "s",
+      TELEGRAM_SOURCE_CHANNEL_ID: "c",
+    });
+    expect([env.tgApiId, env.tgApiHash, env.tgSession, env.tgSourceChannelId]).toEqual(["1", "h", "s", "c"]);
+    expect(BASE_ENV_KEYS).not.toContain("tgSession");
+  });
 });

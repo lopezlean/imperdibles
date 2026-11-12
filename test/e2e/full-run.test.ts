@@ -45,6 +45,10 @@ const ENV: LocalEnv = {
   telegramChannelId: CHANNEL,
   publishNowSecret: PUBLISH_SECRET,
   workerBaseUrl: WORKER_BASE,
+  tgApiId: "",
+  tgApiHash: "",
+  tgSession: "",
+  tgSourceChannelId: "",
   anthropicApiKey: "",
   anthropicModel: "",
 };
