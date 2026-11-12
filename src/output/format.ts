@@ -54,6 +54,12 @@ export function formatDateShort(run_date: string): string {
   return `${d}/${String(m).padStart(2, "0")}/${y}`;
 }
 
+/** "2026-11-10" -> "10.11.2026". */
+export function formatDateDots(run_date: string): string {
+  const [y, m, d] = parseDate(run_date);
+  return `${d}.${String(m).padStart(2, "0")}.${y}`;
+}
+
 /** Shortens to at most `max` characters, ending with "…" when cut. */
 export function truncate(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, max - 1)}…`;

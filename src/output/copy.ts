@@ -78,6 +78,12 @@ export const NAV = {
 
 export const EMPTY_PAGE = "Todavía no hay imperdibles publicados.";
 
+export const EMPTY_PAGE_LEAD = "El mismo filtro. También cuando no hay nada para recomendar.";
+
+export const METHOD_TAGLINE = "Sin atajos.";
+
+export const CHANNEL_EYEBROW = "Un canal. Cero ruido.";
+
 /** `fechaCorta` is the short date ("10/11/2026"). */
 export const CARD_FOOTER = (fechaCorta: string, label: "lista" | "actual" = PRICE_LABEL): string =>
   `Mismo modelo, precio ${label === "lista" ? "de lista" : "actual"} al ${fechaCorta}`;

@@ -54,8 +54,7 @@ describe("catalog photo", () => {
     expect(h).toContain('<img src="https://http2.mlstatic.com/D_NQ_NP_1-O.webp?a=1&amp;b=2"');
     expect(h).toContain('alt="Robot &quot;X&quot; &lt;b&gt;"');
     expect(h).toContain('loading="lazy"');
-    expect(h).toContain('width="140" height="140"');
-    expect(h).toContain("object-fit: contain");
+    expect(h).toContain('width="264" height="240"');
     expect(h).not.toContain("Ilustración");
   });
 
@@ -104,7 +103,7 @@ describe("renderHomePage", () => {
     expect(html).toContain("<title>imperdibles.com.ar</title>");
     expect(html).toContain('name="viewport"');
     expect(html).toContain("fonts.googleapis.com/css2?family=Inter");
-    expect(html).toContain("#C2410C");
+    expect(html).toContain("#FF633D");
     expect(html).not.toContain("{{accent}}");
     expect(html).not.toContain("x-dc");
   });
@@ -113,7 +112,7 @@ describe("renderHomePage", () => {
     expect(html).toContain("Solo publicamos cuando Mercado Libre gana por 15% o más.");
     expect(html).toContain("Diferencia de 15% o más");
     expect(html).toContain("Los imperdibles de hoy");
-    expect(html).toContain("Aspiradoras robot · 10 de noviembre de 2026");
+    expect(html).toContain("10.11.2026 / Aspiradoras robot");
     expect(html).toContain("9 modelos comparados");
     expect(html).toContain("4 publicados");
     expect(html).toContain("Precios actuales al 10 de noviembre de 2026, sin envío ni cuotas.");
@@ -141,14 +140,14 @@ describe("renderHomePage", () => {
   it("renders archive mode with the given date", () => {
     const a = renderHomePage({ ...i, mode: "archive", run_date: "2026-11-09" });
     expect(a).toContain("Los imperdibles del 9 de noviembre de 2026");
-    expect(a).toContain("Aspiradoras robot · 9 de noviembre de 2026");
+    expect(a).toContain("09.11.2026 / Aspiradoras robot");
     expect(a).toContain("Precios actuales al 9 de noviembre de 2026");
   });
 
   it("omits the category and separator when the name is null", () => {
     const h = renderHomePage({ ...i, categoryName: null });
-    expect(h).toContain(">10 de noviembre de 2026</p>");
-    expect(h).not.toContain(" · ");
+    expect(h).toContain(">10.11.2026</p>");
+    expect(h).not.toContain("10.11.2026 / ");
   });
 
   it("renders the empty page without eyebrow or chips", () => {
@@ -156,7 +155,8 @@ describe("renderHomePage", () => {
     expect(h).toContain("Todavía no hay imperdibles publicados.");
     expect(h).not.toContain("modelos comparados");
     expect(h).not.toContain("publicados</span>");
-    expect(h).not.toContain("text-transform: uppercase");
+    expect(h).not.toContain(`class="meta`);
+    expect(h).toContain("El mismo filtro. También cuando no hay nada para recomendar.");
     expect(h).not.toContain("sponsored");
     for (const id of ["hoy", "como", "canal"]) expect(h).toContain(`id="${id}"`);
     expect(h).toContain(AFFILIATE_LEGEND);
@@ -192,7 +192,7 @@ describe("renderHomePage", () => {
     const one = renderHomePage(i);
     const oneArticle = one.slice(one.indexOf("<article"), one.indexOf("</article>"));
     expect(oneArticle).toContain("Frávega");
-    expect(oneArticle.indexOf("Diferencia")).toBeGreaterThan(oneArticle.indexOf("Frávega"));
+    expect(oneArticle).toContain("Diferencia: $");
 
     const three = inputFrom("valid-three-rivals.json", "today");
     const c = three.items[0]!.candidate;
@@ -201,11 +201,26 @@ describe("renderHomePage", () => {
     const article = h.slice(h.indexOf("<article"), h.indexOf("</article>"));
     let last = -1;
     for (const o of c.others) {
-      const at = article.indexOf(`<span>${ars(o.price_ars)}</span>`);
+      const at = article.indexOf(`<span class="p-rival">${ars(o.price_ars)}</span>`);
       expect(at).toBeGreaterThan(last);
       last = at;
     }
-    expect(article.indexOf("Diferencia")).toBeGreaterThan(last);
-    expect(article).toContain(ars(c.difference_ars));
+    expect(article).toContain(`Diferencia: ${ars(c.difference_ars)}`);
+  });
+
+  it("draws every bar on one scale: the dearest price is 100%", () => {
+    const h = renderHomePage(i);
+    const article = h.slice(h.indexOf("<article"), h.indexOf("</article>"));
+    const c = i.items[0]!.candidate;
+    const max = Math.max(c.ml.price_ars, ...c.others.map((o) => o.price_ars));
+    const widths = [...article.matchAll(/<i style="width: ([\d.]+)%">/g)].map((m) => Number(m[1]));
+    expect(widths).toHaveLength(1 + c.others.length);
+    expect(widths[0]).toBeCloseTo((c.ml.price_ars / max) * 100, 1);
+    expect(Math.max(...widths)).toBe(100);
+  });
+
+  it("swaps the palette for dark mode and keeps motion off on request", () => {
+    expect(html).toContain("prefers-color-scheme:dark");
+    expect(html).toContain("prefers-reduced-motion:reduce");
   });
 });

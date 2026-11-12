@@ -6,157 +6,320 @@ exports[`renderHomePage > matches the snapshot (not the check) 1`] = `
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>imperdibles.com.ar</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&family=Space+Grotesk:wght@700&family=DM+Sans:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-body{margin:0}
-a{color:#0E1116}a:hover{color:#3A4350}
+:root{--ink:#171717;--muted:#60605B;--media:#F0F0EA;--accent:#FF633D;--brand:#C2410C;--on-accent:#171717;--border:#D2D2CA;--card:#FFFFFF;--button:#171717;--on-button:#FFFFFF;--bg:#F5F5F2;--band:#EAEAE3;--chip:#E9E9E2;--tile:#F0F0EA;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--brand:#FF633D;--ink:#F5F5F2;--muted:#B8B8B2;--media:#33332E;--border:#41413C;--card:#242421;--button:#F5F5F2;--on-button:#171717;--bg:#141414;--band:#20201D;--chip:#2A2A27}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:16px;line-height:1.45}
+a{color:inherit;transition:color .12s,background-color .12s}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.on-accent :focus-visible{outline-color:#171717}
+h1,h2,h3,p,ol{margin:0}
+ol{padding:0;list-style:none}
+.wrap{max-width:1280px;margin:0 auto;padding-left:64px;padding-right:64px}
+.display{font-family:Inter,system-ui,sans-serif;font-weight:900;letter-spacing:-.05em}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:500}
+
+.hd{padding-top:16px}
+.hd-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand-row{display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:baseline;gap:0;text-decoration:none;white-space:nowrap}
+.brand b,.sign b{font-family:'Space Grotesk',Inter,system-ui,sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.brand i,.sign i{font-family:'Space Grotesk',Inter,system-ui,sans-serif;font-style:normal;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:var(--brand)}
+.brand b,.brand i{font-size:28px}
+.monogram{display:none;width:32px;height:32px;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);font-family:Inter,system-ui,sans-serif;font-weight:900;font-size:24px;line-height:1}
+.nav{display:flex;gap:28px}
+.nav a{display:flex;align-items:center;min-height:44px;font-weight:700;font-size:14px;text-decoration:none}
+.nav a:hover{color:var(--muted)}
+
+.today{padding-top:20px;padding-bottom:36px;display:flex;flex-direction:column;gap:20px}
+.sel{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px 24px}
+.sel h1{font-family:Inter,system-ui,sans-serif;font-weight:900;font-size:44px;line-height:1.13;letter-spacing:-.04em}
+.meta{font-size:11px;line-height:1.45;color:var(--muted);text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--chip);border-radius:100px;padding:10px;font-weight:700;font-size:11px}
+.list{display:flex;flex-direction:column;gap:16px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;display:grid;grid-template-columns:652fr 426fr;gap:24px;align-items:start}
+.top{display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start}
+.photo{width:264px;height:240px;border-radius:6px;background:var(--tile);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:contain;background:#FFFFFF;display:block}
+.photo .art{width:70%;height:70%;display:flex}
+.photo .art svg{width:100%;height:100%}
+.info{display:flex;flex-direction:column;align-items:flex-start;gap:16px;min-width:0}
+.title{font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:30px;line-height:1.16;letter-spacing:-.03em;overflow-wrap:anywhere}
+.badge{background:var(--accent);color:var(--on-accent);border-radius:3px;padding:5px 7px;font-weight:700;font-size:15px;line-height:1.4;white-space:nowrap}
+.diff{font-weight:700;font-size:16px}
+.prices{display:flex;flex-direction:column;gap:12px;min-width:0}
+.price-row{display:flex;flex-direction:column;gap:5px}
+.price-line{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.store{font-size:14px}
+.store-ml{font-weight:700}
+.p-ml{font-family:Inter,system-ui,sans-serif;font-weight:900;font-size:40px;line-height:1.13;letter-spacing:-.03em}
+.p-rival{font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:18px;line-height:1.13;letter-spacing:-.04em}
+.scale{background:var(--media);height:3px;display:flex}
+.scale i{display:block;height:100%;background:var(--border)}
+.scale-ml{height:5px}
+.scale-ml i{background:var(--accent)}
+.cta{display:flex;align-items:center;justify-content:center;min-height:48px;padding:14px;background:var(--button);color:var(--on-button);border-radius:6px;font-weight:700;font-size:15px;text-decoration:none}
+.cta:hover{opacity:.86}
+.note{font-size:12px;color:var(--muted)}
+
+.empty{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:33px;display:flex;flex-direction:column;gap:20px}
+.empty .zero{font-size:96px;line-height:1.05}
+.empty h2{font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:28px;line-height:1.25;letter-spacing:-.03em}
+.empty p{color:var(--muted)}
+
+.why{background:var(--band);padding-top:28px;padding-bottom:36px}
+.why .wrap{display:flex;flex-direction:column;gap:12px}
+.why-lead{font-weight:700;font-size:22px;line-height:1.4}
+.why-sub{color:var(--muted)}
+.method{background:var(--band);padding-top:56px;padding-bottom:56px}
+.method .wrap{display:grid;grid-template-columns:360px minmax(0,1fr);gap:64px;align-items:start}
+.method-head{display:flex;flex-direction:column;gap:16px}
+.method-head h2{font-size:64px;line-height:1.1}
+.method-head p{font-size:18px;line-height:1.5;color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:28px}
+.step{border-top:1px solid var(--border);padding-top:12px;display:flex;gap:24px;align-items:flex-start}
+.step-n{flex:none;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:var(--on-accent);font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:16px;letter-spacing:-.05em}
+.step h3{font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:24px;line-height:1.1;letter-spacing:-.05em}
+.step p{font-size:16px;line-height:1.5;color:var(--muted);margin-top:8px}
+
+.channel{background:var(--accent);color:#171717;padding-top:56px;padding-bottom:56px}
+.channel .wrap{display:flex;flex-direction:column;gap:24px}
+.channel .mono{font-size:11px;line-height:1.5}
+.channel-row{display:flex;align-items:flex-end;gap:64px}
+.channel-copy{flex:1 1 0;min-width:0;max-width:768px;display:flex;flex-direction:column;gap:20px}
+.channel-copy h2{font-size:64px;line-height:1.1}
+.channel-copy p{font-size:19px;line-height:1.5}
+.channel-btn{flex:none;width:320px;display:flex;flex-direction:row-reverse;align-items:center;justify-content:space-between;padding:18px;background:#171717;color:#FFFFFF;border-radius:6px;font-weight:700;font-size:17px;line-height:1.5;text-decoration:none}
+.channel-btn:hover{background:#2E2E2B}
+.channel-btn span{font-size:24px}
+
+.legal{padding-top:48px;padding-bottom:48px;display:flex;flex-direction:column;gap:28px}
+.sign{display:flex;align-items:baseline;gap:0;white-space:nowrap}
+.sign b{font-size:clamp(36px,9.2vw,118px)}
+.sign i{font-size:clamp(36px,9.2vw,118px);line-height:1.1}
+.rule{height:1px;background:var(--border)}
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px}
+.notes p{font-size:14px;line-height:1.5;color:var(--muted)}
+
+@media (max-width:899px){
+.wrap{padding-left:20px;padding-right:20px}
+.hd{padding-top:12px}
+.hd-row{flex-direction:column;align-items:stretch;gap:4px}
+.monogram{display:flex}
+.nav{justify-content:space-between;gap:12px}
+.nav a{font-size:13px}
+.sel h1{font-size:30px}
+.card{grid-template-columns:minmax(0,1fr);gap:16px;padding:20px}
+.top{grid-template-columns:96px minmax(0,1fr);gap:16px}
+.photo{width:96px;height:128px;padding:8px}
+.info{gap:8px}
+.title{font-size:21px}
+.diff{font-size:14px}
+.store{font-size:13px}
+.p-ml{font-size:32px;letter-spacing:-.03em}
+.method .wrap{grid-template-columns:minmax(0,1fr);gap:28px}
+.method-head h2{font-size:40px}
+.method-head p{font-size:16px}
+.method{padding-top:36px;padding-bottom:36px}
+.step{gap:16px}
+.step h3{font-size:20px}
+.channel{padding-top:36px;padding-bottom:36px}
+.channel-row{flex-direction:column;align-items:stretch;gap:24px}
+.channel-copy h2{font-size:38px}
+.channel-btn{width:100%}
+.legal{padding-top:32px;padding-bottom:32px;gap:28px}
+.notes{grid-template-columns:minmax(0,1fr);gap:16px}
+.empty{padding:24px}
+}
+@media (prefers-reduced-motion:reduce){a{transition:none}}
 </style>
 </head>
 <body>
-<div style="background: #F4F5F7; color: #0E1116; font-family: Inter, system-ui, sans-serif; font-size: 16px; line-height: 1.5">
 
-<header style="background: #FFFFFF; border-bottom: 1px solid #DDE1E7">
-<div style="max-width: 1120px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
-<a href="/" style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -0.02em; text-decoration: none; color: #0E1116">imperdibles<span style="color: #C2410C">.com.ar</span></a>
-<nav aria-label="Principal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; font-size: 15px; font-weight: 500">
-<a href="#hoy" style="text-decoration: none; padding: 12px 0">Hoy</a>
-<a href="#como" style="text-decoration: none; padding: 12px 0">Cómo elegimos</a>
-<a href="#canal" style="text-decoration: none; padding: 10px 16px; border: 1px solid #0E1116; border-radius: 999px">Canal de Telegram</a>
+<header class="hd">
+<div class="wrap hd-row">
+<div class="brand-row">
+<a href="/" class="brand"><b>imperdibles</b><i>.com.ar</i></a>
+<span class="monogram" aria-hidden="true">i</span>
+</div>
+<nav class="nav" aria-label="Principal">
+<a href="#hoy">Hoy</a>
+<a href="#como">Cómo elegimos</a>
+<a href="#canal">Canal de Telegram</a>
 </nav>
 </div>
+<div class="wrap"><div class="rule"></div></div>
 </header>
 
-<section style="max-width: 1120px; margin: 0 auto; padding: 72px 24px 56px; display: flex; flex-direction: column; gap: 24px">
-<p style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #C2410C">Aspiradoras robot · 10 de noviembre de 2026</p>
-<h1 style="margin: 0; max-width: 880px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(2.25rem, 5vw, 4rem); line-height: 1.05; letter-spacing: -0.03em">Solo publicamos cuando Mercado Libre gana por 15% o más.</h1>
-<p style="margin: 0; max-width: 640px; font-size: 19px; color: #3A4350">Comparamos el mismo modelo en otras tiendas. Si la diferencia es chica, el producto no aparece.</p>
-<div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 15px; font-weight: 500">
-<span style="padding: 8px 14px; background: #FFFFFF; border: 1px solid #DDE1E7; border-radius: 999px">9 modelos comparados</span>
-<span style="padding: 8px 14px; background: #0E1116; color: #FFFFFF; border-radius: 999px">4 publicados</span>
+<main id="hoy" class="wrap today">
+<div class="sel">
+<h1>Los imperdibles de hoy</h1>
+<p class="meta mono">10.11.2026 / Aspiradoras robot</p>
+</div>
+<div class="chips">
+<span class="chip">9 modelos comparados</span>
+<span class="chip">4 publicados</span>
+</div>
+<div class="list">
+<article class="card">
+<div class="top">
+<div class="photo"><img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100001-F.jpg" alt="Smartlife RVCL050, mapeo láser" loading="lazy" width="264" height="240"></div>
+<div class="info">
+<h2 class="title">Smartlife RVCL050, mapeo láser</h2>
+<span class="badge">19,7% menos</span>
+<p class="diff">Diferencia: $65.300</p>
+</div>
+</div>
+<div class="prices">
+<div class="price-row">
+<div class="price-line"><span class="store store-ml">Mercado Libre</span><span class="p-ml">$264.699</span></div>
+<div class="scale scale-ml" aria-hidden="true"><i style="width: 80.2%"></i></div>
+</div>
+<div class="price-row">
+<div class="price-line"><span class="store">Frávega</span><span class="p-rival">$329.999</span></div>
+<div class="scale" aria-hidden="true"><i style="width: 100%"></i></div>
+</div>
+<a class="cta" href="https://meli.la/AbC_1?x=1&amp;y=2" rel="sponsored noopener">Ver en Mercado Libre</a>
+<p class="note">Mismo modelo, precio actual al 10/11/2026</p>
+</div>
+</article>
+<article class="card">
+<div class="top">
+<div class="photo"><img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100002-F.jpg" alt="Xiaomi Robot Vacuum S40C" loading="lazy" width="264" height="240"></div>
+<div class="info">
+<h2 class="title">Xiaomi Robot Vacuum S40C</h2>
+<span class="badge">17,5% menos</span>
+<p class="diff">Diferencia: $70.000</p>
+</div>
+</div>
+<div class="prices">
+<div class="price-row">
+<div class="price-line"><span class="store store-ml">Mercado Libre</span><span class="p-ml">$329.999</span></div>
+<div class="scale scale-ml" aria-hidden="true"><i style="width: 82.5%"></i></div>
+</div>
+<div class="price-row">
+<div class="price-line"><span class="store">Frávega</span><span class="p-rival">$399.999</span></div>
+<div class="scale" aria-hidden="true"><i style="width: 100%"></i></div>
+</div>
+<a class="cta" href="https://meli.la/Link1" rel="sponsored noopener">Ver en Mercado Libre</a>
+<p class="note">Mismo modelo, precio actual al 10/11/2026</p>
+</div>
+</article>
+<article class="card">
+<div class="top">
+<div class="photo"><img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100003-F.jpg" alt="Xiaomi Robot Vacuum H50 Pro" loading="lazy" width="264" height="240"></div>
+<div class="info">
+<h2 class="title">Xiaomi Robot Vacuum H50 Pro</h2>
+<span class="badge">17,0% menos</span>
+<p class="diff">Diferencia: $205.100</p>
+</div>
+</div>
+<div class="prices">
+<div class="price-row">
+<div class="price-line"><span class="store store-ml">Mercado Libre</span><span class="p-ml">$994.899</span></div>
+<div class="scale scale-ml" aria-hidden="true"><i style="width: 82.9%"></i></div>
+</div>
+<div class="price-row">
+<div class="price-line"><span class="store">Frávega</span><span class="p-rival">$1.199.999</span></div>
+<div class="scale" aria-hidden="true"><i style="width: 100%"></i></div>
+</div>
+<a class="cta" href="https://meli.la/Link2" rel="sponsored noopener">Ver en Mercado Libre</a>
+<p class="note">Mismo modelo, precio actual al 10/11/2026</p>
+</div>
+</article>
+<article class="card">
+<div class="top">
+<div class="photo"><img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100004-F.jpg" alt="Electrolux ERB80, base de autolimpieza" loading="lazy" width="264" height="240"></div>
+<div class="info">
+<h2 class="title">Electrolux ERB80, base de autolimpieza</h2>
+<span class="badge">15,0% menos</span>
+<p class="diff">Diferencia: $100.899</p>
+</div>
+</div>
+<div class="prices">
+<div class="price-row">
+<div class="price-line"><span class="store store-ml">Mercado Libre</span><span class="p-ml">$569.000</span></div>
+<div class="scale scale-ml" aria-hidden="true"><i style="width: 84.9%"></i></div>
+</div>
+<div class="price-row">
+<div class="price-line"><span class="store">Frávega</span><span class="p-rival">$669.899</span></div>
+<div class="scale" aria-hidden="true"><i style="width: 100%"></i></div>
+</div>
+<a class="cta" href="https://meli.la/Link3" rel="sponsored noopener">Ver en Mercado Libre</a>
+<p class="note">Mismo modelo, precio actual al 10/11/2026</p>
+</div>
+</article>
+</div>
+</main>
+
+<section class="why" aria-label="Por qué aparecen estos productos">
+<div class="wrap">
+<p class="why-lead">Solo publicamos cuando Mercado Libre gana por 15% o más.</p>
+<p class="why-sub">Comparamos el mismo modelo en otras tiendas. Si la diferencia es chica, el producto no aparece.</p>
 </div>
 </section>
 
-<section id="hoy" style="max-width: 1120px; margin: 0 auto; padding: 0 24px 72px; display: flex; flex-direction: column; gap: 24px">
-<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -0.02em">Los imperdibles de hoy</h2>
-<div style="display: flex; flex-wrap: wrap; gap: 20px">
-<article style="flex: 1 1 460px; min-width: 0; box-sizing: border-box; background: #FFFFFF; border: 1px solid #DDE1E7; border-radius: 16px; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
-<img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100001-F.jpg" alt="Smartlife RVCL050, mapeo láser" loading="lazy" width="140" height="140" style="flex: 0 0 140px; width: 140px; height: 140px; border-radius: 12px; background: #FFFFFF; object-fit: contain">
-<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
-<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
-<h3 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3">Smartlife RVCL050, mapeo láser</h3>
-<span style="flex: none; padding: 4px 10px; background: #C2410C; color: #FFFFFF; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap">19,7% menos</span>
+<section id="como" class="method">
+<div class="wrap">
+<div class="method-head">
+<h2 class="display">Cómo elegimos</h2>
+<p>Sin atajos.</p>
 </div>
-<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px">
-<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 34px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">$264.699</span>
-<span style="font-size: 14px; color: #5B6472">en Mercado Libre</span>
+<ol class="steps">
+<li class="step">
+<span class="step-n" aria-hidden="true">01</span>
+<div>
+<h3>El mismo modelo exacto</h3>
+<p>Se compara el mismo modelo en Mercado Libre y en otras tiendas, no uno parecido.</p>
 </div>
-<div style="border-top: 1px solid #DDE1E7; padding-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-variant-numeric: tabular-nums">
-<div style="display: flex; justify-content: space-between; gap: 12px; color: #3A4350"><span>Frávega</span><span>$329.999</span></div>
-<div style="display: flex; justify-content: space-between; gap: 12px; font-weight: 600"><span>Diferencia</span><span>$65.300</span></div>
+</li>
+<li class="step">
+<span class="step-n" aria-hidden="true">02</span>
+<div>
+<h3>Diferencia de 15% o más</h3>
+<p>Con una diferencia menor, el producto no se publica.</p>
 </div>
-<a href="https://meli.la/AbC_1?x=1&amp;y=2" rel="sponsored noopener" style="margin-top: 4px; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 10px 16px; background: #0E1116; color: #FFFFFF; border-radius: 10px; font-weight: 600; text-decoration: none">Ver en Mercado Libre</a>
+</li>
+<li class="step">
+<span class="step-n" aria-hidden="true">03</span>
+<div>
+<h3>Precio y fecha a la vista</h3>
+<p>Cada comparación muestra los dos precios y el día en que se tomaron.</p>
 </div>
-</article>
-<article style="flex: 1 1 460px; min-width: 0; box-sizing: border-box; background: #FFFFFF; border: 1px solid #DDE1E7; border-radius: 16px; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
-<img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100002-F.jpg" alt="Xiaomi Robot Vacuum S40C" loading="lazy" width="140" height="140" style="flex: 0 0 140px; width: 140px; height: 140px; border-radius: 12px; background: #FFFFFF; object-fit: contain">
-<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
-<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
-<h3 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3">Xiaomi Robot Vacuum S40C</h3>
-<span style="flex: none; padding: 4px 10px; background: #C2410C; color: #FFFFFF; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap">17,5% menos</span>
+</li>
+</ol>
 </div>
-<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px">
-<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 34px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">$329.999</span>
-<span style="font-size: 14px; color: #5B6472">en Mercado Libre</span>
-</div>
-<div style="border-top: 1px solid #DDE1E7; padding-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-variant-numeric: tabular-nums">
-<div style="display: flex; justify-content: space-between; gap: 12px; color: #3A4350"><span>Frávega</span><span>$399.999</span></div>
-<div style="display: flex; justify-content: space-between; gap: 12px; font-weight: 600"><span>Diferencia</span><span>$70.000</span></div>
-</div>
-<a href="https://meli.la/Link1" rel="sponsored noopener" style="margin-top: 4px; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 10px 16px; background: #0E1116; color: #FFFFFF; border-radius: 10px; font-weight: 600; text-decoration: none">Ver en Mercado Libre</a>
-</div>
-</article>
-<article style="flex: 1 1 460px; min-width: 0; box-sizing: border-box; background: #FFFFFF; border: 1px solid #DDE1E7; border-radius: 16px; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
-<img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100003-F.jpg" alt="Xiaomi Robot Vacuum H50 Pro" loading="lazy" width="140" height="140" style="flex: 0 0 140px; width: 140px; height: 140px; border-radius: 12px; background: #FFFFFF; object-fit: contain">
-<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
-<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
-<h3 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3">Xiaomi Robot Vacuum H50 Pro</h3>
-<span style="flex: none; padding: 4px 10px; background: #C2410C; color: #FFFFFF; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap">17,0% menos</span>
-</div>
-<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px">
-<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 34px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">$994.899</span>
-<span style="font-size: 14px; color: #5B6472">en Mercado Libre</span>
-</div>
-<div style="border-top: 1px solid #DDE1E7; padding-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-variant-numeric: tabular-nums">
-<div style="display: flex; justify-content: space-between; gap: 12px; color: #3A4350"><span>Frávega</span><span>$1.199.999</span></div>
-<div style="display: flex; justify-content: space-between; gap: 12px; font-weight: 600"><span>Diferencia</span><span>$205.100</span></div>
-</div>
-<a href="https://meli.la/Link2" rel="sponsored noopener" style="margin-top: 4px; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 10px 16px; background: #0E1116; color: #FFFFFF; border-radius: 10px; font-weight: 600; text-decoration: none">Ver en Mercado Libre</a>
-</div>
-</article>
-<article style="flex: 1 1 460px; min-width: 0; box-sizing: border-box; background: #FFFFFF; border: 1px solid #DDE1E7; border-radius: 16px; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
-<img src="https://http2.mlstatic.com/D_NQ_NP_MLA45100004-F.jpg" alt="Electrolux ERB80, base de autolimpieza" loading="lazy" width="140" height="140" style="flex: 0 0 140px; width: 140px; height: 140px; border-radius: 12px; background: #FFFFFF; object-fit: contain">
-<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
-<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
-<h3 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3">Electrolux ERB80, base de autolimpieza</h3>
-<span style="flex: none; padding: 4px 10px; background: #C2410C; color: #FFFFFF; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap">15,0% menos</span>
-</div>
-<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px">
-<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 34px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">$569.000</span>
-<span style="font-size: 14px; color: #5B6472">en Mercado Libre</span>
-</div>
-<div style="border-top: 1px solid #DDE1E7; padding-top: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-variant-numeric: tabular-nums">
-<div style="display: flex; justify-content: space-between; gap: 12px; color: #3A4350"><span>Frávega</span><span>$669.899</span></div>
-<div style="display: flex; justify-content: space-between; gap: 12px; font-weight: 600"><span>Diferencia</span><span>$100.899</span></div>
-</div>
-<a href="https://meli.la/Link3" rel="sponsored noopener" style="margin-top: 4px; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 10px 16px; background: #0E1116; color: #FFFFFF; border-radius: 10px; font-weight: 600; text-decoration: none">Ver en Mercado Libre</a>
-</div>
-</article>
-</div>
-<p style="margin: 0; font-size: 14px; color: #5B6472">Precios actuales al 10 de noviembre de 2026, sin envío ni cuotas.</p>
 </section>
 
-<section id="como" style="background: #FFFFFF; border-top: 1px solid #DDE1E7; border-bottom: 1px solid #DDE1E7">
-<div style="max-width: 1120px; margin: 0 auto; padding: 64px 24px; display: flex; flex-direction: column; gap: 32px">
-<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -0.02em">Cómo elegimos</h2>
-<div style="display: flex; flex-wrap: wrap; gap: 32px">
-<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
-<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #C2410C">1</span>
-<h3 style="margin: 0; font-size: 18px; font-weight: 600">El mismo modelo exacto</h3>
-<p style="margin: 0; color: #3A4350">Se compara el mismo modelo en Mercado Libre y en otras tiendas, no uno parecido.</p>
+<section id="canal" class="channel on-accent">
+<div class="wrap">
+<p class="mono">UN CANAL. CERO RUIDO.</p>
+<div class="channel-row">
+<div class="channel-copy">
+<h2 class="display">Los imperdibles del día, en Telegram</h2>
+<p>Un aviso por cada producto que pasa el filtro. Nada más.</p>
 </div>
-<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
-<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #C2410C">2</span>
-<h3 style="margin: 0; font-size: 18px; font-weight: 600">Diferencia de 15% o más</h3>
-<p style="margin: 0; color: #3A4350">Con una diferencia menor, el producto no se publica.</p>
-</div>
-<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
-<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #C2410C">3</span>
-<h3 style="margin: 0; font-size: 18px; font-weight: 600">Precio y fecha a la vista</h3>
-<p style="margin: 0; color: #3A4350">Cada comparación muestra los dos precios y el día en que se tomaron.</p>
-</div>
+<a href="https://t.me/imperdibles_ar?x=1&amp;y=2" class="channel-btn"><span aria-hidden="true">↗</span>Abrir el canal</a>
 </div>
 </div>
 </section>
 
-<section id="canal" style="max-width: 1120px; margin: 0 auto; padding: 64px 24px">
-<div style="background: #0E1116; color: #FFFFFF; border-radius: 20px; padding: 40px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px">
-<div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
-<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -0.02em">Los imperdibles del día, en Telegram</h2>
-<p style="margin: 0; color: #C9CED6">Un aviso por cada producto que pasa el filtro. Nada más.</p>
+<footer class="wrap legal">
+<p class="sign" aria-hidden="true"><b>imperdibles</b><i>.com.ar</i></p>
+<div class="rule"></div>
+<div class="notes">
+<p>Los enlaces a Mercado Libre son de afiliado: recibimos una comisión por cada compra, sin costo adicional.</p>
+<p>imperdibles.com.ar no pertenece a Mercado Libre ni a las tiendas comparadas.</p>
+<p>Precios actuales al 10 de noviembre de 2026, sin envío ni cuotas.</p>
 </div>
-<a href="https://t.me/imperdibles_ar?x=1&amp;y=2" style="min-height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 12px 22px; background: #FFFFFF; color: #0E1116; border-radius: 999px; font-weight: 600; text-decoration: none">
-<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4 20-7z"></path></svg>
-Abrir el canal</a>
-</div>
-</section>
-
-<footer style="max-width: 1120px; margin: 0 auto; padding: 0 24px 56px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #5B6472">
-<p style="margin: 0">Los enlaces a Mercado Libre son de afiliado: recibimos una comisión por cada compra, sin costo adicional.</p>
-<p style="margin: 0">imperdibles.com.ar no pertenece a Mercado Libre ni a las tiendas comparadas.</p>
 </footer>
 
-</div>
 </body>
 </html>
 "
