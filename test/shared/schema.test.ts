@@ -28,11 +28,16 @@ describe("schema", () => {
         "runs",
         "candidates",
         "posts",
-        "pages",
         "config",
         "ml_tokens",
       ]),
     );
+  });
+
+  it("no longer has the pages table (the site is static since the Astro migration)", async () => {
+    const db = createSqliteClient();
+    const rows = await db.all<{ name: string }>("SELECT name FROM sqlite_master WHERE type='table' AND name='pages'");
+    expect(rows).toEqual([]);
   });
 
   it("rejects a bad candidates.status with a CHECK failure", async () => {

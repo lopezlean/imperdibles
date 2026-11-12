@@ -69,5 +69,5 @@ Manual (`workflow_dispatch`), one run at a time, runs `pnpm run ship --site-only
 2. From the Mac, with `SITE_URL`, `TELEGRAM_CHANNEL_URL` and the Cloudflare credentials (or `wrangler login`) set: `pnpm run ship`.
 3. Right after the custom domain is attached, and before relying on Telegram publishing: `workers_dev = false` takes `imperdibles.lopezlean.workers.dev` offline, so set `WORKER_BASE_URL=https://imperdibles.com.ar` in `.env`, run `pnpm telegram:set-webhook`, and verify `https://imperdibles.com.ar/healthz` answers ok. Until then publishing and the bot webhook still point at the dead workers.dev URL.
 4. Add the CI secrets above and run the `Deploy site` workflow once (it runs on Node 24).
-4. Submit `https://imperdibles.com.ar/sitemap-index.xml` in Search Console.
-5. Follow-up, only after the new Worker is live: apply the migration that drops the `pages` table by hand with `pnpm db:migrate:remote`, and delete the `TODO(follow-up migration)` assertion in `test/worker/routes.test.ts` in the same change.
+5. Submit `https://imperdibles.com.ar/sitemap-index.xml` in Search Console.
+6. Only after the new Worker is live: apply `migrations/0005_drop_pages.sql` (drops the unused `pages` table) by hand with `pnpm db:migrate:remote`.

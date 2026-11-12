@@ -114,18 +114,6 @@ describe("POST /internal/publish-now", () => {
     expect(await res.json()).toEqual({ published: ["c1"], failed: [], stale: [] });
   });
 
-  it("publish-now publishes without touching pages", async () => {
-    const { runId } = await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"] });
-    await db.run(
-      "INSERT INTO candidates (id, run_id, model_id, payload, status, affiliate_link, telegram_file_id, validated_at) VALUES ('c1', ?, 'A:1', ?, 'validated', 'https://meli.la/2AbC', 'fid', '2026-11-10T10:50:00-03:00')",
-      [runId, VALID_PAYLOAD],
-    );
-    await handleFetch(post("Bearer pub-secret"), deps());
-    // TODO(follow-up migration): delete when the pages table is dropped
-    const pages = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM pages");
-    expect(pages[0]!.n).toBe(0);
-  });
-
   it("405 on the wrong method", async () => {
     const res = await handleFetch(new Request(url("/internal/publish-now")), deps());
     expect(res.status).toBe(405);
