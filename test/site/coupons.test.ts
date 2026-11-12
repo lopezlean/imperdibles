@@ -60,4 +60,20 @@ describe("loadCouponSiteData", () => {
     await seedCoupon(db, { code: "OK", validFrom: past, validUntil: soon });
     expect(await loadCouponSiteData(db, NOW)).toEqual({ link: null, coupons: [] });
   });
+
+  it("returns link null and no coupons when the coupons table does not exist yet", async () => {
+    const db = await withLink();
+    db.raw.exec("DROP TABLE coupons");
+    expect(await loadCouponSiteData(db, NOW)).toEqual({ link: null, coupons: [] });
+  });
+
+  it("still throws any other database error", async () => {
+    const db = {
+      all: async () => {
+        throw new Error("D1 unavailable");
+      },
+      run: async () => ({ changes: 0 }),
+    };
+    await expect(loadCouponSiteData(db, NOW)).rejects.toThrow("D1 unavailable");
+  });
 });

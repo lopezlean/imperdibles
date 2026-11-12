@@ -282,6 +282,12 @@ describe("coupons", () => {
     expect(await cstatus()).toBe("published");
   });
 
+  it("an unmatched reply is ignored (help text) when the coupons table does not exist yet", async () => {
+    db.raw.exec("DROP TABLE coupons");
+    const reply = await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 12345 }));
+    expect(reply?.text).toBe(HELP);
+  });
+
   it("a candidate wins when both tables hold the same message id", async () => {
     await candidate("c1", { msg: 700 });
     await coupon();

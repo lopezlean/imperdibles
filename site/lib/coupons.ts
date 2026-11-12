@@ -15,15 +15,25 @@ export type CouponSiteData = { link: string; coupons: CouponView[] } | { link: n
  * Without the affiliate link nothing is shown.
  */
 export async function loadCouponSiteData(db: SqlClient, now: Date): Promise<CouponSiteData> {
-  const links = await db.all<{ value: string }>("SELECT value FROM config WHERE name = ?", [CONFIG_LINK]);
-  const link = links[0]?.value;
-  if (!link) return { link: null, coupons: [] };
-  const coupons = await db.all<CouponView>(
-    `SELECT id, code, discount_type, discount_value, min_purchase, cap, scope, valid_from, valid_until
-       FROM coupons
-      WHERE status = 'published' AND valid_until > ?
-      ORDER BY valid_until, id`,
-    [now.toISOString()],
-  );
-  return { link, coupons };
+  try {
+    const links = await db.all<{ value: string }>("SELECT value FROM config WHERE name = ?", [CONFIG_LINK]);
+    const link = links[0]?.value;
+    if (!link) return { link: null, coupons: [] };
+    const coupons = await db.all<CouponView>(
+      `SELECT id, code, discount_type, discount_value, min_purchase, cap, scope, valid_from, valid_until
+         FROM coupons
+        WHERE status = 'published' AND valid_until > ?
+        ORDER BY valid_until, id`,
+      [now.toISOString()],
+    );
+    return { link, coupons };
+  } catch (error) {
+    // The migration may not be applied yet: the deal site must still build.
+    if (isNoSuchTable(error)) return { link: null, coupons: [] };
+    throw error;
+  }
+}
+
+function isNoSuchTable(error: unknown): boolean {
+  return error instanceof Error && /no such table/i.test(error.message);
 }

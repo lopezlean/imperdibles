@@ -60,10 +60,13 @@ async function handleCouponReply(
   text: string,
   reply: (text: string) => WebhookReply,
 ): Promise<WebhookReply> {
-  const [coupon] = await deps.db.all<CouponRow>(
-    "SELECT id, code, status, channel_message_id FROM coupons WHERE owner_message_id = ?",
-    [replied],
-  );
+  let coupon: CouponRow | undefined;
+  try {
+    [coupon] = await deps.db.all<CouponRow>("SELECT id, code, status, channel_message_id FROM coupons WHERE owner_message_id = ?", [replied]);
+  } catch (error) {
+    // The coupons migration may not be applied yet: no table means no match.
+    if (!(error instanceof Error && /no such table/i.test(error.message))) throw error;
+  }
   if (!coupon) return reply(HELP);
   if (text.trim().toLowerCase() !== "rechazar") return reply(COUPON_HELP);
   if (coupon.status === "removed") return reply(COUPON_ALREADY_REMOVED);

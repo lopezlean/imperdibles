@@ -47,6 +47,12 @@ Expected: wrangler reports `0001_initial.sql` and `0002_seed.sql` applied.
 
 The coupon step reads the official Mercado Libre affiliates channel with your own Telegram user account and extracts coupons with Claude.
 
+Do these in order:
+
+1. Apply the coupons migration BEFORE the first ship from this branch: `pnpm db:migrate:remote` (applies `migrations/0006_coupons.sql`). The site build and the Worker tolerate the missing table, but nothing is stored until it exists.
+2. Store the fixed affiliate link once: `pnpm imperdibles cupones-link https://meli.la/...`. Until it is set, coupons are stored as pending and neither posted nor shown.
+3. Then the login and environment steps below.
+
 1. Create an app at https://my.telegram.org (API development tools) and copy its `api_id` and `api_hash` into the local `.env` as `TELEGRAM_API_ID` and `TELEGRAM_API_HASH`.
 2. Run `pnpm telegram:login`. It asks for your phone number, the login code and, if you have one, your 2FA password. It prints one line `TELEGRAM_SESSION=...` and the list of your channels (id and title).
 3. Copy `TELEGRAM_SESSION` and the affiliates channel id (`TELEGRAM_SOURCE_CHANNEL_ID`) into the local `.env` only.
