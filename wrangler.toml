@@ -1,6 +1,13 @@
 name = "imperdibles"
 main = "src/worker/index.ts"
 compatibility_date = "2026-11-01"
+workers_dev = false
+
+[assets]
+directory = "dist/site"
+html_handling = "force-trailing-slash"
+not_found_handling = "404-page"
+run_worker_first = ["/telegram/*", "/internal/*", "/healthz"]
 
 [[d1_databases]]
 binding = "DB"
