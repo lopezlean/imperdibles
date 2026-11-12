@@ -5,7 +5,7 @@ import { formatArs, truncate } from "../format.js";
 
 const TELEGRAM_LIMIT = 4096;
 /** The scope is free model text not verified against the post: capped so it cannot bloat the public message. */
-export const SCOPE_LIMIT = 200;
+export const SCOPE_LIMIT = 300;
 
 const QUOTE_HEADER = "Mensaje original:";
 const OWNER_HINT = 'Para bajarlo, responder "rechazar".';

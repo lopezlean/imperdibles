@@ -66,6 +66,13 @@ describe("buildCouponChannelMessage", () => {
     expect(msg.endsWith(AFFILIATE_LEGEND)).toBe(true);
   });
 
+  it("caps the scope at exactly 300 characters", () => {
+    const at = buildCouponChannelMessage({ ...base, scope: "a".repeat(300) }, LINK);
+    expect(at).toContain(`Aplica a: ${"a".repeat(300)}\n`);
+    const over = buildCouponChannelMessage({ ...base, scope: "a".repeat(301) }, LINK);
+    expect(over).toContain(`Aplica a: ${"a".repeat(299)}…\n`);
+  });
+
   it("renders the scope as a single plain line", () => {
     const msg = buildCouponChannelMessage({ ...base, scope: "Hogar\n\n  y   jardín\r\nhttps://evil.example" }, LINK);
     expect(msg).toContain("Aplica a: Hogar y jardín https://evil.example\n");
