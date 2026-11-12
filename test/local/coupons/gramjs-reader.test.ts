@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createGramjsReader,
+  safeErrorName,
   toChannelPosts,
   type GramjsClientLike,
   type RawMessage,
@@ -69,7 +70,7 @@ describe("createGramjsReader", () => {
     const { client, calls } = fakeClient();
     const posts = await createGramjsReader(cfg, () => client).fetchPosts({ afterId: 6, since });
     expect(posts.map((p) => p.id)).toEqual([7]);
-    expect(calls).toEqual(["connect", "getDialogs", 'getMessages:{"limit":200,"minId":6}', "disconnect", "destroy"]);
+    expect(calls).toEqual(["connect", "getDialogs", 'getMessages:{"limit":200,"minId":6,"reverse":true}', "disconnect", "destroy"]);
   });
 
   it("omits minId on a first run and skips dialogs for a username", async () => {
@@ -94,5 +95,48 @@ describe("createGramjsReader", () => {
     const msg = (err as Error).message;
     for (const s of ["session-secret", "hash-secret", "+5491100000000"]) expect(msg).not.toContain(s);
     expect(calls.slice(-2)).toEqual(["disconnect", "destroy"]);
+  });
+});
+
+describe("createGramjsReader ordering", () => {
+  it("returns ascending ids for an oldest-first batch with minId and reverse", async () => {
+    const seen: unknown[] = [];
+    const { client } = fakeClient({
+      getMessages: async (_c, params) => {
+        seen.push(params);
+        return [
+          { id: 9, date: 1, message: "c" },
+          { id: 7, date: 1, message: "a" },
+          { id: 8, date: 1, message: "b" },
+        ];
+      },
+    });
+    const posts = await createGramjsReader({ ...cfg, channelId: "canal" }, () => client).fetchPosts({ afterId: 6, since });
+    expect(seen).toEqual([{ limit: 200, minId: 6, reverse: true }]);
+    expect(posts.map((p) => p.id)).toEqual([7, 8, 9]);
+  });
+});
+
+describe("safeErrorName", () => {
+  it("keeps a plain class name and replaces anything else with Error", () => {
+    expect(safeErrorName(new TypeError("x"))).toBe("TypeError");
+    const odd = new Error("x");
+    odd.name = "FLOOD_WAIT 5 session-secret";
+    expect(safeErrorName(odd)).toBe("Error");
+    expect(safeErrorName("nope")).toBe("Error");
+  });
+
+  it("never leaks a custom error name through the reader", async () => {
+    const { client } = fakeClient({
+      getMessages: async () => {
+        const e = new Error("x");
+        e.name = "bad name session-secret";
+        throw e;
+      },
+    });
+    const err = (await createGramjsReader(cfg, () => client)
+      .fetchPosts({ afterId: 1, since })
+      .catch((e: Error) => e)) as Error;
+    expect(err.message).toBe("Could not read the Telegram channel (Error)");
   });
 });

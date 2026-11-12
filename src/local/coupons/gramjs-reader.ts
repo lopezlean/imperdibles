@@ -27,7 +27,7 @@ export function toChannelPosts(raw: RawMessage[], opts: FetchOpts): ChannelPost[
 export interface GramjsClientLike {
   connect(): Promise<unknown>;
   getDialogs(params: { limit: number }): Promise<unknown>;
-  getMessages(channel: string, params: { limit: number; minId?: number }): Promise<RawMessage[]>;
+  getMessages(channel: string, params: { limit: number; minId?: number; reverse?: boolean }): Promise<RawMessage[]>;
   disconnect(): Promise<unknown>;
   destroy(): Promise<unknown>;
 }
@@ -48,11 +48,12 @@ export function createGramjsReader(
         if (/^-?\d+$/.test(cfg.channelId)) await client.getDialogs({ limit: 200 });
         const raw = await client.getMessages(cfg.channelId, {
           limit: 200,
-          ...(opts.afterId !== null ? { minId: opts.afterId } : {}),
+          // Oldest-first above the cursor: a capped batch keeps the oldest posts, so none are skipped.
+          ...(opts.afterId !== null ? { minId: opts.afterId, reverse: true } : {}),
         });
         return toChannelPosts(raw, opts);
       } catch (e) {
-        throw new Error(`Could not read the Telegram channel (${errorName(e)})`);
+        throw new Error(`Could not read the Telegram channel (${safeErrorName(e)})`);
       } finally {
         await client.disconnect().catch(() => undefined);
         await client.destroy().catch(() => undefined);
@@ -61,9 +62,9 @@ export function createGramjsReader(
   };
 }
 
-/** Only the error class: GramJS messages can echo the phone number or the session. */
-function errorName(e: unknown): string {
-  return e instanceof Error && e.name !== "" ? e.name : "unknown error";
+/** Only a plain error class name: GramJS RPC errors can carry server text in `name`, messages can echo secrets. */
+export function safeErrorName(e: unknown): string {
+  return e instanceof Error && /^[A-Za-z][A-Za-z0-9]{0,39}$/.test(e.name) ? e.name : "Error";
 }
 
 function defaultClient(cfg: GramjsReaderConfig): GramjsClientLike {
