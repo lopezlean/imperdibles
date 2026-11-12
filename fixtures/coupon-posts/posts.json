@@ -1,0 +1,54 @@
+[
+  {
+    "id": 2874,
+    "file": "cyberalmax.txt",
+    "postedAt": "2026-11-04T10:15:13-03:00",
+    "coupons": [
+      { "code": "CYBERALMAX", "discount_type": "amount", "discount_value": 20000, "min_purchase": 250000, "cap": null, "scope": "", "valid_from": "2026-11-04T10:00", "valid_until": "2026-11-04T23:59" },
+      { "code": "MELIROMPETODO", "discount_type": "amount", "discount_value": 45000, "min_purchase": 500000, "cap": null, "scope": "", "valid_from": "2026-11-04T10:00", "valid_until": "2026-11-04T23:59" },
+      { "code": "CYBERENCENDIDO", "discount_type": "amount", "discount_value": 80000, "min_purchase": 1000000, "cap": null, "scope": "", "valid_from": "2026-11-04T10:00", "valid_until": "2026-11-04T23:59" }
+    ]
+  },
+  {
+    "id": 136,
+    "file": "flash25.txt",
+    "postedAt": "2025-09-25T10:00:11-03:00",
+    "coupons": [
+      { "code": "FLASH25", "discount_type": "percent", "discount_value": 10, "min_purchase": 45000, "cap": 10000, "scope": "", "valid_from": null, "valid_until": null }
+    ]
+  },
+  {
+    "id": 149,
+    "file": "gldy9a.txt",
+    "postedAt": "2025-09-29T12:00:37-03:00",
+    "coupons": [
+      { "code": "GLDY9A", "discount_type": "percent", "discount_value": 10, "min_purchase": 50000, "cap": 5250, "scope": "Productos de la campaña Glam Days", "valid_from": "2025-09-29T12:00", "valid_until": "2025-09-29T15:00" }
+    ]
+  },
+  {
+    "id": 2853,
+    "file": "47extra10.txt",
+    "postedAt": "2026-11-02T15:04:17-03:00",
+    "coupons": [
+      { "code": "47EXTRA10", "discount_type": "percent", "discount_value": 10, "min_purchase": null, "cap": null, "scope": "Productos seleccionados", "valid_from": "2026-11-02", "valid_until": "2026-11-09" },
+      { "code": "CQCYBER", "discount_type": "amount", "discount_value": 5000, "min_purchase": 80000, "cap": null, "scope": "Como Quieres", "valid_from": "2026-11-02", "valid_until": "2026-11-12" },
+      { "code": "CHEEKY", "discount_type": "amount", "discount_value": 5000, "min_purchase": 50000, "cap": null, "scope": "Cheeky", "valid_from": "2026-11-02", "valid_until": "2026-11-12" }
+    ]
+  },
+  {
+    "id": 2863,
+    "file": "siguen-vigentes.txt",
+    "postedAt": "2026-11-03T13:52:57-03:00",
+    "coupons": [
+      { "code": "47EXTRA10", "discount_type": "percent", "discount_value": 10, "min_purchase": null, "cap": null, "scope": "Productos seleccionados", "valid_from": "2026-11-02", "valid_until": "2026-11-09" },
+      { "code": "CQCYBER", "discount_type": "amount", "discount_value": 5000, "min_purchase": 80000, "cap": null, "scope": "", "valid_from": "2026-11-02", "valid_until": "2026-11-12" },
+      { "code": "CHEEKY", "discount_type": "amount", "discount_value": 5000, "min_purchase": 50000, "cap": null, "scope": "", "valid_from": "2026-11-02", "valid_until": "2026-11-12" }
+    ]
+  },
+  {
+    "id": 1801,
+    "file": "sin-codigo.txt",
+    "postedAt": "2026-03-31T10:00:14-03:00",
+    "coupons": []
+  }
+]
