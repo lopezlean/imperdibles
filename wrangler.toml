@@ -2,6 +2,7 @@ name = "imperdibles"
 main = "src/worker/index.ts"
 compatibility_date = "2026-11-01"
 workers_dev = false
+routes = [{ pattern = "imperdibles.com.ar", custom_domain = true }]
 
 [assets]
 directory = "dist/site"

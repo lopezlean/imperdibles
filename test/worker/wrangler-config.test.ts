@@ -39,4 +39,10 @@ describe("wrangler.toml", () => {
   it("disables workers.dev", () => {
     expect(toml).toMatch(/^workers_dev = false$/m);
   });
+
+  it("manages the custom domain in code", () => {
+    expect(toml).toMatch(
+      /^routes = \[\{ pattern = "imperdibles\.com\.ar", custom_domain = true \}\]$/m,
+    );
+  });
 });
