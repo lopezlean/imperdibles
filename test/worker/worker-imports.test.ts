@@ -15,8 +15,6 @@ describe("Worker import closure", () => {
     "src/output/affiliate-link.ts",
     "src/output/telegram/client.ts",
     "src/output/publish/messages.ts",
-    "src/output/page/render.ts",
-    "src/output/html.ts",
     "src/shared/",
     "src/contract/",
   ])("reaches %s", (p) => {

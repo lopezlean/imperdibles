@@ -20,7 +20,6 @@ type Deps = {
   channelId: string;
   ownerChatId: string;
   now: () => Date;
-  afterPublish: () => Promise<void>;
 };
 
 type Row = { id: string; model_id: string; payload: string; affiliate_link: string; telegram_file_id: string; validated_at: string | null };
@@ -138,14 +137,6 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
     pending = { error: e };
   }
 
-  // Whatever happened above, a page that is missing published candidates must be regenerated.
-  if (report.published.length > 0) {
-    try {
-      await deps.afterPublish();
-    } catch (e) {
-      pending ??= { error: e };
-    }
-  }
   if (pending) throw pending.error;
   return report;
 }

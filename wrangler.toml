@@ -8,8 +8,5 @@ database_name = "imperdibles"
 database_id = "bef2b34f-9908-486e-bbf8-b85331c9a9f8"
 migrations_dir = "migrations"
 
-[vars]
-TELEGRAM_CHANNEL_URL = "https://t.me/REPLACE_WITH_CHANNEL"
-
 [triggers]
-crons = ["30 10 * * *", "0 14 * * *"]
+crons = ["30 10 * * *"]

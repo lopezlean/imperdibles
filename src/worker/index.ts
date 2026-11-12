@@ -4,23 +4,12 @@ import { safeEqual } from "./auth.js";
 import type { WorkerDeps } from "./deps.js";
 import type { Env } from "./env.js";
 import { checkMissingRun } from "./missing-run.js";
-import { regeneratePages, servePage } from "./page-store.js";
 import { publishValidated } from "./publish.js";
 import { handleTelegramUpdate } from "./webhook.js";
 
-// Cron times mirror notify_time and publish_time in config; changing an hour means editing both and wrangler.toml.
+// The cron time mirrors notify_time in config; changing the hour means editing both and wrangler.toml.
+// publish_time is still read by the local after-revalidation hook, so its config entry stays.
 const CRON_MISSING_RUN = "30 10 * * *";
-const CRON_PUBLISH = "0 14 * * *";
-
-// Single place that regenerates the page after a publication. A page failure is logged, never propagated:
-// the posts are already out and publishValidated must still report them.
-const afterPublish = async (deps: WorkerDeps): Promise<void> => {
-  try {
-    await regeneratePages({ db: deps.db, now: deps.now, channelUrl: deps.env.TELEGRAM_CHANNEL_URL });
-  } catch (e) {
-    console.error("regeneratePages failed", e);
-  }
-};
 
 const telegramFor = (deps: WorkerDeps): TelegramClient =>
   deps.telegram ?? createTelegramClient({ token: deps.env.TELEGRAM_BOT_TOKEN, fetch });
@@ -36,7 +25,6 @@ function runPublish(deps: WorkerDeps) {
     channelId: deps.env.TELEGRAM_CHANNEL_ID,
     ownerChatId: deps.env.TELEGRAM_OWNER_CHAT_ID,
     now: deps.now,
-    afterPublish: () => afterPublish(deps),
   });
 }
 
@@ -62,24 +50,12 @@ async function handlePublishNow(req: Request, deps: WorkerDeps): Promise<Respons
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (secret === "" || !safeEqual(token, secret)) return status(401, "unauthorized");
-  const report = await runPublish(deps);
-  // The manual trigger also refreshes the stored page when nothing new went out (e.g. after a deploy
-  // that changed the page markup); a publication already regenerated it.
-  if (report.published.length === 0) await afterPublish(deps);
-  return json(report);
-}
-
-async function serveHome(req: Request, deps: WorkerDeps): Promise<Response> {
-  const res = await servePage({ db: deps.db, now: deps.now, channelUrl: deps.env.TELEGRAM_CHANNEL_URL });
-  return req.method === "HEAD" ? new Response(null, { status: res.status, headers: res.headers }) : res;
+  return json(await runPublish(deps));
 }
 
 export async function handleFetch(req: Request, deps: WorkerDeps): Promise<Response> {
   const { pathname } = new URL(req.url);
   switch (pathname) {
-    case "/":
-      if (req.method !== "GET" && req.method !== "HEAD") return status(405, "method not allowed");
-      return serveHome(req, deps);
     case "/healthz":
       if (req.method !== "GET") return status(405, "method not allowed");
       await deps.db.all("SELECT 1");
@@ -101,8 +77,6 @@ export async function handleScheduled(cron: string, deps: WorkerDeps): Promise<v
       ownerChatId: deps.env.TELEGRAM_OWNER_CHAT_ID,
       now: deps.now,
     });
-  } else if (cron === CRON_PUBLISH) {
-    await runPublish(deps);
   } else {
     throw new Error(`unknown cron: ${cron}`);
   }

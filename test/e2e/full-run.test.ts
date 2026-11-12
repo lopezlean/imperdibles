@@ -3,21 +3,18 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseCandidateList } from "../../src/contract/candidate-list.js";
 import { createReplayFetch } from "../../src/data/recording.js";
 import { runDaily, type RunDeps } from "../../src/data/run-daily.js";
 import { runRevalidate } from "../../src/data/revalidate.js";
 import { fravegaSearchUrl } from "../../src/data/stores/fravega.js";
 import { createOutputHooks } from "../../src/local/output-hooks.js";
-import { renderCardPng } from "../../src/output/card/render.js";
-import { AFFILIATE_LEGEND, EMPTY_PAGE } from "../../src/output/copy.js";
-import { escapeHtml } from "../../src/output/html.js";
-import { renderHomePage } from "../../src/output/page/render.js";
+import { AFFILIATE_LEGEND } from "../../src/output/copy.js";
 import { createTelegramClient } from "../../src/output/telegram/client.js";
 import type { LocalEnv } from "../../src/shared/env.js";
 import type { WorkerDeps } from "../../src/worker/deps.js";
 import type { Env } from "../../src/worker/env.js";
-import { handleFetch, handleScheduled } from "../../src/worker/index.js";
+import { handleFetch } from "../../src/worker/index.js";
+import { dayPage, listDays, loadSiteData } from "../../site/lib/deals.js";
 import { createSqliteClient } from "../support/sqlite-client.js";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -124,7 +121,6 @@ function createWorld(replay: typeof fetch, startIso: string) {
     TELEGRAM_CHANNEL_ID: CHANNEL,
     TELEGRAM_WEBHOOK_SECRET: WEBHOOK_SECRET,
     PUBLISH_NOW_SECRET: PUBLISH_SECRET,
-    TELEGRAM_CHANNEL_URL: "https://t.me/e2e_test",
   } as unknown as Env;
   const workerDeps: WorkerDeps = {
     db,
@@ -156,7 +152,11 @@ function createWorld(replay: typeof fetch, startIso: string) {
   };
 
   const at = (iso: string) => void (clock.now = new Date(iso));
-  const get = (p = "/") => handleFetch(new Request(`${WORKER_BASE}${p}`), workerDeps);
+  const publishNow = () =>
+    handleFetch(
+      new Request(`${WORKER_BASE}/internal/publish-now`, { method: "POST", headers: { Authorization: `Bearer ${PUBLISH_SECRET}` } }),
+      workerDeps,
+    );
   const reply = (replyTo: number, text: string) =>
     handleFetch(
       new Request(`${WORKER_BASE}/telegram/webhook`, {
@@ -176,7 +176,7 @@ function createWorld(replay: typeof fetch, startIso: string) {
     );
   const posts = () => db.all<{ channel: string }>("SELECT channel FROM posts ORDER BY channel").then((r) => r.map((x) => x.channel));
 
-  return { db, runDeps, at, get, reply, channelPosts, candidates, posts, calls, workerRequests, workerDeps, workerFetch: (p: string) => get(p) };
+  return { db, runDeps, at, publishNow, reply, channelPosts, candidates, posts, calls, workerRequests, workerDeps };
 }
 type World = ReturnType<typeof createWorld>;
 
@@ -200,13 +200,19 @@ async function collectAndChoose(w: World, date: string): Promise<string> {
   return first.id;
 }
 
-function expectPublishedPage(html: string): void {
-  expect(html).toContain(`href="${escapeHtml(LINK)}"`);
-  expect(html).toContain('rel="sponsored noopener"');
-  expect(html).toContain("15% o más");
+/** What the static site would publish: the day page built from the same database the Worker wrote to. */
+async function expectPublishedDay(w: World, runDate: string): Promise<void> {
+  const data = await loadSiteData(w.db);
+  const page = dayPage(data, runDate);
+  expect(page).not.toBeNull();
+  expect(page!.items).toHaveLength(1);
+  const [deal] = page!.items;
+  expect(deal!.candidate.title).toEqual(expect.any(String));
+  expect(deal!.candidate.title.length).toBeGreaterThan(0);
+  expect(deal!.affiliate_link).toBe(LINK);
 }
 
-describe("end to end: replayed data to the published page", () => {
+describe("end to end: replayed data to the published deals", () => {
   it(
     "publishes at 11:00 with one rival: shortlist, reply, revalidate, scheduled post, page",
     async () => {
@@ -220,8 +226,8 @@ describe("end to end: replayed data to the published page", () => {
       expect(w.workerRequests).toEqual([]);
       expect(w.channelPosts()).toHaveLength(0);
 
-      w.at("2026-11-10T11:00:00-03:00"); // the 14:00 UTC cron, 15 minutes after validated_at
-      await handleScheduled("0 14 * * *", w.workerDeps);
+      w.at("2026-11-10T11:00:00-03:00"); // 15 minutes after validated_at
+      expect((await w.publishNow()).status).toBe(200);
       const posts = w.channelPosts();
       expect(posts).toHaveLength(1);
       expect(posts[0]!.photo).toBe("file_id");
@@ -230,15 +236,13 @@ describe("end to end: replayed data to the published page", () => {
       expect(await w.posts()).toEqual(["telegram_channel", "x_manual"]); // the channel post and the X material for the owner
       expect((await w.candidates()).find((c) => c.id === id)!.status).toBe("published");
 
-      const page = await w.get("/");
-      expect(page.status).toBe(200);
-      expectPublishedPage(await page.text());
+      await expectPublishedDay(w, "2026-11-10");
     },
     60_000,
   );
 
   it(
-    "publishes once when revalidation runs after 11:00 and the hook ships (build and upload stubbed), and the cron adds nothing",
+    "publishes once when revalidation runs after 11:00 and the hook ships (build and upload stubbed), and a further publish-now adds nothing",
     async () => {
       const w = createWorld(routedReplay(composedRoutes()), "2026-11-10T10:00:00-03:00");
       await collectAndChoose(w, "2026-11-10");
@@ -249,48 +253,23 @@ describe("end to end: replayed data to the published page", () => {
       expect(w.workerRequests).toEqual(["/internal/publish-now", "/internal/publish-now"]);
       expect(w.channelPosts()).toHaveLength(1);
 
-      await handleScheduled("0 14 * * *", w.workerDeps);
+      expect((await w.publishNow()).status).toBe(200);
       expect(w.channelPosts()).toHaveLength(1);
       expect(await w.posts()).toEqual(["telegram_channel", "x_manual"]);
-      expectPublishedPage(await (await w.get("/")).text());
+      await expectPublishedDay(w, "2026-11-10");
     },
     60_000,
   );
 
   it(
-    "shows the empty page when the replay listing has no results",
+    "publishes no days when the replay listing has no results",
     async () => {
       const w = createWorld(routedReplay(composedRoutes("listing-no-results.html")), "2026-11-10T10:00:00-03:00");
       w.at("2026-11-10T10:00:00-03:00");
       expect((await runDaily(w.runDeps, { force: false, category: "aspiradoras-robot" })).exitCode).toBe(0);
       expect(await w.candidates()).toEqual([]);
-      const page = await w.get("/");
-      expect(page.status).toBe(200);
-      expect(await page.text()).toContain(EMPTY_PAGE);
+      expect(listDays(await loadSiteData(w.db))).toEqual([]);
       expect(w.channelPosts()).toHaveLength(0);
-    },
-    60_000,
-  );
-
-  it(
-    "renders the page and the card with three rivals from the existing fixture",
-    async () => {
-      // The multi-rival end-to-end flow waits for real rival adapters (Cetrogar, Musimundo); until then only the rendering is covered.
-      const list = parseCandidateList(JSON.parse(read("lista-candidatos", "valid-three-rivals.json")));
-      const c = list.candidates[0]!;
-      expect(c.others.length).toBe(3);
-      const html = renderHomePage({
-        mode: "today",
-        run_date: list.run_date,
-        categoryName: "Aspiradoras robot",
-        threshold_pct: 15,
-        models_compared: list.models_compared,
-        items: [{ candidate: c, affiliate_link: LINK }],
-        channelUrl: "https://t.me/e2e_test",
-      });
-      expectPublishedPage(html);
-      const png = await renderCardPng(c, { run_date: list.run_date });
-      expect([...png.slice(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
     },
     60_000,
   );
@@ -313,11 +292,11 @@ describe.skipIf(recorded === undefined)(recorded === undefined ? SKIP_RECORDED :
       expect(await runRevalidate(w.runDeps)).toBe(0);
       expect((await w.candidates()).find((c) => c.id === id)!.status).toBe("validated");
       w.at(`${date}T11:00:00-03:00`);
-      await handleScheduled("0 14 * * *", w.workerDeps);
+      expect((await w.publishNow()).status).toBe(200);
       expect(w.channelPosts()).toHaveLength(1);
       expect(w.channelPosts()[0]!.text).toContain(LINK);
       expect(w.channelPosts()[0]!.text).toContain(AFFILIATE_LEGEND);
-      expectPublishedPage(await (await w.get("/")).text());
+      await expectPublishedDay(w, date);
     },
     120_000,
   );

@@ -12,7 +12,6 @@ function makeDeps(): WorkerDeps {
     TELEGRAM_CHANNEL_ID: "-100",
     TELEGRAM_WEBHOOK_SECRET: "fake-secret",
     PUBLISH_NOW_SECRET: "fake-publish",
-    TELEGRAM_CHANNEL_URL: "https://t.me/fake",
   } as unknown as Env;
   return { db: createSqliteClient(), env, now: () => new Date("2026-11-10T10:30:00Z") };
 }

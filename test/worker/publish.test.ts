@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { buildXPost } from "../../src/output/publish/messages.js";
 import { TelegramError, type TelegramClient } from "../../src/output/telegram/client.js";
 import { PUBLISH_CAP_PER_CALL, publishValidated } from "../../src/worker/publish.js";
@@ -92,8 +92,8 @@ function fakeTelegram(opts: { failChannel?: (fileId: string) => unknown; failOwn
   return { client, calls, channelPhotos: () => calls.filter((c) => c.kind === "photo" && c.chat === CHANNEL) };
 }
 
-const run = (tg: TelegramClient, afterPublish = async () => {}, now = NOW, client: SqlClient = db) =>
-  publishValidated({ db: client, telegram: tg, channelId: CHANNEL, ownerChatId: OWNER, now: () => now, afterPublish });
+const run = (tg: TelegramClient, now = NOW, client: SqlClient = db) =>
+  publishValidated({ db: client, telegram: tg, channelId: CHANNEL, ownerChatId: OWNER, now: () => now });
 
 /** A SqlClient that throws on the nth call (1-based) whose SQL matches `pattern`. */
 function failingDb(pattern: RegExp, nth: number): SqlClient {
@@ -217,33 +217,27 @@ describe("publishValidated", () => {
     expect(left[0]!.n).toBe(3);
   });
 
-  it("still regenerates the page, then rethrows, when a database call fails after a successful publish", async () => {
+  it("rethrows when a database call fails after a successful publish", async () => {
     await addCandidate("c1", "r1", "m1");
     await addCandidate("c2", "r1", "m2");
     const tg = fakeTelegram();
-    const after = vi.fn(async () => {});
-    await expect(run(tg.client, after, NOW, failingDb(/SELECT c2\.id/, 2))).rejects.toThrow("d1 down");
-    expect(after).toHaveBeenCalledTimes(1);
+    await expect(run(tg.client, NOW, failingDb(/SELECT c2\.id/, 2))).rejects.toThrow("d1 down");
     expect((await status("c1")).status).toBe("published");
     expect((await status("c2")).status).toBe("validated");
   });
 
-  it("does not regenerate when the database fails before anything was published", async () => {
+  it("rethrows when the database fails before anything was published", async () => {
     await addCandidate("c1", "r1", "m1");
-    const after = vi.fn(async () => {});
-    await expect(run(fakeTelegram().client, after, NOW, failingDb(/SELECT c2\.id/, 1))).rejects.toThrow("d1 down");
-    expect(after).not.toHaveBeenCalled();
+    await expect(run(fakeTelegram().client, NOW, failingDb(/SELECT c2\.id/, 1))).rejects.toThrow("d1 down");
   });
 
   it("alerts the owner and keeps going when the revert to validated fails", async () => {
     await addCandidate("c1", "r1", "m1");
     await addCandidate("c2", "r1", "m2");
     const tg = fakeTelegram({ failChannel: (fileId) => (fileId === "file-c1" ? new TelegramError(500, "boom") : undefined) });
-    const after = vi.fn(async () => {});
-    const report = await run(tg.client, after, NOW, failingDb(/SET status = 'validated'/, 1));
+    const report = await run(tg.client, NOW, failingDb(/SET status = 'validated'/, 1));
     expect(report.published).toEqual(["c2"]);
     expect(report.failed).toEqual(["c1"]);
-    expect(after).toHaveBeenCalledTimes(1);
     const alerts = tg.calls.filter((c) => c.kind === "message").map((c) => c.text ?? "");
     expect(alerts.some((t) => t.includes("Robot c1") && t.includes("publicado"))).toBe(true);
   });
@@ -252,8 +246,7 @@ describe("publishValidated", () => {
     await addCandidate("c1", "r1", "m1");
     await addCandidate("c2", "r1", "m2");
     const tg = fakeTelegram();
-    const after = vi.fn(async () => {});
-    const [a, b] = await Promise.all([run(tg.client, after), run(tg.client, after)]);
+    const [a, b] = await Promise.all([run(tg.client), run(tg.client)]);
     expect(tg.channelPhotos()).toHaveLength(2);
     expect([...a.published, ...b.published].sort()).toEqual(["c1", "c2"]);
     expect(await posts("telegram_channel")).toHaveLength(2);
@@ -320,7 +313,7 @@ describe("publishValidated", () => {
     };
     const tg = fakeTelegram();
     const report = await publishValidated({
-      db: failing, telegram: tg.client, channelId: CHANNEL, ownerChatId: OWNER, now: () => NOW, afterPublish: async () => {},
+      db: failing, telegram: tg.client, channelId: CHANNEL, ownerChatId: OWNER, now: () => NOW
     });
     expect(report.failed).toEqual([]);
     expect(report.published).toEqual(["c1"]);
@@ -330,20 +323,5 @@ describe("publishValidated", () => {
     const again = fakeTelegram();
     await run(again.client);
     expect(again.channelPhotos()).toHaveLength(0);
-  });
-
-  it("calls afterPublish once when something was published, never otherwise", async () => {
-    const after = vi.fn(async () => {});
-    await run(fakeTelegram().client, after);
-    expect(after).not.toHaveBeenCalled();
-    await addCandidate("c1", "r1", "m1");
-    await addCandidate("c2", "r1", "m2");
-    await run(fakeTelegram().client, after);
-    expect(after).toHaveBeenCalledTimes(1);
-    const failing = vi.fn(async () => {});
-    await db.run("UPDATE candidates SET status = 'validated'");
-    await db.run("DELETE FROM posts");
-    await run(fakeTelegram({ failChannel: () => new TelegramError(500, "sendPhoto: boom") }).client, failing);
-    expect(failing).not.toHaveBeenCalled();
   });
 });

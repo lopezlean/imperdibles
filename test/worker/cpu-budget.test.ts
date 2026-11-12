@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { TelegramClient } from "../../src/output/telegram/client.js";
 import type { WorkerDeps } from "../../src/worker/deps.js";
 import type { Env } from "../../src/worker/env.js";
-import { handleFetch, handleScheduled } from "../../src/worker/index.js";
+import { handleFetch } from "../../src/worker/index.js";
 import { createSqliteClient } from "../support/sqlite-client.js";
 import { seedRun } from "./support/seed.js";
 
@@ -15,7 +15,7 @@ import { seedRun } from "./support/seed.js";
 const CAP_US = 8_000; // below the 10 ms limit, leaving headroom for the approximation
 const WARMUP = 5;
 const RUNS = 20;
-const NOW = new Date("2026-11-10T14:00:00Z"); // 11:00 ART, the publish cron
+const NOW = new Date("2026-11-10T14:00:00Z"); // 11:00 ART
 const FRESH = "2026-11-10T10:45:00-03:00"; // inside the 30 minute validation window
 const LINK = "https://meli.la/2AbC_xY?r=1/";
 const MODELS = Array.from({ length: 10 }, (_, i) => `m${i}`);
@@ -83,7 +83,6 @@ beforeAll(async () => {
     TELEGRAM_CHANNEL_ID: "-100",
     TELEGRAM_WEBHOOK_SECRET: "hook-secret",
     PUBLISH_NOW_SECRET: "pub-secret",
-    TELEGRAM_CHANNEL_URL: "https://t.me/x",
   } as unknown as Env;
   deps = { db, env, now: () => NOW, telegram };
 });
@@ -118,25 +117,16 @@ describe("Worker CPU budget (cap 8 ms median)", () => {
     expect(us).toBeLessThan(CAP_US);
   });
 
-  it("14:00 cron: publish the capped 5 of 10 validated candidates and regenerate the pages", async () => {
+  it("publish-now: publish the capped 5 of 10 validated candidates", async () => {
+    const publishNow = () =>
+      new Request("https://imperdibles.com.ar/internal/publish-now", { method: "POST", headers: { Authorization: "Bearer pub-secret" } });
     await resetPublish();
-    await db.run("DELETE FROM pages");
-    await handleScheduled("0 14 * * *", deps);
+    const res = await handleFetch(publishNow(), deps);
+    expect(res.status).toBe(200);
     const done = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM candidates WHERE status = 'published'");
     expect(done[0]!.n).toBe(5);
-    const pages = await db.all<{ n: number }>("SELECT COUNT(*) AS n FROM pages");
-    expect(pages[0]!.n).toBeGreaterThan(0);
-    const us = await medianCpuUs(resetPublish, () => handleScheduled("0 14 * * *", deps));
-    console.log(`cpu median publish cron: ${us} us`);
-    expect(us).toBeLessThan(CAP_US);
-  });
-
-  it("GET /: serves the stored page with 5 published items", async () => {
-    const res = await handleFetch(new Request("https://imperdibles.com.ar/"), deps);
-    expect(res.status).toBe(200);
-    expect(await res.text()).toContain("Robot aspirador 0");
-    const us = await medianCpuUs(async () => {}, async () => (await handleFetch(new Request("https://imperdibles.com.ar/"), deps)).text());
-    console.log(`cpu median GET /: ${us} us`);
+    const us = await medianCpuUs(resetPublish, () => handleFetch(publishNow(), deps));
+    console.log(`cpu median publish-now: ${us} us`);
     expect(us).toBeLessThan(CAP_US);
   });
 });
