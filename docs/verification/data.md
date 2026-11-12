@@ -67,8 +67,13 @@
 - Then check the run: `pnpm wrangler d1 execute imperdibles --remote --command "SELECT id, status, models_compared, queries_used FROM runs ORDER BY started_at DESC LIMIT 1"`.
 - Then count the rows written by that run (`<id>` from the previous query): `pnpm wrangler d1 execute imperdibles --remote --command "SELECT (SELECT COUNT(*) FROM price_observations WHERE run_id = '<id>') AS observations, (SELECT COUNT(*) FROM candidates WHERE run_id = '<id>') AS candidates, (SELECT COUNT(*) FROM models) AS models, (SELECT COUNT(*) FROM matches) AS matches, (SELECT COUNT(*) FROM store_listings) AS listings"`. Rows written per run are about observations + candidates + 1 (runs) plus the upserts to store_listings, models and matches; record the totals and compare with 100.000.
 - A second `pnpm imperdibles correr` the same day must print `Ya hay una corrida de hoy (<id>). Para repetirla: imperdibles correr --forzar` and exit 2 (also confirms `run_date` uses the ART date).
-- Result: pending.
+- Result (2026-11-11, run `2026-11-11-aspiradoras-robot-200859`, four stores, 6 models compared, 59 queries): 186 price observations, 5 candidates, 1 run row, plus upserts to 186 store listings, 10 models and 10 matches. About 400 rows written per run, under 1% of the 100.000 rows/day quota. The "already ran today" check (exit 2) is still unchecked.
 - Fallback: if one run writes more than a fraction of 100.000 rows, reduce `presupuesto_consultas` or the categories read per day.
+
+## V13 Listings without a model code
+
+- Date: 2026-11-11. The run logs two `no_model_code` skips; both are Easy listings: "Aspiradora Robot 0.31 L Blanca RCV 1 Karcher" (the code is split by a space, "RCV 1") and "Aspiradora Robot 40.5 W 350 Ml Negra KL-ASPRB Klauben" (the code has no digit).
+- Decision: left as skips. Joining a letter token with a following number would also turn words like "Serie 5" into codes, and both are minor brands for this category.
 
 ## V10 Jumbo (VTEX catalog API)
 
