@@ -170,6 +170,8 @@ const env = (over: Partial<LocalEnv> = {}): LocalEnv => ({
   telegramChannelId: "",
   publishNowSecret: "",
   workerBaseUrl: "",
+  anthropicApiKey: "",
+  anthropicModel: "",
   ...over,
 });
 

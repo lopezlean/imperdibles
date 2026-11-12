@@ -23,6 +23,8 @@ const env: LocalEnv = {
   telegramChannelId: "",
   publishNowSecret: "",
   workerBaseUrl: "",
+  anthropicApiKey: "",
+  anthropicModel: "",
 };
 const NOW = new Date("2026-11-10T12:00:00Z");
 const now = () => NOW;

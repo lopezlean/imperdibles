@@ -10,7 +10,27 @@ export type LocalEnv = {
   telegramChannelId: string;
   publishNowSecret: string;
   workerBaseUrl: string;
+  anthropicApiKey: string;
+  anthropicModel: string;
 };
+
+/** Keys every local command has always required; the default `required` list. */
+export const BASE_ENV_KEYS: readonly (keyof LocalEnv)[] = [
+  "mlAppId",
+  "mlClientSecret",
+  "mlRedirectUri",
+  "cfAccountId",
+  "cfApiToken",
+  "d1DatabaseId",
+  "telegramBotToken",
+  "telegramOwnerChatId",
+  "telegramChannelId",
+  "publishNowSecret",
+  "workerBaseUrl",
+];
+
+/** Opt-in: required only by the coupon pipeline (ANTHROPIC_MODEL is optional, it has a default). */
+export const COUPON_ENV_KEYS: readonly (keyof LocalEnv)[] = ["anthropicApiKey"];
 
 export const DATA_ENV_KEYS: readonly (keyof LocalEnv)[] = [
   "mlAppId",
@@ -33,6 +53,8 @@ const VAR_NAMES: Record<keyof LocalEnv, string> = {
   telegramChannelId: "TELEGRAM_CHANNEL_ID",
   publishNowSecret: "PUBLISH_NOW_SECRET",
   workerBaseUrl: "WORKER_BASE_URL",
+  anthropicApiKey: "ANTHROPIC_API_KEY",
+  anthropicModel: "ANTHROPIC_MODEL",
 };
 
 const ALL_KEYS = Object.keys(VAR_NAMES) as (keyof LocalEnv)[];
@@ -46,7 +68,7 @@ export class MissingEnvError extends Error {
 
 export function loadLocalEnv(
   source: Record<string, string | undefined>,
-  required: readonly (keyof LocalEnv)[] = ALL_KEYS,
+  required: readonly (keyof LocalEnv)[] = BASE_ENV_KEYS,
 ): LocalEnv {
   const missing: string[] = [];
   const out = {} as LocalEnv;

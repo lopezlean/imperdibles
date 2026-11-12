@@ -45,6 +45,8 @@ const ENV: LocalEnv = {
   telegramChannelId: CHANNEL,
   publishNowSecret: PUBLISH_SECRET,
   workerBaseUrl: WORKER_BASE,
+  anthropicApiKey: "",
+  anthropicModel: "",
 };
 
 const urlOf = (input: Parameters<typeof fetch>[0]): string =>

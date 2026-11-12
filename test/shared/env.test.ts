@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DATA_ENV_KEYS, MissingEnvError, loadLocalEnv } from "../../src/shared/env.js";
+import { BASE_ENV_KEYS, COUPON_ENV_KEYS, DATA_ENV_KEYS, MissingEnvError, loadLocalEnv } from "../../src/shared/env.js";
 
 const full = {
   ML_APP_ID: "app-id-value",
@@ -71,5 +71,18 @@ describe("loadLocalEnv", () => {
     expect(env.telegramBotToken).toBe("");
     expect(env.workerBaseUrl).toBe("");
     expect(env.publishNowSecret).toBe("");
+  });
+
+  it("exposes the Anthropic keys as empty strings when unset, without throwing", () => {
+    const env = loadLocalEnv(full);
+    expect(env.anthropicApiKey).toBe("");
+    expect(env.anthropicModel).toBe("");
+  });
+
+  it("reads the Anthropic keys when set and requires them only on opt-in", () => {
+    const env = loadLocalEnv({ ...full, ANTHROPIC_API_KEY: "k", ANTHROPIC_MODEL: "m" });
+    expect(env.anthropicApiKey).toBe("k");
+    expect(env.anthropicModel).toBe("m");
+    expect(() => loadLocalEnv(full, [...BASE_ENV_KEYS, ...COUPON_ENV_KEYS])).toThrow(/ANTHROPIC_API_KEY/);
   });
 });

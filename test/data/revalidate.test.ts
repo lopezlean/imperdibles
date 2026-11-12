@@ -571,6 +571,8 @@ const ENV: LocalEnv = {
   telegramChannelId: "",
   publishNowSecret: "",
   workerBaseUrl: "",
+  anthropicApiKey: "",
+  anthropicModel: "",
 };
 
 type Routes = Map<string, () => Response>;
