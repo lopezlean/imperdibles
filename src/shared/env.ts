@@ -74,6 +74,9 @@ const VAR_NAMES: Record<keyof LocalEnv, string> = {
   anthropicModel: "ANTHROPIC_MODEL",
 };
 
+/** The `.env` variable name of a key; safe to log, unlike its value. */
+export const envVarName = (key: keyof LocalEnv): string => VAR_NAMES[key];
+
 const ALL_KEYS = Object.keys(VAR_NAMES) as (keyof LocalEnv)[];
 
 /** Thrown with variable names only, never values. */

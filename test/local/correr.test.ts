@@ -472,6 +472,26 @@ describe("main", () => {
     expect(USAGE).toContain("imperdibles cupones-link <enlace>");
   });
 
+  it("revalidar calls afterRevalidar after runRevalidate; correr never does", async () => {
+    const s = setup();
+    const order: string[] = [];
+    s.hooks.onRevalidated = async () => void order.push("revalidated");
+    s.deps.afterRevalidar = async () => void order.push("coupons");
+    expect(await main(["revalidar"], s.deps)).toBe(0);
+    expect(order).toEqual(["revalidated", "coupons"]);
+    expect(await main(["correr"], s.deps)).toBe(0);
+    expect(order).toEqual(["revalidated", "coupons"]);
+  });
+
+  it("revalidar keeps its exit code even when the coupon hook throws", async () => {
+    const s = setup();
+    s.deps.afterRevalidar = async () => {
+      throw new Error("coupon boom sk-SECRET");
+    };
+    expect(await main(["revalidar"], s.deps)).toBe(0);
+    expect(s.err.join("")).not.toContain("sk-SECRET");
+  });
+
   it("prints usage for help and for unknown commands", async () => {
     const s = setup();
     expect(await main(["--help"], s.deps)).toBe(0);

@@ -8,6 +8,7 @@ import { sendShortlist } from "../output/local/send-shortlist.js";
 import { createTelegramClient } from "../output/telegram/client.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
 import type { LocalEnv } from "../shared/env.js";
+import { shipWithFingerprint } from "./coupons/site-sync.js";
 
 export type OutputHookDeps = {
   db: SqlClient;
@@ -48,7 +49,7 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
           telegram,
           ownerChatId,
           render: renderCardPng,
-          runShip: () =>
+          runShip: shipWithFingerprint({ db, now: deps.now }, () =>
             ship(
               {
                 fetch: deps.fetch,
@@ -59,6 +60,7 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
               },
               { siteOnly: false },
             ),
+          ),
           now: deps.now,
         },
         report,

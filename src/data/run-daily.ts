@@ -33,6 +33,8 @@ export type RunDeps = {
   sleep: (ms: number) => Promise<void>;
   hooks: LocalOutputHooks;
   logPath: string;
+  /** Runs after `revalidar` (never after `correr`); it must not throw, and a throw never changes the exit code. */
+  afterRevalidar?: () => Promise<void>;
   stdout: (s: string) => void;
   stderr: (s: string) => void;
 };
@@ -230,7 +232,18 @@ export async function main(argv: string[], deps: RunDeps): Promise<number> {
     return 0;
   }
   if (command?.name === "correr") return (await runDaily(deps, { force: command.force, category: command.category })).exitCode;
-  if (command?.name === "revalidar") return runRevalidate(deps);
+  if (command?.name === "revalidar") {
+    const exitCode = await runRevalidate(deps);
+    if (deps.afterRevalidar) {
+      try {
+        await deps.afterRevalidar();
+      } catch (error) {
+        // Name only: the coupon side holds secrets the scrubber knows nothing about.
+        deps.stderr(`La ronda de cupones falló (${error instanceof Error ? error.name : "error"}).\n`);
+      }
+    }
+    return exitCode;
+  }
   deps.stderr(USAGE);
   return 2;
 }

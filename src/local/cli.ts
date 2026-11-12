@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { USAGE, main, parseCommand } from "../data/run-daily.js";
 import { createD1HttpClient } from "../shared/db/d1-http-client.js";
 import { DATA_ENV_KEYS, MissingEnvError, loadLocalEnv } from "../shared/env.js";
+import { createCouponRound } from "./coupons/factory.js";
 import { runCouponsLinkCommand } from "./coupons/link.js";
 import { createOutputHooks } from "./output-hooks.js";
 
@@ -41,6 +42,8 @@ async function run(): Promise<number> {
     now,
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     hooks: createOutputHooks({ db, env, now, fetch }),
+    afterRevalidar:
+      command.name === "revalidar" ? (createCouponRound({ db, env, now, fetch }, (line) => void process.stderr.write(`${line}\n`)) ?? undefined) : undefined,
     logPath: path.join(ROOT, "var", "run-log.jsonl"),
     stdout: (s) => void process.stdout.write(s),
     stderr: (s) => void process.stderr.write(s),
