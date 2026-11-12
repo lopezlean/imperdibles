@@ -1,6 +1,6 @@
-import { spawn } from "node:child_process";
 import type { LocalOutputHooks } from "../contract/local-hooks.js";
 import { ship } from "../deploy/ship.js";
+import { spawnExec } from "../deploy/spawn-exec.js";
 import { renderOwnerAlert } from "../output/alerts.js";
 import { afterRevalidation } from "../output/local/after-revalidation.js";
 import { renderCardPng } from "../output/card/render.js";
@@ -8,13 +8,6 @@ import { sendShortlist } from "../output/local/send-shortlist.js";
 import { createTelegramClient } from "../output/telegram/client.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
 import type { LocalEnv } from "../shared/env.js";
-
-const spawnExec = (cmd: string, args: string[]): Promise<number> =>
-  new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { stdio: "inherit" });
-    child.on("error", reject);
-    child.on("close", (code) => resolve(code ?? 1));
-  });
 
 export type OutputHookDeps = {
   db: SqlClient;
