@@ -23,12 +23,18 @@ const errText = (e: unknown): string => (e instanceof Error ? e.message : String
 
 /** The SDK client behind the extractor's narrow interface; the cast is confined to the request params. */
 function anthropicAdapter(apiKey: string): AnthropicLike {
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, timeout: 30_000, maxRetries: 1 });
   return {
     messages: {
       create: (params) => client.messages.create(params as unknown as MessageCreateParamsNonStreaming),
     },
   };
+}
+
+/** Replaces every secret value (4+ characters) with [redacted]. */
+export function createRedactor(env: LocalEnv): (text: string) => string {
+  const secrets = [env.tgSession, env.tgApiHash, env.tgApiId, env.anthropicApiKey, env.telegramBotToken, env.cfApiToken].filter((s) => s.length >= 4);
+  return (text) => secrets.reduce((out, secret) => out.split(secret).join("[redacted]"), text);
 }
 
 /**
@@ -49,8 +55,7 @@ export function createCouponRound(deps: CouponRoundDeps, log: (line: string) => 
   }
 
   // Last line of defence: no secret value may reach a log line or an owner message, whatever threw.
-  const secrets = [env.tgSession, env.tgApiHash, env.anthropicApiKey, env.telegramBotToken].filter((s) => s.length >= 4);
-  const redact = (text: string): string => secrets.reduce((out, secret) => out.split(secret).join("[redacted]"), text);
+  const redact = createRedactor(env);
   const safeLog = (line: string): void => log(redact(line));
 
   const telegram = createTelegramClient({ token: env.telegramBotToken, fetch: deps.fetch });

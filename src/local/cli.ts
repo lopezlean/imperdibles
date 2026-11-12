@@ -50,4 +50,5 @@ async function run(): Promise<number> {
   });
 }
 
-process.exitCode = await run();
+// Leftover GramJS/HTTP handles must not keep the process alive after the work is done.
+process.exit(await run());

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { IngestReport } from "../../../src/local/coupons/ingest.js";
 import { runCouponRound, type RoundDeps } from "../../../src/local/coupons/round.js";
 
@@ -67,5 +67,37 @@ describe("runCouponRound", () => {
     });
     await expect(runCouponRound(s.deps)).resolves.toBeUndefined();
     expect(s.log.join("\n")).toContain("tg down");
+  });
+
+  it("caps the error text sent to the owner at 500 characters", async () => {
+    const s = setup({
+      ingest: async () => {
+        throw new Error("x".repeat(2000));
+      },
+    });
+    await runCouponRound(s.deps);
+    expect(s.owner[0]!.length).toBeLessThanOrEqual("Falló la lectura de cupones: ".length + 500);
+  });
+
+  describe("deadline", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("cuts a hung round after 10 minutes, logs, notifies the owner and resolves", async () => {
+      vi.useFakeTimers();
+      const s = setup({ ingest: () => new Promise<IngestReport>(() => undefined) });
+      const done = runCouponRound(s.deps);
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+      await expect(done).resolves.toBeUndefined();
+      expect(s.owner).toEqual(["La ronda de cupones superó 10 minutos y se cortó."]);
+      expect(s.log.join("\n")).toContain("10 minutos");
+    });
+
+    it("does not fire the deadline for a round that finishes", async () => {
+      vi.useFakeTimers();
+      const s = setup();
+      await runCouponRound(s.deps);
+      await vi.advanceTimersByTimeAsync(11 * 60_000);
+      expect(s.owner).toEqual([]);
+    });
   });
 });

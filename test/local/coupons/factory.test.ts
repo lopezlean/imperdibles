@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCouponRound } from "../../../src/local/coupons/factory.js";
+import { createCouponRound, createRedactor } from "../../../src/local/coupons/factory.js";
 import type { LocalEnv } from "../../../src/shared/env.js";
 import { createSqliteClient } from "../../support/sqlite-client.js";
 
@@ -54,5 +54,11 @@ describe("createCouponRound", () => {
 
   it("returns a round when everything is set", () => {
     expect(build(ENV).round).toBeTypeOf("function");
+  });
+
+  it("redacts every secret, including the api id and the Cloudflare token", () => {
+    const redact = createRedactor({ ...ENV, cfApiToken: "CF-TOKEN-SECRET", tgApiId: "98765", telegramOwnerChatId: "1" });
+    const out = redact("a 98765 b CF-TOKEN-SECRET c SESSION-SECRET d HASH-SECRET e sk-SECRET f 123:BOT-SECRET g 1");
+    expect(out).toBe("a [redacted] b [redacted] c [redacted] d [redacted] e [redacted] f [redacted] g 1");
   });
 });
