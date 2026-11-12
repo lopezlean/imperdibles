@@ -23,6 +23,7 @@
     "telegram:set-webhook": "tsx scripts/set-webhook.ts",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
+    "db:pull": "bash scripts/db-pull.sh",
     "db:migrate:local": "wrangler d1 migrations apply imperdibles --local",
     "db:migrate:remote": "wrangler d1 migrations apply imperdibles --remote"
   },
