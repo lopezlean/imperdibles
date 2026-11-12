@@ -62,7 +62,11 @@ async function handlePublishNow(req: Request, deps: WorkerDeps): Promise<Respons
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (secret === "" || !safeEqual(token, secret)) return status(401, "unauthorized");
-  return json(await runPublish(deps));
+  const report = await runPublish(deps);
+  // The manual trigger also refreshes the stored page when nothing new went out (e.g. after a deploy
+  // that changed the page markup); a publication already regenerated it.
+  if (report.published.length === 0) await afterPublish(deps);
+  return json(report);
 }
 
 async function serveHome(req: Request, deps: WorkerDeps): Promise<Response> {

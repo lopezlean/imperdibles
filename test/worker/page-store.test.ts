@@ -256,3 +256,16 @@ describe("page failure isolation", () => {
     errors.mockRestore();
   });
 });
+
+describe("publish-now refreshes the page", () => {
+  it("regenerates the stored page even when nothing new is published (after a deploy)", async () => {
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
+    await addCandidate("c1", "r1", "A:1", { title: "Robot publicado" });
+    await db.run("INSERT INTO pages (page_key, html, generated_at) VALUES ('today:2026-11-10', '<p>stale</p>', '2026-11-10T11:00:00-03:00')");
+    const res = await publishNow(SAME_DAY);
+    expect(res.status).toBe(200);
+    const page = await (await getHome(SAME_DAY)).text();
+    expect(page).toContain("Robot publicado");
+    expect(page).not.toContain("stale");
+  });
+});
