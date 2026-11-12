@@ -20,6 +20,7 @@ describe("/cupones build", () => {
       seed: async (db) => {
         await setConfig(db, CONFIG_LINK, LINK);
         await seedCoupon(db, { code: "VIGENTE1", validFrom: from, validUntil: until, discountValue: 15, minPurchase: 50000, cap: 8000, scope: "Hogar" });
+        await seedCoupon(db, { code: "LARGO1", validFrom: from, validUntil: until, scope: `Ropa ${"muy larga ".repeat(60)}FINAL` });
         await seedCoupon(db, { code: "VENCIDO1", validFrom: new Date(now - 3 * DAY).toISOString(), validUntil: new Date(now - DAY).toISOString() });
         await seedCoupon(db, { code: "RETIRADO1", status: "removed", validFrom: from, validUntil: until });
         await seedCoupon(db, { code: "PENDIENTE1", status: "pending", validFrom: from, validUntil: until });
@@ -43,6 +44,12 @@ describe("/cupones build", () => {
     expect(html).toContain(AFFILIATE_LEGEND);
     expect(html).toContain(COUPONS_HOW_HEADING);
     expect(html).toContain('"@type":"BreadcrumbList"');
+  });
+
+  it("caps a long scope like the channel message does", () => {
+    const html = site.read("cupones/index.html");
+    expect(html).toContain("LARGO1");
+    expect(html).not.toContain("FINAL");
   });
 
   it("omits expired, removed and pending coupons", () => {
