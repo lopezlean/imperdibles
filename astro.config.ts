@@ -7,8 +7,10 @@ import { lastmodByPath } from "./site/lib/sitemap.js";
 
 const { siteUrl } = readSiteEnv(process.env);
 
-let lastmods: Promise<Map<string, string>> | undefined;
-const loadLastmods = () => (lastmods ??= getSiteData().then(lastmodByPath));
+// Started at config load: the config's module runner is closed by the time the sitemap serializes,
+// so lazy imports (better-sqlite3, D1 client) would fail there. A failure still surfaces in serialize().
+const lastmods = getSiteData().then(lastmodByPath);
+lastmods.catch(() => undefined);
 
 export default defineConfig({
   output: "static",
@@ -19,7 +21,7 @@ export default defineConfig({
   build: { format: "directory" },
   integrations: [sitemap({
       async serialize(item) {
-        const lastmod = (await loadLastmods()).get(new URL(item.url).pathname);
+        const lastmod = (await lastmods).get(new URL(item.url).pathname);
         if (lastmod) item.lastmod = lastmod;
         return item;
       },

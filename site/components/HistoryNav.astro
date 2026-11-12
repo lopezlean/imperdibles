@@ -1,0 +1,19 @@
+---
+import { MONTH_NAMES, formatDateLong } from "../../src/output/format.js";
+import { dayPath, monthPath } from "../lib/slugs.js";
+
+export interface Props {
+  /** Run date of the previous day with deals, if any. */
+  prev: string | null;
+  /** Month ("2026-11") whose page lists the whole month. */
+  month: string;
+}
+
+const { prev, month } = Astro.props;
+const [year = "", m = ""] = month.split("-");
+---
+
+<nav class="chips" aria-label="Historial">
+  {prev && <a class="chip" href={dayPath(prev)}>{`Día anterior: ${formatDateLong(prev)}`}</a>}
+  <a class="chip" href={monthPath(month)}>{`Ofertas de ${MONTH_NAMES[Number(m) - 1]} de ${year}`}</a>
+</nav>

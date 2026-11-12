@@ -1,0 +1,20 @@
+---
+import { CHANNEL_CTA, CHANNEL_EYEBROW, CHANNEL_HEADING, CHANNEL_LEAD } from "../../src/output/copy.js";
+
+export interface Props {
+  channelUrl: string;
+}
+---
+
+<section id="canal" class="channel on-accent">
+  <div class="wrap">
+    <p class="mono">{CHANNEL_EYEBROW.toUpperCase()}</p>
+    <div class="channel-row">
+      <div class="channel-copy">
+        <h2 class="display">{CHANNEL_HEADING}</h2>
+        <p>{CHANNEL_LEAD}</p>
+      </div>
+      <a href={Astro.props.channelUrl} class="channel-btn"><span aria-hidden="true">↗</span>{CHANNEL_CTA}</a>
+    </div>
+  </div>
+</section>

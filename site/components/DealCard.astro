@@ -1,0 +1,56 @@
+---
+import { storeName, CARD_FOOTER, CTA_ML, DIFFERENCE, PCT_BADGE } from "../../src/output/copy.js";
+import { categoryArtLabel, categoryArtSvg } from "../../src/output/category-art.js";
+import { formatArs, formatDateShort, formatPct } from "../../src/output/format.js";
+import { catalogPhotoUrl } from "../../src/output/photo-url.js";
+import type { Deal } from "../lib/deals.js";
+
+export interface Props {
+  deal: Deal;
+}
+
+const { deal } = Astro.props;
+const c = deal.candidate;
+const photo = catalogPhotoUrl(c.image_url);
+const rivals = [...c.others].sort((a, b) => a.price_ars - b.price_ars);
+const max = Math.max(c.ml.price_ars, ...rivals.map((o) => o.price_ars));
+/** Bar width as a share of the dearest price in the card, one decimal. */
+const scale = (price: number) => `${Math.round((price / max) * 1000) / 10}%`;
+---
+
+<article class="card">
+  <div class="top">
+    {
+      photo ? (
+        <div class="photo">
+          <img src={photo} alt={c.title} loading="lazy" width="264" height="240" />
+        </div>
+      ) : (
+        <div class="photo" role="img" aria-label={categoryArtLabel(deal.category)}>
+          <div class="art" aria-hidden="true" set:html={categoryArtSvg(deal.category)} />
+        </div>
+      )
+    }
+    <div class="info">
+      <h2 class="title">{c.title}</h2>
+      <span class="badge">{PCT_BADGE(formatPct(c))}</span>
+      <p class="diff">{DIFFERENCE}: {formatArs(c.difference_ars)}</p>
+    </div>
+  </div>
+  <div class="prices">
+    <div class="price-row">
+      <div class="price-line"><span class="store store-ml">{storeName("ml")}</span><span class="p-ml">{formatArs(c.ml.price_ars)}</span></div>
+      <div class="scale scale-ml" aria-hidden="true"><i style={`width: ${scale(c.ml.price_ars)}`}></i></div>
+    </div>
+    {
+      rivals.map((o) => (
+        <div class="price-row">
+          <div class="price-line"><span class="store">{storeName(o.store)}</span><span class="p-rival">{formatArs(o.price_ars)}</span></div>
+          <div class="scale" aria-hidden="true"><i style={`width: ${scale(o.price_ars)}`}></i></div>
+        </div>
+      ))
+    }
+    <a class="cta" href={deal.affiliate_link} rel="sponsored noopener">{CTA_ML}</a>
+    <p class="note">{CARD_FOOTER(formatDateShort(deal.run_date))}</p>
+  </div>
+</article>

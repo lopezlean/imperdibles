@@ -1,0 +1,70 @@
+---
+import { SEO } from "astro-seo";
+import { PAGE_CSS, PAGE_FONTS } from "../../src/output/page/styles.js";
+import { PRICES_NOTE } from "../../src/output/copy.js";
+import { formatDateLong } from "../../src/output/format.js";
+import { absoluteUrl, jsonLdScript } from "../lib/seo.js";
+import ChannelBand from "../components/ChannelBand.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import Method from "../components/Method.astro";
+
+export interface Props {
+  title: string;
+  description: string;
+  /** Root-absolute path with trailing slash; the canonical is SITE_URL + path. */
+  path: string;
+  ogImage: string | null;
+  jsonLd: object[];
+  noindex?: boolean;
+  threshold_pct: number;
+  channelUrl: string;
+  /** Day the prices were taken; omitted when there is nothing to date. */
+  pricesDate?: string | null;
+}
+
+const { title, description, path, ogImage, jsonLd, noindex, threshold_pct, channelUrl, pricesDate } = Astro.props;
+const url = absoluteUrl(String(Astro.site), path);
+const og = [
+  { property: "og:title", content: title },
+  { property: "og:type", content: "website" },
+  { property: "og:url", content: url },
+  { property: "og:description", content: description },
+  { property: "og:locale", content: "es_AR" },
+];
+const openGraph = ogImage
+  ? {
+      basic: { title, type: "website", image: ogImage, url },
+      optional: { description, locale: "es_AR" },
+    }
+  : undefined;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <SEO
+      title={title}
+      description={description}
+      canonical={url}
+      noindex={noindex}
+      twitter={{ card: ogImage ? "summary_large_image" : "summary", title, description, ...(ogImage ? { image: ogImage } : {}) }}
+      openGraph={openGraph}
+      extend={openGraph ? undefined : { meta: og }}
+      surpressWarnings
+    />
+    <link href={PAGE_FONTS} rel="stylesheet" />
+    <style is:inline set:html={PAGE_CSS}></style>
+    {jsonLd.map((data) => <script type="application/ld+json" set:html={jsonLdScript(data)} />)}
+  </head>
+  <body>
+    <Header />
+    <slot />
+    <Method threshold_pct={threshold_pct} />
+    <ChannelBand channelUrl={channelUrl} />
+    <Footer pricesNote={pricesDate ? PRICES_NOTE(formatDateLong(pricesDate)) : null} />
+  </body>
+</html>

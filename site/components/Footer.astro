@@ -1,0 +1,17 @@
+---
+import { AFFILIATE_LEGEND, NOT_AFFILIATED } from "../../src/output/copy.js";
+
+export interface Props {
+  pricesNote: string | null;
+}
+---
+
+<footer class="wrap legal">
+  <p class="sign" aria-hidden="true"><b>imperdibles</b><i>.com.ar</i></p>
+  <div class="rule"></div>
+  <div class="notes">
+    <p>{AFFILIATE_LEGEND}</p>
+    <p>{NOT_AFFILIATED}</p>
+    {Astro.props.pricesNote && <p>{Astro.props.pricesNote}</p>}
+  </div>
+</footer>

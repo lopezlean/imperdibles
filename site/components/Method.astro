@@ -1,0 +1,40 @@
+---
+import { HERO_LEAD, HOW_HEADING, HOW_STEPS, METHOD_TAGLINE, PAGE_TITLE_HERO } from "../../src/output/copy.js";
+import { formatThreshold } from "../../src/output/format.js";
+
+export interface Props {
+  threshold_pct: number;
+}
+
+const threshold = formatThreshold(Astro.props.threshold_pct);
+const steps = HOW_STEPS(threshold);
+---
+
+<section class="why" aria-label="Por qué aparecen estos productos">
+  <div class="wrap">
+    <p class="why-lead">{PAGE_TITLE_HERO(threshold)}</p>
+    <p class="why-sub">{HERO_LEAD}</p>
+  </div>
+</section>
+
+<section id="como" class="method">
+  <div class="wrap">
+    <div class="method-head">
+      <h2 class="display">{HOW_HEADING}</h2>
+      <p>{METHOD_TAGLINE}</p>
+    </div>
+    <ol class="steps">
+      {
+        steps.map((s, i) => (
+          <li class="step">
+            <span class="step-n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+            <div>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
