@@ -31,3 +31,32 @@ describe("0004_more_categories", () => {
     expect(categories.find((c) => c.id === "smart-tv")).toEqual({ id: "smart-tv", name: "Smart TV", terms: ["smart tv"] });
   });
 });
+
+describe("0006_coupons", () => {
+  const insert = (db: ReturnType<typeof createSqliteClient>, over: { status?: string; value?: number } = {}) =>
+    db.raw
+      .prepare(
+        `INSERT INTO coupons (code, discount_type, discount_value, valid_from, valid_until, status, source_message_id, source_text, created_at, updated_at)
+         VALUES ('ABC', 'amount', ?, '2026-11-12T00:00:00.000Z', '2026-11-13T00:00:00.000Z', ?, 1, 'texto', 'x', 'x')`,
+      )
+      .run(over.value ?? 1000, over.status ?? "pending");
+
+  it("creates coupons and coupon_posts", async () => {
+    const rows = await createSqliteClient().all<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('coupons', 'coupon_posts') ORDER BY name",
+    );
+    expect(rows.map((r) => r.name)).toEqual(["coupon_posts", "coupons"]);
+  });
+
+  it("rejects an unknown status and a non-positive discount", () => {
+    const db = createSqliteClient();
+    expect(() => insert(db, { status: "x" })).toThrow(/CHECK constraint/);
+    expect(() => insert(db, { value: 0 })).toThrow(/CHECK constraint/);
+  });
+
+  it("unique on (source_message_id, code)", () => {
+    const db = createSqliteClient();
+    insert(db);
+    expect(() => insert(db)).toThrow(/UNIQUE constraint/);
+  });
+});
