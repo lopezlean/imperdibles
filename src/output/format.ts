@@ -1,6 +1,6 @@
 import type { Candidate } from "../contract/candidate-list.js";
 
-const MONTHS = [
+export const MONTH_NAMES = [
   "enero",
   "febrero",
   "marzo",
@@ -45,7 +45,7 @@ function parseDate(run_date: string): [string, number, string] {
 /** "2026-11-10" -> "10 de noviembre de 2026". */
 export function formatDateLong(run_date: string): string {
   const [y, m, d] = parseDate(run_date);
-  return `${Number(d)} de ${MONTHS[m - 1]} de ${y}`;
+  return `${Number(d)} de ${MONTH_NAMES[m - 1]} de ${y}`;
 }
 
 /** "2026-11-10" -> "10/11/2026". */
