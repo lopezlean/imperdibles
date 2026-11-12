@@ -4,6 +4,7 @@ import { afterRevalidation } from "../output/local/after-revalidation.js";
 import { renderCardPng } from "../output/card/render.js";
 import { sendShortlist } from "../output/local/send-shortlist.js";
 import { createTelegramClient } from "../output/telegram/client.js";
+import { loadAffiliateConfig } from "../shared/config.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
 import type { LocalEnv } from "../shared/env.js";
 
@@ -22,7 +23,11 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
 
   return {
     async onCandidatesReady(list) {
-      const r = await sendShortlist({ db, telegram, ownerChatId, render: renderCardPng }, list);
+      const { auto } = await loadAffiliateConfig(db);
+      const r = await sendShortlist(
+        { db, telegram, ownerChatId, render: renderCardPng, ...(auto ? { affiliate: auto } : {}) },
+        list,
+      );
       if (r.sent === 0 && r.failed > 0) {
         throw new Error(`No se pudo enviar ninguno de los ${r.failed} candidatos de la lista de hoy.`);
       }

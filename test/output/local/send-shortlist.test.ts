@@ -237,4 +237,34 @@ describe("createOutputHooks", () => {
     const b = createOutputHooks({ db, env: env({ workerBaseUrl: "https://w.example" }), now: () => new Date(), fetch });
     await expect(b.onRevalidated(report)).rejects.toThrow(/PUBLISH_NOW_SECRET/);
   });
+
+  it("in auto mode stores the affiliate link and tells the owner to reply publicar", async () => {
+    const list = load("valid-2026-11-10.json");
+    const db = await setup(list);
+    const { t, photos } = fakeTelegram();
+    await sendShortlist({ db, telegram: t, ownerChatId: OWNER, render, affiliate: { word: "w", tool: "1" } }, list);
+    const rows = await db.all<{ id: string; status: string; affiliate_link: string | null }>(
+      "SELECT id, status, affiliate_link FROM candidates ORDER BY rowid",
+    );
+    rows.forEach((row, i) => {
+      expect(row.status).toBe("pending");
+      const u = new URL(row.affiliate_link!);
+      expect(u.searchParams.get("matt_word")).toBe("w");
+      expect(u.searchParams.get("matt_tool")).toBe("1");
+      expect(u.origin + u.pathname).toBe(new URL(list.candidates[i]!.ml.url).origin + new URL(list.candidates[i]!.ml.url).pathname);
+    });
+    const caption = (photos[0] as { caption: string }).caption;
+    expect(caption).toContain('responder "publicar"');
+    expect(caption).toContain("Ya tiene enlace de afiliado");
+  });
+
+  it("without affiliate deps leaves the link null and the manual caption", async () => {
+    const list = load("valid-2026-11-10.json");
+    const db = await setup(list);
+    const { t, photos } = fakeTelegram();
+    await sendShortlist({ db, telegram: t, ownerChatId: OWNER, render }, list);
+    const rows = await db.all<{ affiliate_link: string | null }>("SELECT affiliate_link FROM candidates");
+    expect(rows.every((r) => r.affiliate_link === null)).toBe(true);
+    expect((photos[0] as { caption: string }).caption).not.toContain("publicar");
+  });
 });
