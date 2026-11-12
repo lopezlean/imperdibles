@@ -1,4 +1,4 @@
-import { parseAffiliateLink } from "../output/affiliate-link.js";
+import { AFFILIATE_REASON_ES, parseAffiliateLink } from "../output/affiliate-link.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
 import { artDate } from "../shared/time.js";
 
@@ -21,13 +21,6 @@ const STATUS_ES: Record<string, string> = {
   published: "publicado",
   invalidated: "invalidado",
 };
-
-const REASON_ES = {
-  empty: "el mensaje está vacío",
-  not_single_url: "tiene que ser un único enlace, sin otro texto",
-  not_https: "el enlace no usa https",
-  wrong_host: "el enlace no es de meli.la",
-} as const;
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 
@@ -106,7 +99,7 @@ export async function handleTelegramUpdate(deps: Deps, update: unknown): Promise
 
   const parsed = parseAffiliateLink(text);
   if (!parsed.ok) {
-    return reply(`No se guardó el enlace: ${REASON_ES[parsed.reason]}. Debe ser un único enlace https://meli.la/...`);
+    return reply(`No se guardó el enlace: ${AFFILIATE_REASON_ES[parsed.reason]}. Debe ser un único enlace https://meli.la/...`);
   }
   if (cand.status !== "pending" && cand.status !== "chosen") return unchanged();
   const saved = await deps.db.run(

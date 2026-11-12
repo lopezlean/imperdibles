@@ -43,7 +43,9 @@ export const USAGE = `Uso:
                                   categoría que toca hoy; con --categoria corre esa (se pueden correr varias por día).
                                   --forzar repite una categoría que ya corrió hoy.
   imperdibles revalidar           Vuelve a leer los precios de los candidatos elegidos antes de publicar.
-  imperdibles --help              Muestra esta ayuda.
+  imperdibles cupones-link <enlace>
+                                  Guarda el enlace meli.la fijo que se usa en todos los cupones del canal.
+  imperdibles --help             Muestra esta ayuda.
 `;
 
 /** A write that failed because D1 was unreachable is attempted once more; nothing else is repeated. */
@@ -196,7 +198,7 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean; category?:
   }
 }
 
-export type Command = { name: "correr"; force: boolean; category: string | null } | { name: "revalidar" } | { name: "help" };
+export type Command = { name: "correr"; force: boolean; category: string | null } | { name: "revalidar" } | { name: "cupones-link"; url: string } | { name: "help" };
 
 /** The one place that decides what argv means; `cli.ts` uses it to skip the environment for help and unknown input. */
 export function parseCommand(argv: string[]): Command | null {
@@ -217,6 +219,7 @@ export function parseCommand(argv: string[]): Command | null {
     return { name: "correr", force, category };
   }
   if (command === "revalidar" && flags.length === 0) return { name: "revalidar" };
+  if (command === "cupones-link" && flags.length === 1) return { name: "cupones-link", url: flags[0]! };
   return null;
 }
 

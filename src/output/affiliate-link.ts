@@ -4,6 +4,14 @@ export type AffiliateLinkResult =
 
 const AFFILIATE_HOST = "meli.la";
 
+/** Spanish explanation for each rejection reason, shared by the Telegram webhook and the CLI. */
+export const AFFILIATE_REASON_ES = {
+  empty: "el mensaje está vacío",
+  not_single_url: "tiene que ser un único enlace, sin otro texto",
+  not_https: "el enlace no usa https",
+  wrong_host: "el enlace no es de meli.la",
+} as const satisfies Record<Extract<AffiliateLinkResult, { ok: false }>["reason"], string>;
+
 /**
  * Accepts exactly one https://meli.la link. The returned `link` is the trimmed input substring,
  * byte for byte: it is never normalized, resolved or rewritten.

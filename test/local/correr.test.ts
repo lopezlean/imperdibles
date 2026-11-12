@@ -466,6 +466,10 @@ describe("main", () => {
     expect(parseCommand(["correr", "--categoria"])).toBeNull();
     expect(parseCommand(["correr", "--categoria", "--forzar"])).toBeNull();
     expect(parseCommand(["correr", "--otra"])).toBeNull();
+    expect(parseCommand(["cupones-link", "https://meli.la/x"])).toEqual({ name: "cupones-link", url: "https://meli.la/x" });
+    expect(parseCommand(["cupones-link"])).toBeNull();
+    expect(parseCommand(["cupones-link", "a", "b"])).toBeNull();
+    expect(USAGE).toContain("imperdibles cupones-link <enlace>");
   });
 
   it("prints usage for help and for unknown commands", async () => {
