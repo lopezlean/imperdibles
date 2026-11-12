@@ -39,6 +39,7 @@ beforeEach(() => {
   telegram = {
     sendMessage: vi.fn(async () => ({ message_id: 1 })),
     sendPhoto: vi.fn(async () => ({ message_id: 1, file_id: "f" })),
+    deleteMessage: vi.fn(async () => {}),
   } as never;
 });
 

@@ -55,6 +55,7 @@ function fakeTelegram(failPhotoFor: (n: number) => boolean = () => false) {
       photos.push(p);
       return { message_id: 1000 + n, file_id: `file-${n}` };
     },
+    async deleteMessage() {},
     async sendMessage(p) {
       messages.push(p);
       return { message_id: 1 };

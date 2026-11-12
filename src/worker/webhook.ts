@@ -1,10 +1,17 @@
 import { AFFILIATE_REASON_ES, parseAffiliateLink } from "../output/affiliate-link.js";
+import type { TelegramClient } from "../output/telegram/client.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
-import { artDate } from "../shared/time.js";
+import { artDate, artIso } from "../shared/time.js";
 
 export type WebhookReply = { method: "sendMessage"; chat_id: number; text: string; reply_to_message_id: number };
 
-type Deps = { db: SqlClient; ownerChatId: string; now: () => Date };
+type Deps = {
+  db: SqlClient;
+  ownerChatId: string;
+  channelId: string;
+  telegram: Pick<TelegramClient, "deleteMessage">;
+  now: () => Date;
+};
 
 type CandidateRow = { id: string; model_id: string; payload: string; status: string; run_date: string };
 
@@ -41,6 +48,41 @@ function storedPayload(raw: string): { title: string; rivals: { store: string; r
   }
 }
 
+type CouponRow = { id: number; code: string; status: string; channel_message_id: number | null };
+
+const COUPON_HELP = 'Para bajar este cupón, responder "rechazar".';
+const COUPON_ALREADY_REMOVED = "Ese cupón ya está retirado; no se cambió nada.";
+
+/** A reply to a coupon notice: only "rechazar" does anything. Reached when no candidate owns the replied message. */
+async function handleCouponReply(
+  deps: Deps,
+  replied: number,
+  text: string,
+  reply: (text: string) => WebhookReply,
+): Promise<WebhookReply> {
+  const [coupon] = await deps.db.all<CouponRow>(
+    "SELECT id, code, status, channel_message_id FROM coupons WHERE owner_message_id = ?",
+    [replied],
+  );
+  if (!coupon) return reply(HELP);
+  if (text.trim().toLowerCase() !== "rechazar") return reply(COUPON_HELP);
+  if (coupon.status === "removed") return reply(COUPON_ALREADY_REMOVED);
+  // Guarded claim first: a concurrent rechazar must not delete the channel message twice.
+  const claim = await deps.db.run(
+    "UPDATE coupons SET status = 'removed', updated_at = ? WHERE id = ? AND status IN ('pending','published')",
+    [artIso(deps.now()), coupon.id],
+  );
+  if (claim.changes !== 1) return reply(COUPON_ALREADY_REMOVED);
+  if (coupon.channel_message_id !== null) {
+    try {
+      await deps.telegram.deleteMessage({ chat_id: deps.channelId, message_id: coupon.channel_message_id });
+    } catch {
+      return reply("Cupón retirado de la web, pero no se pudo borrar el mensaje del canal. Borrarlo a mano.");
+    }
+  }
+  return reply(`Cupón retirado: ${coupon.code}. Se quita de la web en la próxima actualización (hasta una hora).`);
+}
+
 /**
  * Handles one Telegram update from the owner. The returned reply is sent as the webhook HTTP
  * response body, so no subrequest is needed. Anything not from the owner chat returns null.
@@ -68,7 +110,7 @@ export async function handleTelegramUpdate(deps: Deps, update: unknown): Promise
     [replied],
   );
   const cand = rows[0];
-  if (!cand) return reply(HELP);
+  if (!cand) return handleCouponReply(deps, replied, typeof message.text === "string" ? message.text : "", reply);
   if (cand.run_date !== artDate(deps.now())) return reply(OTHER_DAY);
 
   const { title, rivals } = storedPayload(cand.payload);

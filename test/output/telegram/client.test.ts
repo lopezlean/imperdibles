@@ -64,6 +64,24 @@ describe("telegram client", () => {
     expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ chat_id: "1", text: "Hola" });
   });
 
+  it("deleteMessage posts to /deleteMessage with chat_id and message_id and resolves on {ok:true,result:true}", async () => {
+    const { f, calls } = fake('{"ok":true,"result":true}');
+    const c = createTelegramClient({ token: TOKEN, fetch: f });
+    await expect(c.deleteMessage({ chat_id: "-100", message_id: 900 })).resolves.toBeUndefined();
+    expect(calls[0]!.url).toBe(`https://api.telegram.org/bot${TOKEN}/deleteMessage`);
+    expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ chat_id: "-100", message_id: 900 });
+  });
+
+  it("deleteMessage throws TelegramError(400, ...) when the message is already gone", async () => {
+    const { f } = fake('{"ok":false,"error_code":400,"description":"Bad Request: message to delete not found"}', 400);
+    const c = createTelegramClient({ token: TOKEN, fetch: f });
+    const e = await c.deleteMessage({ chat_id: "-100", message_id: 900 }).catch((x) => x);
+    expect(e).toBeInstanceOf(TelegramError);
+    expect(e.status).toBe(400);
+    expect(e.message).toContain("message to delete not found");
+    expect(e.message).not.toContain(TOKEN);
+  });
+
   it("maps a bad file id to TelegramError recognised by isInvalidFileId", async () => {
     const { f } = fake(fx("send-photo-bad-file-id"), 400);
     const c = createTelegramClient({ token: TOKEN, fetch: f });

@@ -11,7 +11,16 @@ const LINK = "https://meli.la/2AbC_xY?r=1/";
 
 type Db = ReturnType<typeof createSqliteClient>;
 let db: Db;
-const deps = () => ({ db, ownerChatId: OWNER, now: () => NOW });
+const CHANNEL = "-1001234";
+let deleted: { chat_id: string; message_id: number }[] = [];
+let deleteFails = false;
+const telegram = {
+  async deleteMessage(p: { chat_id: string; message_id: number }) {
+    deleted.push(p);
+    if (deleteFails) throw new Error("Telegram error 400: deleteMessage: Bad Request: message to delete not found");
+  },
+};
+const deps = () => ({ db, ownerChatId: OWNER, channelId: CHANNEL, telegram, now: () => NOW });
 
 function payload(title: string, others: { store: string; ref: string }[]): string {
   return JSON.stringify({ title, others: others.map((o) => ({ store: o.store, external_ref: o.ref })) });
@@ -74,11 +83,13 @@ function racingDeps(updatePattern: RegExp) {
       return db.run(sql, params);
     },
   };
-  return { db: racing, ownerChatId: OWNER, now: () => NOW };
+  return { db: racing, ownerChatId: OWNER, channelId: CHANNEL, telegram, now: () => NOW };
 }
 
 beforeEach(() => {
   db = createSqliteClient();
+  deleted = [];
+  deleteFails = false;
 });
 
 describe("handleTelegramUpdate", () => {
@@ -203,5 +214,106 @@ describe("handleTelegramUpdate", () => {
     const reply = await handleTelegramUpdate(deps(), upd(LINK));
     expect(reply?.text).toBe("Este candidato ya está validado; no se cambió nada.");
     expect(await row("c1")).toEqual({ status: "validated", affiliate_link: null });
+  });
+});
+
+describe("coupons", () => {
+  async function coupon(o: { status?: string; owner?: number; channel?: number | null; code?: string } = {}) {
+    await db.run(
+      `INSERT INTO coupons (code, discount_type, discount_value, valid_from, valid_until, status, source_message_id, source_text,
+         channel_message_id, owner_message_id, created_at, updated_at)
+       VALUES (?, 'percent', 10, 'a', 'b', ?, 1, 'src', ?, ?, 'x', 'x')`,
+      [o.code ?? "CYBERALMAX", o.status ?? "published", o.channel === undefined ? 900 : o.channel, o.owner ?? 700],
+    );
+  }
+  const cstatus = () => db.all<{ status: string }>("SELECT status FROM coupons").then((r) => r[0]!.status);
+  const REMOVED = "Cupón retirado: CYBERALMAX. Se quita de la web en la próxima actualización (hasta una hora).";
+
+  it("rechazar marks the coupon removed and deletes the channel message", async () => {
+    await coupon();
+    const reply = await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 700 }));
+    expect(reply?.text).toBe(REMOVED);
+    expect(await cstatus()).toBe("removed");
+    expect(deleted).toEqual([{ chat_id: CHANNEL, message_id: 900 }]);
+  });
+
+  it("ignores case and surrounding spaces", async () => {
+    await coupon();
+    const reply = await handleTelegramUpdate(deps(), upd("  Rechazar ", { replyTo: 700 }));
+    expect(reply?.text).toBe(REMOVED);
+  });
+
+  it("a second rechazar changes nothing", async () => {
+    await coupon();
+    await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 700 }));
+    const reply = await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 700 }));
+    expect(reply?.text).toBe("Ese cupón ya está retirado; no se cambió nada.");
+    expect(deleted).toHaveLength(1);
+  });
+
+  it("deleteMessage failing still leaves the coupon removed", async () => {
+    await coupon();
+    deleteFails = true;
+    const reply = await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 700 }));
+    expect(reply?.text).toBe("Cupón retirado de la web, pero no se pudo borrar el mensaje del canal. Borrarlo a mano.");
+    expect(await cstatus()).toBe("removed");
+  });
+
+  it("a pending coupon without a channel message is removed with no delete call", async () => {
+    await coupon({ status: "pending", channel: null });
+    const reply = await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 700 }));
+    expect(reply?.text).toBe(REMOVED);
+    expect(await cstatus()).toBe("removed");
+    expect(deleted).toEqual([]);
+  });
+
+  it("any other reply text explains how to take the coupon down", async () => {
+    await coupon();
+    const reply = await handleTelegramUpdate(deps(), upd("hola", { replyTo: 700 }));
+    expect(reply?.text).toBe('Para bajar este cupón, responder "rechazar".');
+    expect(await cstatus()).toBe("published");
+    expect(deleted).toEqual([]);
+  });
+
+  it("a reply to a message that is neither a candidate nor a coupon notice gets the help text", async () => {
+    await coupon();
+    const reply = await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 12345 }));
+    expect(reply?.text).toBe(HELP);
+    expect(await cstatus()).toBe("published");
+  });
+
+  it("a candidate wins when both tables hold the same message id", async () => {
+    await candidate("c1", { msg: 700 });
+    await coupon();
+    const reply = await handleTelegramUpdate(deps(), upd("rechazar", { replyTo: 700 }));
+    expect(reply?.text).toBe("Descartado: Robot c1. No se volverá a proponer.");
+    expect(await cstatus()).toBe("published");
+  });
+
+  it("the removal is a guarded UPDATE: a coupon removed between SELECT and UPDATE reports unchanged", async () => {
+    await coupon();
+    let raced = false;
+    const racing = {
+      all: db.all.bind(db),
+      run: async (sql: string, params?: (string | number | null)[]) => {
+        if (!raced && /UPDATE coupons SET status = 'removed'/.test(sql)) {
+          raced = true;
+          await db.run("UPDATE coupons SET status = 'removed'");
+        }
+        return db.run(sql, params);
+      },
+    };
+    const reply = await handleTelegramUpdate(
+      { db: racing, ownerChatId: OWNER, channelId: CHANNEL, telegram, now: () => NOW },
+      upd("rechazar", { replyTo: 700 }),
+    );
+    expect(reply?.text).toBe("Ese cupón ya está retirado; no se cambió nada.");
+    expect(deleted).toEqual([]);
+  });
+
+  it("non-owner chats are still ignored", async () => {
+    await coupon();
+    expect(await handleTelegramUpdate(deps(), upd("rechazar", { chat: 999, replyTo: 700 }))).toBeNull();
+    expect(await cstatus()).toBe("published");
   });
 });

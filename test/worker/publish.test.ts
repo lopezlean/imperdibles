@@ -83,6 +83,7 @@ function fakeTelegram(opts: { failChannel?: (fileId: string) => unknown; failOwn
       if (p.chat_id === OWNER && opts.failOwnerPhoto) throw new TelegramError(500, "boom");
       return { message_id: ++n, file_id: fileId };
     },
+    async deleteMessage() {},
     async sendMessage(p) {
       calls.push({ kind: "message", chat: p.chat_id, text: p.text });
       if (opts.failMessage) throw new TelegramError(500, "boom");

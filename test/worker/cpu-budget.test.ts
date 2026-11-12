@@ -26,6 +26,7 @@ let deps: WorkerDeps;
 
 const telegram: TelegramClient = {
   sendMessage: async () => ({ message_id: 1 }),
+  deleteMessage: async () => {},
   sendPhoto: async () => ({ message_id: 1, file_id: "f" }),
 };
 

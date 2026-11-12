@@ -9,6 +9,7 @@ export interface TelegramClient {
     reply_to_message_id?: number;
   }): Promise<{ message_id: number; file_id: string }>;
   sendMessage(p: { chat_id: string; text: string; reply_to_message_id?: number }): Promise<{ message_id: number }>;
+  deleteMessage(p: { chat_id: string; message_id: number }): Promise<void>;
 }
 
 export class TelegramError extends Error {
@@ -28,14 +29,14 @@ type ApiResponse = {
   ok?: boolean;
   error_code?: number;
   description?: string;
-  result?: { message_id: number; photo?: { file_id: string }[] };
+  result?: true | { message_id: number; photo?: { file_id: string }[] };
 };
 
 export function createTelegramClient(cfg: { token: string; fetch: typeof fetch }): TelegramClient {
   // Never call it as cfg.fetch(...): in Workers the global fetch throws "Illegal invocation" with a foreign `this`.
   const doFetch = cfg.fetch;
   // Never put the token or URL in an error: only method, status and description.
-  async function call(method: string, body: FormData | Record<string, unknown>): Promise<NonNullable<ApiResponse["result"]>> {
+  async function call(method: string, body: FormData | Record<string, unknown>): Promise<true | { message_id: number; photo?: { file_id: string }[] }> {
     const init: RequestInit =
       body instanceof FormData
         ? { method: "POST", body }
@@ -74,6 +75,7 @@ export function createTelegramClient(cfg: { token: string; fetch: typeof fetch }
         if (p.reply_to_message_id !== undefined) body.reply_to_message_id = p.reply_to_message_id;
       }
       const r = await call("sendPhoto", body);
+      if (r === true) throw new TelegramError(200, "sendPhoto: unexpected boolean result");
       const sizes = r.photo ?? [];
       const largest = sizes[sizes.length - 1];
       if (!largest) throw new TelegramError(200, "sendPhoto: response without photo sizes");
@@ -83,7 +85,11 @@ export function createTelegramClient(cfg: { token: string; fetch: typeof fetch }
       const body: Record<string, unknown> = { chat_id: p.chat_id, text: p.text };
       if (p.reply_to_message_id !== undefined) body.reply_to_message_id = p.reply_to_message_id;
       const r = await call("sendMessage", body);
+      if (r === true) throw new TelegramError(200, "sendMessage: unexpected boolean result");
       return { message_id: r.message_id };
+    },
+    async deleteMessage(p) {
+      await call("deleteMessage", { chat_id: p.chat_id, message_id: p.message_id });
     },
   };
 }

@@ -49,6 +49,7 @@ function fakeTelegram(opts: { failFirstMessage?: boolean; failPhoto?: boolean } 
   const photos: { caption: string }[] = [];
   let msgCalls = 0;
   const t: TelegramClient = {
+    async deleteMessage() {},
     async sendMessage(p) {
       msgCalls++;
       if (opts.failFirstMessage && msgCalls === 1) throw new Error("telegram down");

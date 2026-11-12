@@ -39,7 +39,13 @@ async function handleWebhook(req: Request, deps: WorkerDeps): Promise<Response> 
     return empty(); // 200 so Telegram does not retry a body that can never parse
   }
   const reply = await handleTelegramUpdate(
-    { db: deps.db, ownerChatId: deps.env.TELEGRAM_OWNER_CHAT_ID, now: deps.now },
+    {
+      db: deps.db,
+      ownerChatId: deps.env.TELEGRAM_OWNER_CHAT_ID,
+      channelId: deps.env.TELEGRAM_CHANNEL_ID,
+      telegram: telegramFor(deps),
+      now: deps.now,
+    },
     update,
   );
   return reply === null ? empty() : json(reply);
