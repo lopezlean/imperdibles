@@ -114,6 +114,19 @@ describe("guardCoupon", () => {
     expect(guard({ min_purchase: 250000 }, text)).toMatchObject({ ok: true });
   });
 
+  it("does not satisfy a number with digits embedded in the code or a URL", () => {
+    const flash = postById(136);
+    const c = { ...flash.coupons[0]!, discount_value: 25 };
+    expect(guardCoupon(c, flash, new Date(flash.postedAt.getTime() + MIN5))).toEqual({
+      ok: false,
+      reason: "number_not_in_text",
+    });
+    expect(guard({ discount_value: 3 }, "Cupón CHEEKY $5.000 https://tinyurl.com/yvd3x")).toEqual({
+      ok: false,
+      reason: "number_not_in_text",
+    });
+  });
+
   it("rejects invalid values", () => {
     for (const over of [
       { discount_value: -5 },
@@ -153,6 +166,9 @@ describe("containsToken", () => {
     expect(containsToken("CHEEKYS", "CHEEKY")).toBe(false);
     expect(containsToken("xCHEEKY", "CHEEKY")).toBe(false);
     expect(containsToken("cheeky", "CHEEKY")).toBe(false);
+    expect(containsToken("cheeky-sale CHEEKY-X", "CHEEKY")).toBe(false);
+    expect(containsToken("X_CHEEKY_Y", "CHEEKY")).toBe(false);
+    expect(containsToken("Código: CHEEKY.", "CHEEKY")).toBe(true);
   });
 });
 
@@ -163,5 +179,12 @@ describe("containsNumber", () => {
     expect(containsNumber("$15.000", 5000)).toBe(false);
     expect(containsNumber("250,000", 250000)).toBe(true);
     expect(containsNumber("10% OFF", 10)).toBe(true);
+    expect(containsNumber("$5.250", 5250)).toBe(true);
+    expect(containsNumber("$5.250.", 5250)).toBe(true);
+    expect(containsNumber("9,5%", 95)).toBe(false);
+    expect(containsNumber("1.5", 15)).toBe(false);
+    expect(containsNumber("FLASH25 y 47EXTRA10 y GLDY9A", 25)).toBe(false);
+    expect(containsNumber("https://tinyurl.com/mr44da4u", 44)).toBe(false);
+    expect(containsNumber("https://tinyurl.com/mr44da4u 44 cosas", 44)).toBe(true);
   });
 });

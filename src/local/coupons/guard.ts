@@ -9,16 +9,27 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Case-sensitive whole token: not adjacent to [A-Za-z0-9]. */
+/** Case-sensitive whole token: not adjacent to [A-Za-z0-9_-]. */
 export function containsToken(text: string, token: string): boolean {
-  return new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(token)}(?![A-Za-z0-9])`).test(text);
+  return new RegExp(`(?<![A-Za-z0-9_-])${escapeRegExp(token)}(?![A-Za-z0-9_-])`).test(text);
 }
 
-/** Numeric tokens with "." / "," thousands separators stripped, compared whole. */
+const THOUSANDS = /^\d{1,3}([.,]\d{3})+$/;
+
+/**
+ * Standalone numeric tokens (not adjacent to letters or digits, URLs ignored). "." / ","
+ * count as thousands separators only in the form 1.000 / 1,000,000; "9,5" is not 95.
+ */
 export function containsNumber(text: string, n: number): boolean {
   const target = String(n);
-  for (const match of text.matchAll(/\d[\d.,]*/g)) {
-    if (match[0].replace(/[.,]/g, "") === target) return true;
+  const prose = text.replace(/https?:\/\/\S+/g, " ");
+  for (const match of prose.matchAll(/(?<![A-Za-z\d])\d+(?:[.,]\d+)*(?![A-Za-z\d])/g)) {
+    const token = match[0];
+    if (/^\d+$/.test(token)) {
+      if (token === target) return true;
+    } else if (THOUSANDS.test(token) && token.replace(/[.,]/g, "") === target) {
+      return true;
+    }
   }
   return false;
 }
