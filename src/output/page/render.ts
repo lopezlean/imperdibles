@@ -35,7 +35,8 @@ export type PageInput = {
   categoryId?: string | null;
   threshold_pct: number;
   models_compared: number;
-  items: { candidate: Candidate; affiliate_link: string }[];
+  /** `category` is the item's own category id (art fallback); it wins over the page-level `categoryId`. */
+  items: { candidate: Candidate; affiliate_link: string; category?: string | null }[];
   channelUrl: string;
 };
 
@@ -119,7 +120,7 @@ function todaySection(input: PageInput): string {
   return `<section id="hoy" style="max-width: 1120px; margin: 0 auto; padding: 0 24px 72px; display: flex; flex-direction: column; gap: 24px">
 <h2 style="${H2}">${e(heading)}</h2>
 <div style="display: flex; flex-wrap: wrap; gap: 20px">
-${input.items.map((i) => article(i, input.categoryId ?? null)).join("\n")}
+${input.items.map((i) => article(i, i.category ?? input.categoryId ?? null)).join("\n")}
 </div>
 <p style="margin: 0; font-size: 14px; color: ${T.muted}">${e(PRICES_NOTE(formatDateLong(input.run_date)))}</p>
 </section>`;

@@ -32,7 +32,7 @@ function pickItems(rows: Row[]): PageInput["items"] {
   const items: PageInput["items"] = [];
   for (const r of byModel.values()) {
     try {
-      items.push({ candidate: JSON.parse(r.payload) as Candidate, affiliate_link: r.affiliate_link });
+      items.push({ candidate: JSON.parse(r.payload) as Candidate, affiliate_link: r.affiliate_link, category: r.category });
     } catch {
       // A payload that does not parse cannot be shown.
     }
@@ -40,6 +40,13 @@ function pickItems(rows: Row[]): PageInput["items"] {
   return items.sort(
     (a, b) => tenthsOf(b.candidate) - tenthsOf(a.candidate) || a.candidate.title.localeCompare(b.candidate.title, "es"),
   );
+}
+
+/** Models compared that day: the largest run of each category (a repeated run is not double counted), summed. */
+function comparedOfDay(rows: Row[]): number {
+  const byCategory = new Map<string, number>();
+  for (const r of rows) byCategory.set(r.category, Math.max(byCategory.get(r.category) ?? 0, r.models_compared));
+  return [...byCategory.values()].reduce((a, b) => a + b, 0);
 }
 
 /** Renders both pages first and writes afterwards, so a render failure leaves the stored pages untouched. */
@@ -72,13 +79,15 @@ export async function regeneratePages(deps: Deps): Promise<void> {
     return;
   }
 
-  const categoryName = config.categories.find((c) => c.id === rows[0]!.category)?.name ?? null;
+  // A day with several categories has no single category name or illustration.
+  const categoryIds = new Set(rows.map((r) => r.category));
+  const single = categoryIds.size === 1 ? rows[0]!.category : null;
   const data = {
     ...base,
     run_date,
-    categoryName,
-    categoryId: rows[0]!.category,
-    models_compared: Math.max(...rows.map((r) => r.models_compared)),
+    categoryName: single === null ? null : (config.categories.find((c) => c.id === single)?.name ?? null),
+    categoryId: single,
+    models_compared: comparedOfDay(rows),
     items: pickItems(rows),
   };
   const today = renderHomePage({ ...data, mode: "today" });

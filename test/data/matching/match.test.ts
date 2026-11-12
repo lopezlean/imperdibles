@@ -385,6 +385,20 @@ describe("false negatives from the 2026-11-11 run", () => {
     image_url: null,
   });
 
+  it("flags accessories of the TV, phone and appliance categories but not the products themselves", () => {
+    expect(hasAccessoryWords("Funda Silicona Samsung Galaxy A15")).toBe(true);
+    expect(hasAccessoryWords("Protector De Pantalla Vidrio Templado Moto G54")).toBe(true);
+    expect(hasAccessoryWords("Soporte De Pared Para Tv 32 A 70")).toBe(true);
+    expect(hasAccessoryWords("Cable Hdmi 2.0 Para Smart Tv")).toBe(true);
+    expect(hasAccessoryWords("Control Remoto Samsung Smart Tv BN59")).toBe(true);
+    expect(hasAccessoryWords("Carcasa Rigida Iphone 15")).toBe(true);
+    expect(hasAccessoryWords("Adaptador Usb C Samsung")).toBe(true);
+    expect(hasAccessoryWords("Smart Tv Samsung 50 Crystal UHD 4K UN50CU7000")).toBe(false);
+    expect(hasAccessoryWords("Celular Motorola Moto G54 5G 256GB XT2343")).toBe(false);
+    expect(hasAccessoryWords("Heladera No Frost Samsung RT38 con estantes de vidrio")).toBe(false);
+    expect(hasAccessoryWords("Smart Tv Philips 43 con control remoto por voz")).toBe(false);
+  });
+
   it("does not read 'Filtro HEPA' in a feature list as an accessory (Ultracomb AS-6061)", () => {
     const easy = other({ title: "Aspiradora Robot 120 W 0,65 L Gris AS-6061 Ultracomb", brand: "Ultracomb", gtin: "7790368297220" }, 229995);
     const robot = ml({ title: "Aspiradora Robot Ultracomb AS-6061 1600Pa Filtro HEPA 60min 650ml Modos Auto Punto Fijo", brand: "Ultracomb", model: "AS-6061", gtin: "7790368297220" });

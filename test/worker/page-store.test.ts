@@ -122,6 +122,23 @@ describe("regeneratePages", () => {
     expect(rows.find((r) => r.page_key === "archive")?.html).toContain("Los imperdibles del 10 de noviembre de 2026");
   });
 
+  it("lists the published candidates of every category run the same day, with no single category name", async () => {
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1", category: "aspiradoras-robot", models_compared: 10 });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["B:1"], runId: "r2", category: "smart-tv", models_compared: 5 });
+    await seedRun(db, { run_date: "2026-11-10", modelIds: ["B:2"], runId: "r3", category: "smart-tv", models_compared: 7 });
+    await addCandidate("c1", "r1", "A:1", { title: "Robot uno" });
+    await addCandidate("c2", "r2", "B:1", { title: "Tele dos" });
+    await addCandidate("c3", "r3", "B:2", { title: "Tele tres" });
+    await regeneratePages(deps(SAME_DAY));
+    const { html } = (await db.all<{ html: string }>("SELECT html FROM pages WHERE page_key = 'today:2026-11-10'"))[0]!;
+    for (const t of ["Robot uno", "Tele dos", "Tele tres"]) expect(html).toContain(t);
+    expect(html).not.toContain("Aspiradoras robot ·");
+    expect(html).not.toContain("SMART TV");
+    // robot art for the robot, generic art for the tv; max within a category (7), summed across categories (10 + 7).
+    expect(html).toContain("Ilustración de aspiradora robot");
+    expect(html).toContain("17");
+  });
+
   it("writes only archive in mode none when nothing was ever published", async () => {
     await seedRun(db, { run_date: "2026-11-10", modelIds: ["A:1"], runId: "r1" });
     await addCandidate("c1", "r1", "A:1", { status: "validated" });

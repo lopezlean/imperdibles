@@ -9,6 +9,8 @@ const ACCESSORY_WORDS: ReadonlySet<string> = new Set([
   "BOLSA", "BOLSAS", "BATERIA", "BATERIAS", "PACK", "COMBO", "X2", "X3",
   "ESTACION", "DOCK", "ACCESORIO", "ACCESORIOS", "MOPA", "MOPAS", "PANO", "PANOS",
   "RODILLO", "RODILLOS", "CARGADOR", "COMPATIBLE",
+  "FUNDA", "FUNDAS", "PROTECTOR", "PROTECTORES", "CARCASA", "SOPORTE", "SOPORTES",
+  "CABLE", "CABLES", "ADAPTADOR",
 ]);
 
 // Words that make a complete unit a bundle when introduced by "con", "y" or "+".
@@ -119,11 +121,18 @@ const isBundleAt = (words: string[], i: number) =>
 const isFeatureFilterAt = (words: string[], i: number) =>
   i > 0 && (words[i] === "FILTRO" || words[i] === "FILTROS") && words[i + 1] === "HEPA";
 
+// Words that only name an accessory next to their partner: "vidrio templado" (not "estantes de vidrio")
+// and a title that starts with "control remoto" (a TV listing may mention its remote further on).
+const isAccessoryPairAt = (words: string[], i: number) =>
+  (words[i] === "VIDRIO" && words[i + 1] === "TEMPLADO") || (i === 0 && words[i] === "CONTROL" && words[i + 1] === "REMOTO");
+
 export function hasAccessoryWords(title: string): boolean {
   const words = wordsWithPlus(title);
   if (words.length === 0) return false;
   if (words[0] === "BASE") return true;
-  return words.some((w, i) => ACCESSORY_WORDS.has(w) && !isBundleAt(words, i) && !isFeatureFilterAt(words, i));
+  return words.some(
+    (w, i) => (ACCESSORY_WORDS.has(w) && !isBundleAt(words, i) && !isFeatureFilterAt(words, i)) || isAccessoryPairAt(words, i),
+  );
 }
 
 // "con base", "y estacion", "+ dock": the title sells the unit together with the extra.

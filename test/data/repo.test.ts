@@ -173,4 +173,13 @@ describe("repo", () => {
     await mk("open2", "2026-11-10", "2026-11-10T09:00:00-03:00");
     expect(await findRunOfDay(db, "2026-11-10")).toEqual({ id: "ok1", status: "ok" });
   });
+
+  it("findRunOfDay with a category only sees runs of that category", async () => {
+    const db = createSqliteClient();
+    await startRun(db, { id: "a", run_date: "2026-11-10", category: "robot", started_at: "2026-11-10T06:00:00-03:00" });
+    await finishRun(db, "a", { status: "ok", models_compared: 1, queries_used: 1, error: null, finished_at: NOW });
+    expect(await findRunOfDay(db, "2026-11-10", "smart-tv")).toBeNull();
+    expect(await findRunOfDay(db, "2026-11-10", "robot")).toEqual({ id: "a", status: "ok" });
+    expect(await findRunOfDay(db, "2026-11-10")).toEqual({ id: "a", status: "ok" });
+  });
 });

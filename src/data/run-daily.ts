@@ -1,6 +1,6 @@
 import type { LocalOutputHooks, OwnerAlert } from "../contract/local-hooks.js";
 import { appendRunLog } from "../local/run-log.js";
-import { loadConfig } from "../shared/config.js";
+import { loadConfig, type Category } from "../shared/config.js";
 import { D1Unavailable, type SqlClient } from "../shared/db/sql-client.js";
 import type { LocalEnv } from "../shared/env.js";
 import { artDate, artIso } from "../shared/time.js";
@@ -38,7 +38,10 @@ export type RunDeps = {
 };
 
 export const USAGE = `Uso:
-  imperdibles correr [--forzar]   Corre la recolección del día y guarda los candidatos.
+  imperdibles correr [--categoria <id>] [--forzar]
+                                  Corre la recolección del día y guarda los candidatos. Sin --categoria usa la
+                                  categoría que toca hoy; con --categoria corre esa (se pueden correr varias por día).
+                                  --forzar repite una categoría que ya corrió hoy.
   imperdibles revalidar           Vuelve a leer los precios de los candidatos elegidos antes de publicar.
   imperdibles --help              Muestra esta ayuda.
 `;
@@ -53,7 +56,7 @@ async function retryOnce<T>(write: () => Promise<T>): Promise<T> {
   }
 }
 
-export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise<{ exitCode: number; run_id: string | null }> {
+export async function runDaily(deps: RunDeps, opts: { force: boolean; category?: string | null }): Promise<{ exitCode: number; run_id: string | null }> {
   const { db, hooks } = deps;
   const run_date = artDate(deps.now());
   let run_id: string | null = null;
@@ -81,7 +84,20 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
   };
 
   try {
-    const existing = await findRunOfDay(db, run_date);
+    const config = await loadConfig(db);
+    let category: Category;
+    if (opts.category) {
+      const chosen = config.categories.find((c) => c.id === opts.category);
+      if (!chosen) {
+        deps.stderr(`Categoría desconocida: "${opts.category}". Categorías válidas: ${config.categories.map((c) => c.id).join(", ")}\n`);
+        return { exitCode: 2, run_id: null };
+      }
+      category = chosen;
+    } else {
+      category = categoryOfDay(config.categories, run_date);
+    }
+
+    const existing = await findRunOfDay(db, run_date, category.id);
     if (existing !== null && !opts.force) {
       deps.stdout(`Ya hay una corrida de hoy (${existing.id}). Para repetirla: imperdibles correr --forzar\n`);
       return { exitCode: 2, run_id: null };
@@ -90,8 +106,6 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
     const token = createTokenProvider({ db, fetch: trackedFetch, env: deps.env, now: deps.now });
     await token.get();
     await holdStoredTokens();
-    const config = await loadConfig(db);
-    const category = categoryOfDay(config.categories, run_date);
 
     const startedAt = deps.now();
     run_id = `${run_date}-${category.id}-${artIso(startedAt).slice(11, 19).replaceAll(":", "")}`;
@@ -182,13 +196,26 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean }): Promise
   }
 }
 
-export type Command = { name: "correr"; force: boolean } | { name: "revalidar" } | { name: "help" };
+export type Command = { name: "correr"; force: boolean; category: string | null } | { name: "revalidar" } | { name: "help" };
 
 /** The one place that decides what argv means; `cli.ts` uses it to skip the environment for help and unknown input. */
 export function parseCommand(argv: string[]): Command | null {
   const [command, ...flags] = argv;
   if (command === "--help" || command === "-h") return { name: "help" };
-  if (command === "correr" && flags.every((f) => f === "--forzar")) return { name: "correr", force: flags.includes("--forzar") };
+  if (command === "correr") {
+    let force = false;
+    let category: string | null = null;
+    for (let i = 0; i < flags.length; i++) {
+      const flag = flags[i]!;
+      if (flag === "--forzar") force = true;
+      else if (flag === "--categoria") {
+        const value = flags[++i];
+        if (value === undefined || value.startsWith("--")) return null;
+        category = value;
+      } else return null;
+    }
+    return { name: "correr", force, category };
+  }
   if (command === "revalidar" && flags.length === 0) return { name: "revalidar" };
   return null;
 }
@@ -199,7 +226,7 @@ export async function main(argv: string[], deps: RunDeps): Promise<number> {
     deps.stdout(USAGE);
     return 0;
   }
-  if (command?.name === "correr") return (await runDaily(deps, { force: command.force })).exitCode;
+  if (command?.name === "correr") return (await runDaily(deps, { force: command.force, category: command.category })).exitCode;
   if (command?.name === "revalidar") return runRevalidate(deps);
   deps.stderr(USAGE);
   return 2;

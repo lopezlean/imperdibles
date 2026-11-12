@@ -44,14 +44,16 @@ export async function finishRun(
   );
 }
 
-/** Latest finished (ok or partial) run of an ART date; failed or still-open runs never count. */
+/** Latest finished (ok or partial) run of an ART date, optionally of one category; failed or still-open runs never count. */
 export async function findRunOfDay(
   db: SqlClient,
   run_date: string,
+  category?: string,
 ): Promise<{ id: string; status: "ok" | "partial" } | null> {
   const rows = await db.all<{ id: string; status: "ok" | "partial" }>(
-    "SELECT id, status FROM runs WHERE run_date = ? AND status IN ('ok', 'partial') ORDER BY started_at DESC, rowid DESC LIMIT 1",
-    [run_date],
+    `SELECT id, status FROM runs WHERE run_date = ? AND status IN ('ok', 'partial')${category === undefined ? "" : " AND category = ?"}
+     ORDER BY started_at DESC, rowid DESC LIMIT 1`,
+    category === undefined ? [run_date] : [run_date, category],
   );
   return rows[0] ?? null;
 }

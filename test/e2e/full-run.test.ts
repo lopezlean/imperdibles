@@ -183,7 +183,7 @@ type World = ReturnType<typeof createWorld>;
 /** Daily run at 10:00 ART, the owner's reply at 10:20, and returns the chosen candidate's id. */
 async function collectAndChoose(w: World, date: string): Promise<string> {
   w.at(`${date}T10:00:00-03:00`);
-  expect((await runDaily(w.runDeps, { force: false })).exitCode).toBe(0);
+  expect((await runDaily(w.runDeps, { force: false, category: "aspiradoras-robot" })).exitCode).toBe(0);
   const pending = await w.candidates();
   expect(pending.length).toBeGreaterThan(0);
   for (const c of pending) {
@@ -261,7 +261,7 @@ describe("end to end: replayed data to the published page", () => {
     async () => {
       const w = createWorld(routedReplay(composedRoutes("listing-no-results.html")), "2026-11-10T10:00:00-03:00");
       w.at("2026-11-10T10:00:00-03:00");
-      expect((await runDaily(w.runDeps, { force: false })).exitCode).toBe(0);
+      expect((await runDaily(w.runDeps, { force: false, category: "aspiradoras-robot" })).exitCode).toBe(0);
       expect(await w.candidates()).toEqual([]);
       const page = await w.get("/");
       expect(page.status).toBe(200);

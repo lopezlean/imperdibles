@@ -7,7 +7,7 @@ import type { CandidateList } from "../../src/contract/candidate-list.js";
 import type { LocalOutputHooks, OwnerAlert } from "../../src/contract/local-hooks.js";
 import { fravegaSearchUrl } from "../../src/data/stores/fravega.js";
 import { jumboSearchUrl } from "../../src/data/stores/jumbo.js";
-import { runDaily, main, USAGE, type RunDeps } from "../../src/data/run-daily.js";
+import { runDaily, main, parseCommand, USAGE, type RunDeps } from "../../src/data/run-daily.js";
 import { appendRunLog } from "../../src/local/run-log.js";
 import { D1Unavailable, type SqlClient, type SqlValue } from "../../src/shared/db/sql-client.js";
 import type { LocalEnv } from "../../src/shared/env.js";
@@ -232,6 +232,37 @@ describe("imperdibles correr", () => {
     expect(await count(s.sqlite, "runs")).toBe(2);
   });
 
+  const TWO_CATEGORIES = JSON.stringify([
+    { id: "aspiradoras-robot", name: "Aspiradoras robot", terms: ["aspiradora robot"] },
+    { id: "otra", name: "Otra", terms: ["aspiradora robot"] },
+  ]);
+
+  it("runs another category the same day without --forzar and refuses repeating that one", async () => {
+    const s = setup();
+    s.sqlite.raw.prepare("UPDATE config SET value = ? WHERE name = 'categories'").run(TWO_CATEGORIES);
+    expect((await runDaily(s.deps, { force: false })).run_id).toBe(RUN_ID);
+    s.clock.now = new Date("2026-11-10T09:05:00Z");
+    const other = await runDaily(s.deps, { force: false, category: "otra" });
+    expect(other).toEqual({ exitCode: 0, run_id: "2026-11-10-otra-060500" });
+    expect(await runRow(s.sqlite)).toBeTruthy();
+    s.out.length = 0;
+    const again = await runDaily(s.deps, { force: false, category: "otra" });
+    expect(again).toEqual({ exitCode: 2, run_id: null });
+    expect(s.out.join("")).toBe("Ya hay una corrida de hoy (2026-11-10-otra-060500). Para repetirla: imperdibles correr --forzar\n");
+    expect(await count(s.sqlite, "runs")).toBe(2);
+  });
+
+  it("rejects an unknown --categoria listing the valid ids, before reading any price", async () => {
+    const s = setup();
+    s.sqlite.raw.prepare("UPDATE config SET value = ? WHERE name = 'categories'").run(TWO_CATEGORIES);
+    const r = await runDaily(s.deps, { force: false, category: "zapatillas" });
+    expect(r).toEqual({ exitCode: 2, run_id: null });
+    expect(s.err.join("")).toContain('Categoría desconocida: "zapatillas"');
+    expect(s.err.join("")).toContain("aspiradoras-robot, otra");
+    expect(s.fetched).toEqual([]);
+    expect(await count(s.sqlite, "runs")).toBe(0);
+  });
+
   it("does not count a failed run of the day as done", async () => {
     const s = setup({ routes: new Map([[fravegaSearchUrl("aspiradora robot"), () => new Response(FRAVEGA_BROKEN, { status: 200 })]]) });
     expect((await runDaily(s.deps, { force: false })).exitCode).toBe(1);
@@ -419,6 +450,16 @@ describe("main", () => {
     expect(await main(["correr"], s.deps)).toBe(2);
     s.clock.now = new Date("2026-11-10T09:05:00Z");
     expect(await main(["correr", "--forzar"], s.deps)).toBe(0);
+  });
+
+  it("parses --categoria with --forzar in any order and rejects a missing value", () => {
+    expect(parseCommand(["correr", "--categoria", "smart-tv"])).toEqual({ name: "correr", force: false, category: "smart-tv" });
+    expect(parseCommand(["correr", "--forzar", "--categoria", "smart-tv"])).toEqual({ name: "correr", force: true, category: "smart-tv" });
+    expect(parseCommand(["correr", "--categoria", "smart-tv", "--forzar"])).toEqual({ name: "correr", force: true, category: "smart-tv" });
+    expect(parseCommand(["correr", "--forzar"])).toEqual({ name: "correr", force: true, category: null });
+    expect(parseCommand(["correr", "--categoria"])).toBeNull();
+    expect(parseCommand(["correr", "--categoria", "--forzar"])).toBeNull();
+    expect(parseCommand(["correr", "--otra"])).toBeNull();
   });
 
   it("prints usage for help and for unknown commands", async () => {
