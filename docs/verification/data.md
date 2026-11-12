@@ -28,7 +28,7 @@
 
 ## V3 Refresh token single use
 
-- Status: PENDING OWNER. `pnpm verify:ml --refresh` prints only whether the stored `refresh_token` changed (stored atomically in one upsert either way). Do not run it concurrently with another command that refreshes.
+- Status: DONE 2026-11-11. `pnpm verify:ml --refresh` printed `refresh_token changed after refresh: yes`: ML rotates the refresh token on each use, so the stored one must always be replaced (it is, in one upsert). `pnpm verify:ml --refresh` prints only whether the stored `refresh_token` changed (stored atomically in one upsert either way). Do not run it concurrently with another command that refreshes.
 
 ## V4 Frávega seller
 
@@ -41,7 +41,7 @@
 
 ## V5 GTIN availability
 
-- ML attributes: PENDING OWNER (visible only in the real `/products/{id}` recording; the synthetic fixtures carry a fake GTIN attribute purely as a shape assumption).
+- ML attributes: yes, partially (2026-11-11, `scripts/debug-match.ts` on live catalog products). Many products carry `GTIN`, sometimes as a comma-separated list or with leading zeros; others have none (e.g. MLA79828952). The matcher splits the list and drops leading zeros.
 - Frávega HTML: yes, partially. The embedded Next.js JSON holds `"gtin":{"__typename":"EAN","number":"<13 digits>"}` for 10 of the 15 products in the recorded listing and `"gtin":null` for 5. It is not in the visible `<article>` markup, so using it means reading the embedded JSON, which Task 8 must decide.
 
 ## V6 Store terms
@@ -54,7 +54,7 @@
 
 ## V8 Reproduction of the 10/11 run
 
-- Status: PENDING OWNER. The owner has not authorized Mercado Libre yet, so no real run is recorded and `fixtures/runs/` does not exist. The pipeline is tested against a replay composed from the real Frávega listing and synthetic `-derived` ML responses (fake ids); that proves behaviour, not the real counts.
+- Status: RECORDED 2026-11-11, not committed yet (19 MB, mostly Frávega HTML; owner decides whether to commit it). The text below predates the recording. The pipeline is tested against a replay composed from the real Frávega listing and synthetic `-derived` ML responses (fake ids); that proves behaviour, not the real counts.
 - Owner runs: `pnpm fixtures:record run aspiradoras-robot`. It runs the collection with the configured budget under `createRecordingFetch` and then repeats the reads revalidation will make for each candidate (`getOffers` and the rival store searches), writing `fixtures/runs/<YYYY-MM-DD>-aspiradoras-robot/`. Then check `rg -il "bearer|access_token" fixtures/runs` prints nothing.
 - Then, to record here: run `pnpm vitest run test/data/pipeline.test.ts` (the test "reproduces the recorded aspiradoras-robot run" stops being skipped and writes its snapshot under `test/data/__snapshots__/`; commit it), and note the models compared and the approved candidates next to the 4 of 9 from 10/11. Prices have moved since; the spec treats 4 of 9 as a value to confirm, not an assertion.
 - Result: pending.
@@ -62,7 +62,7 @@
 
 ## V9 D1 rows per run
 
-- Status: PENDING OWNER. The owner has not run `imperdibles correr` against the real D1 yet, so the rows written per run (for the 100.000 rows/day D1 free quota) are unmeasured.
+- Status: DONE 2026-11-11 (rows measured; the same-day exit 2 check is still open).
 - Owner runs: `pnpm imperdibles correr` once. Expected: exit 0, the stub hook line in stderr (or the shortlist on Telegram once output Task 6 is merged).
 - Then check the run: `pnpm wrangler d1 execute imperdibles --remote --command "SELECT id, status, models_compared, queries_used FROM runs ORDER BY started_at DESC LIMIT 1"`.
 - Then count the rows written by that run (`<id>` from the previous query): `pnpm wrangler d1 execute imperdibles --remote --command "SELECT (SELECT COUNT(*) FROM price_observations WHERE run_id = '<id>') AS observations, (SELECT COUNT(*) FROM candidates WHERE run_id = '<id>') AS candidates, (SELECT COUNT(*) FROM models) AS models, (SELECT COUNT(*) FROM matches) AS matches, (SELECT COUNT(*) FROM store_listings) AS listings"`. Rows written per run are about observations + candidates + 1 (runs) plus the upserts to store_listings, models and matches; record the totals and compare with 100.000.

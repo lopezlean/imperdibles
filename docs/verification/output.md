@@ -78,7 +78,7 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 
 ## V1 price label
 
-- V1 price label: PENDING OWNER. `PRICE_LABEL` in `src/output/copy.ts` is `"lista"` until `docs/verification/data.md` V1 is recorded; switch it there.
+- V1 price label: DONE 2026-11-11. `docs/verification/data.md` V1 is recorded and `PRICE_LABEL` in `src/output/copy.ts` is `"actual"`.
 
 ## V-O8 Recorded run
 
