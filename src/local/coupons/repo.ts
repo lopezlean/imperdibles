@@ -27,9 +27,10 @@ export async function insertPending(
 ): Promise<number | null> {
   const stamp = artIso(now);
   const { changes } = await db.run(
-    `INSERT OR IGNORE INTO coupons
+    `INSERT INTO coupons
        (code, discount_type, discount_value, min_purchase, cap, scope, valid_from, valid_until, status, source_message_id, source_text, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+     ON CONFLICT (source_message_id, code) DO NOTHING`,
     [c.code, c.discount_type, c.discount_value, c.min_purchase, c.cap, c.scope, c.valid_from, c.valid_until, src.message_id, src.text, stamp, stamp],
   );
   if (changes === 0) return null;

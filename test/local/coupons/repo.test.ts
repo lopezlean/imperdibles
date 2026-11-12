@@ -52,6 +52,21 @@ describe("coupon repository", () => {
     expect(await insertPending(db, coupon(), src(2), NOW)).not.toBeNull();
   });
 
+  it("insertPending throws on a constraint violation instead of reporting a duplicate", async () => {
+    const db = createSqliteClient();
+    await expect(insertPending(db, coupon({ discount_value: 0 }), src(), NOW)).rejects.toThrow(/CHECK constraint/);
+    await insertPending(db, coupon(), src(), NOW);
+    expect(await insertPending(db, coupon(), src(), NOW)).toBeNull();
+  });
+
+  it("releaseClaim leaves a removed row untouched", async () => {
+    const db = createSqliteClient();
+    const id = (await insertPending(db, coupon(), src(), NOW))!;
+    await db.run("UPDATE coupons SET status = 'removed' WHERE id = ?", [id]);
+    await releaseClaim(db, id);
+    expect((await findByCodeValidAt(db, "ABC123", NOW))!.status).toBe("removed");
+  });
+
   it("findByCodeValidAt matches only rows whose valid_until is after the instant, in any status", async () => {
     const db = createSqliteClient();
     const id = (await insertPending(db, coupon(), src(), NOW))!;
