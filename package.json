@@ -21,6 +21,8 @@
     "verify:telegram": "tsx scripts/verify-telegram-file-id.ts",
     "card:preview": "tsx scripts/card-preview.ts",
     "telegram:set-webhook": "tsx scripts/set-webhook.ts",
+    "site:dev": "astro dev",
+    "site:build": "astro build",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
     "db:pull": "bash scripts/db-pull.sh",
@@ -37,9 +39,12 @@
     ]
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
     "@fontsource/inter": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
     "@resvg/resvg-js": "^2.6.2",
+    "astro": "^7.4.11",
+    "astro-seo": "^1.2.0",
     "cheerio": "^1.2.0",
     "dotenv": "^18.0.10",
     "satori": "^0.63.2",

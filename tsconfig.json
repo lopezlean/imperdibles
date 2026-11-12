@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "types": ["node", "@cloudflare/workers-types"]
   },
-  "include": ["src", "test", "scripts"]
+  "include": ["src", "test", "scripts", "site/lib", "astro.config.ts"]
 }
