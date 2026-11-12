@@ -24,6 +24,7 @@
     "site:dev": "astro dev",
     "site:build": "astro build",
     "worker:dev": "wrangler dev",
+    "ship": "tsx scripts/ship.ts",
     "worker:deploy": "wrangler deploy",
     "db:pull": "bash scripts/db-pull.sh",
     "db:migrate:local": "wrangler d1 migrations apply imperdibles --local",
