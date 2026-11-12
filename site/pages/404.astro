@@ -1,0 +1,30 @@
+---
+import Base from "../layouts/Base.astro";
+import { readSiteEnv } from "../lib/env.js";
+import { getSiteData } from "../lib/site-data.js";
+
+const d = await getSiteData();
+const { channelUrl } = readSiteEnv(process.env);
+---
+
+<Base
+  title="Página no encontrada | imperdibles"
+  description="La página que buscás no existe. Volvé al inicio para ver los imperdibles más recientes."
+  path="/404/"
+  ogImage={null}
+  jsonLd={[]}
+  noindex
+  threshold_pct={d.threshold_pct}
+  channelUrl={channelUrl}
+>
+  <main class="wrap today">
+    <div class="sel">
+      <h1>Página no encontrada</h1>
+    </div>
+    <div class="empty">
+      <p class="display zero" aria-hidden="true">404</p>
+      <p>No hay nada en esta dirección.</p>
+      <p><a href="/">Volver al inicio</a></p>
+    </div>
+  </main>
+</Base>

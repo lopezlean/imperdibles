@@ -1,0 +1,108 @@
+---
+import { COMPARED_CHIP, PUBLISHED_CHIP } from "../../../src/output/copy.js";
+import { MONTH_NAMES, formatDateLong } from "../../../src/output/format.js";
+import DealList from "../../components/DealList.astro";
+import HistoryNav from "../../components/HistoryNav.astro";
+import Base from "../../layouts/Base.astro";
+import { dayPage, listDays, listMonths, monthPage } from "../../lib/deals.js";
+import { readSiteEnv } from "../../lib/env.js";
+import {
+  absoluteUrl,
+  breadcrumbLd,
+  buildDescription,
+  dayTitle,
+  itemListLd,
+  monthTitle,
+  ogImageOf,
+  topPct,
+} from "../../lib/seo.js";
+import { getSiteData } from "../../lib/site-data.js";
+import { dayPath, daySlug, monthPath, monthSlug, weekdayName } from "../../lib/slugs.js";
+
+export async function getStaticPaths() {
+  const d = await getSiteData();
+  return [
+    ...listDays(d).map((key) => ({ params: { slug: daySlug(key) }, props: { kind: "day" as const, key } })),
+    ...listMonths(d).map((key) => ({ params: { slug: monthSlug(key) }, props: { kind: "month" as const, key } })),
+  ];
+}
+
+const { kind, key } = Astro.props;
+const d = await getSiteData();
+const { siteUrl, channelUrl } = readSiteEnv(process.env);
+
+const monthLabel = (month: string) => {
+  const [y = "", m = ""] = month.split("-");
+  return `${MONTH_NAMES[Number(m) - 1]} de ${y}`;
+};
+
+const day = kind === "day" ? dayPage(d, key) : null;
+const month = kind === "month" ? monthPage(d, key) : null;
+const items = (day ?? month)?.items ?? [];
+const monthKey = day ? day.month : key;
+
+const title = day ? dayTitle(key) : monthTitle(key);
+const path = day ? dayPath(key) : monthPath(key);
+const description = buildDescription({
+  count: items.length,
+  topPct: topPct(items),
+  names: items.slice(0, 3).map((i) => i.candidate.title),
+});
+const heading = day
+  ? `Los imperdibles del ${weekdayName(key)} ${formatDateLong(key)}`
+  : `Los imperdibles de ${monthLabel(key)}`;
+const crumbs = [
+  { name: "Inicio", url: absoluteUrl(siteUrl, "/") },
+  { name: monthLabel(monthKey), url: absoluteUrl(siteUrl, monthPath(monthKey)) },
+  ...(day ? [{ name: formatDateLong(key), url: absoluteUrl(siteUrl, dayPath(key)) }] : []),
+];
+const pricesDate = day ? key : null;
+---
+
+<Base
+  title={title}
+  description={description}
+  path={path}
+  ogImage={ogImageOf(items)}
+  jsonLd={[breadcrumbLd(crumbs), itemListLd(items)]}
+  threshold_pct={d.threshold_pct}
+  channelUrl={channelUrl}
+  pricesDate={pricesDate}
+>
+  <main class="wrap today">
+    <div class="sel">
+      <h1>{heading}</h1>
+    </div>
+    {
+      day && (
+        <div class="chips">
+          <span class="chip">{COMPARED_CHIP(day.models_compared)}</span>
+          <span class="chip">{PUBLISHED_CHIP(items.length)}</span>
+        </div>
+      )
+    }
+    <DealList items={items} />
+    {
+      day && (
+        <nav class="chips" aria-label="Historial">
+          {day.prev && <a class="chip" href={dayPath(day.prev)}>{`Día anterior: ${formatDateLong(day.prev)}`}</a>}
+          {day.next && <a class="chip" href={dayPath(day.next)}>{`Día siguiente: ${formatDateLong(day.next)}`}</a>}
+          <a class="chip" href={monthPath(day.month)}>{`Ofertas de ${monthLabel(day.month)}`}</a>
+        </nav>
+      )
+    }
+    {
+      month && (
+        <>
+          <nav class="chips" aria-label="Días con ofertas">
+            {month.days.map((runDate) => <a class="chip" href={dayPath(runDate)}>{formatDateLong(runDate)}</a>)}
+          </nav>
+          <nav class="chips" aria-label="Historial">
+            {month.prev && <a class="chip" href={monthPath(month.prev)}>{`Mes anterior: ${monthLabel(month.prev)}`}</a>}
+            {month.next && <a class="chip" href={monthPath(month.next)}>{`Mes siguiente: ${monthLabel(month.next)}`}</a>}
+          </nav>
+        </>
+      )
+    }
+  </main>
+</Base>

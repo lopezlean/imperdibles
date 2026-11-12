@@ -58,6 +58,11 @@ const openGraph = ogImage
     />
     <link href={PAGE_FONTS} rel="stylesheet" />
     <style is:inline set:html={PAGE_CSS}></style>
+    <style is:inline>
+      a.chip{color:inherit;text-decoration:none}
+      a.chip:hover{text-decoration:underline}
+      a.chip:focus-visible,.empty a:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+    </style>
     {jsonLd.map((data) => <script type="application/ld+json" set:html={jsonLdScript(data)} />)}
   </head>
   <body>
