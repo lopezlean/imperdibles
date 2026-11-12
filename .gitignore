@@ -8,3 +8,7 @@ var/
 .atl/
 .superpowers/
 .DS_Store
+
+# Real run recordings (19 MB of store HTML); kept local only, see docs/verification/data.md V8.
+fixtures/runs/
+test/data/__snapshots__/
