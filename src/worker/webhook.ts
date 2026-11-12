@@ -6,14 +6,7 @@ export type WebhookReply = { method: "sendMessage"; chat_id: number; text: strin
 
 type Deps = { db: SqlClient; ownerChatId: string; now: () => Date };
 
-type CandidateRow = {
-  id: string;
-  model_id: string;
-  payload: string;
-  status: string;
-  run_date: string;
-  affiliate_link: string | null;
-};
+type CandidateRow = { id: string; model_id: string; payload: string; status: string; run_date: string };
 
 const HELP =
   'Para elegir un candidato, responder a su mensaje con el enlace de afiliado. Para descartarlo, responder "rechazar".';
@@ -78,7 +71,7 @@ export async function handleTelegramUpdate(deps: Deps, update: unknown): Promise
   if (typeof replied !== "number") return reply(HELP);
 
   const rows = await deps.db.all<CandidateRow>(
-    "SELECT c.id, c.model_id, c.payload, c.status, c.affiliate_link, r.run_date FROM candidates c JOIN runs r ON r.id = c.run_id WHERE c.telegram_message_id = ?",
+    "SELECT c.id, c.model_id, c.payload, c.status, r.run_date FROM candidates c JOIN runs r ON r.id = c.run_id WHERE c.telegram_message_id = ?",
     [replied],
   );
   const cand = rows[0];
@@ -109,20 +102,6 @@ export async function handleTelegramUpdate(deps: Deps, update: unknown): Promise
       );
     }
     return reply(`Descartado: ${title}. No se volverá a proponer.`);
-  }
-
-  // Auto affiliate mode: the link was stored when the candidate was sent, so "publicar" only approves it.
-  // A pending candidate never has a link in manual mode, so manual behavior is unchanged.
-  if (text.trim().toLowerCase() === "publicar" && cand.status === "pending" && cand.affiliate_link !== null) {
-    const approved = await deps.db.run(
-      "UPDATE candidates SET status = 'chosen' WHERE id = ? AND status = 'pending' AND affiliate_link IS NOT NULL",
-      [cand.id],
-    );
-    if (approved.changes !== 1) return lostRace();
-    return reply(`Aprobado: ${title}. Se publica tras revalidar el precio.`);
-  }
-  if (text.trim().toLowerCase() === "publicar" && cand.status !== "pending" && cand.affiliate_link !== null) {
-    return unchanged();
   }
 
   const parsed = parseAffiliateLink(text);

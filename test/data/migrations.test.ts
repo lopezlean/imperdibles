@@ -13,16 +13,3 @@ describe("0003_seed_vtex_stores", () => {
     ]);
   });
 });
-
-describe("0004_affiliate_mode", () => {
-  it("seeds manual mode with empty ids", async () => {
-    const rows = await createSqliteClient().all<{ name: string; value: string }>(
-      "SELECT name, value FROM config WHERE name LIKE 'affiliate_%' ORDER BY name",
-    );
-    expect(rows).toEqual([
-      { name: "affiliate_mode", value: "manual" },
-      { name: "affiliate_tool", value: "" },
-      { name: "affiliate_word", value: "" },
-    ]);
-  });
-});

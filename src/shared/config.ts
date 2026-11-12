@@ -34,19 +34,3 @@ export async function loadConfig(db: SqlClient): Promise<AppConfig> {
     categories: JSON.parse(text("categories")) as Category[],
   };
 }
-
-export type AffiliateConfig = {
-  mode: "manual" | "auto";
-  /** Set only when mode is "auto" and both ids are non-empty. */
-  auto: { word: string; tool: string } | null;
-};
-
-/** Reads the optional affiliate rows; anything missing or unrecognised means manual mode. */
-export async function loadAffiliateConfig(db: SqlClient): Promise<AffiliateConfig> {
-  const rows = await db.all<{ name: string; value: string }>("SELECT name, value FROM config WHERE name LIKE 'affiliate_%'");
-  const m = new Map(rows.map((r) => [r.name, r.value.trim()]));
-  const word = m.get("affiliate_word") ?? "";
-  const tool = m.get("affiliate_tool") ?? "";
-  if (m.get("affiliate_mode") !== "auto") return { mode: "manual", auto: null };
-  return { mode: "auto", auto: word !== "" && tool !== "" ? { word, tool } : null };
-}

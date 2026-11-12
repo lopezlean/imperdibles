@@ -1,5 +1,4 @@
 import type { Candidate, CandidateList } from "../../contract/candidate-list.js";
-import { buildAffiliateLink, type AffiliateIds } from "../affiliate-link.js";
 import type { SqlClient } from "../../shared/db/sql-client.js";
 import { buildNoCandidatesText, buildShortlistCaption } from "../shortlist/messages.js";
 import type { TelegramClient } from "../telegram/client.js";
@@ -8,19 +7,7 @@ const MAX_CANDIDATES = 10;
 
 export type RenderCard = (c: Candidate, opts: { run_date: string }) => Promise<Uint8Array>;
 
-export type SendShortlistDeps = { db: SqlClient; telegram: TelegramClient; ownerChatId: string; render: RenderCard;
-  /** Automatic affiliate mode: when set, each candidate gets its link built from the Mercado Libre URL. */
-  affiliate?: AffiliateIds;
-};
-
-/** The automatic link, or null (manual flow for this candidate) when the ML URL cannot take one. */
-function autoLink(c: Candidate, ids: AffiliateIds): string | null {
-  try {
-    return buildAffiliateLink(c.ml.url, ids);
-  } catch {
-    return null;
-  }
-}
+export type SendShortlistDeps = { db: SqlClient; telegram: TelegramClient; ownerChatId: string; render: RenderCard };
 
 /**
  * Sends the first 10 candidates to the owner as cards and records the Telegram ids.
@@ -31,7 +18,7 @@ export async function sendShortlist(
   deps: SendShortlistDeps,
   list: CandidateList,
 ): Promise<{ sent: number; failed: number }> {
-  const { db, telegram, ownerChatId, render, affiliate } = deps;
+  const { db, telegram, ownerChatId, render } = deps;
   if (list.candidates.length === 0) {
     await telegram.sendMessage({ chat_id: ownerChatId, text: buildNoCandidatesText(list) });
     return { sent: 0, failed: 0 };
@@ -48,24 +35,12 @@ export async function sendShortlist(
       if (rows.length === 0) throw new Error("candidate row not found");
       if (rows[0]!.telegram_message_id !== null) continue;
       const png = await render(c, { run_date: list.run_date });
-      const auto = affiliate ? autoLink(c, affiliate) : null;
-      const r = await telegram.sendPhoto({
-        chat_id: ownerChatId,
-        photo: { png },
-        caption: buildShortlistCaption(c, { autoAffiliate: auto !== null }),
-      });
-      if (auto === null) {
-        await db.run("UPDATE candidates SET telegram_file_id = ?, telegram_message_id = ? WHERE id = ?", [
-          r.file_id,
-          r.message_id,
-          c.candidate_id,
-        ]);
-      } else {
-        await db.run(
-          "UPDATE candidates SET telegram_file_id = ?, telegram_message_id = ?, affiliate_link = ? WHERE id = ?",
-          [r.file_id, r.message_id, auto, c.candidate_id],
-        );
-      }
+      const r = await telegram.sendPhoto({ chat_id: ownerChatId, photo: { png }, caption: buildShortlistCaption(c) });
+      await db.run("UPDATE candidates SET telegram_file_id = ?, telegram_message_id = ? WHERE id = ?", [
+        r.file_id,
+        r.message_id,
+        c.candidate_id,
+      ]);
       sent++;
     } catch (e) {
       failed++;

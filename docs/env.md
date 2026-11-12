@@ -32,20 +32,3 @@ pnpm db:migrate:remote
 ```
 
 Expected: wrangler reports `0001_initial.sql` and `0002_seed.sql` applied.
-
-## Optional: automatic affiliate mode
-
-By default (`affiliate_mode = 'manual'`) the owner replies to each Telegram card with a `https://meli.la/...` link. In `auto` mode the link is built from the Mercado Libre product URL by adding `matt_word` and `matt_tool` (the constant per-affiliate values found in a resolved meli.la link). The card then says the candidate already has its link; the owner replies `publicar` to approve, `rechazar` to discard, or a meli.la link to override.
-
-Unverified: that appending these two params credits the affiliate. Check it with one real link before enabling.
-
-Apply the migration, then set the three rows (replace `<word>` and `<tool>`; never commit them):
-
-```
-pnpm db:migrate:remote
-pnpm wrangler d1 execute imperdibles --remote --command "UPDATE config SET value='<word>' WHERE name='affiliate_word'"
-pnpm wrangler d1 execute imperdibles --remote --command "UPDATE config SET value='<tool>' WHERE name='affiliate_tool'"
-pnpm wrangler d1 execute imperdibles --remote --command "UPDATE config SET value='auto' WHERE name='affiliate_mode'"
-```
-
-Auto mode applies only when the mode is `auto` and both ids are non-empty; otherwise the manual flow runs. To go back: set `affiliate_mode` to `manual`. The mode is read when the shortlist is sent (local job), so it affects the next run only.

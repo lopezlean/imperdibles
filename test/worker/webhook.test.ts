@@ -204,46 +204,4 @@ describe("handleTelegramUpdate", () => {
     expect(reply?.text).toBe("Este candidato ya está validado; no se cambió nada.");
     expect(await row("c1")).toEqual({ status: "validated", affiliate_link: null });
   });
-
-  describe("auto affiliate mode", () => {
-    const AUTO = "https://www.mercadolibre.com.ar/p/MLA1?matt_word=w&matt_tool=1";
-    const setLink = (id: string) => db.run("UPDATE candidates SET affiliate_link = ? WHERE id = ?", [AUTO, id]);
-
-    it('"publicar" approves a pending candidate that already has its link', async () => {
-      await candidate("c1");
-      await setLink("c1");
-      const reply = await handleTelegramUpdate(deps(), upd(" Publicar "));
-      expect(reply?.text).toBe("Aprobado: Robot c1. Se publica tras revalidar el precio.");
-      expect(await row("c1")).toEqual({ status: "chosen", affiliate_link: AUTO });
-    });
-
-    it("a meli.la reply still overrides the automatic link", async () => {
-      await candidate("c1");
-      await setLink("c1");
-      await handleTelegramUpdate(deps(), upd(LINK));
-      expect(await row("c1")).toEqual({ status: "chosen", affiliate_link: LINK });
-    });
-
-    it('"rechazar" still rejects', async () => {
-      await candidate("c1");
-      await setLink("c1");
-      expect((await handleTelegramUpdate(deps(), upd("rechazar")))?.text).toContain("Descartado");
-      expect((await row("c1")).status).toBe("discarded");
-    });
-
-    it('"publicar" on an already chosen candidate changes nothing', async () => {
-      await candidate("c1", { status: "chosen" });
-      await setLink("c1");
-      expect((await handleTelegramUpdate(deps(), upd("publicar")))?.text).toBe(
-        "Este candidato ya está elegido; no se cambió nada.",
-      );
-    });
-
-    it('"publicar" without a stored link keeps the manual-mode error', async () => {
-      await candidate("c1");
-      const reply = await handleTelegramUpdate(deps(), upd("publicar"));
-      expect(reply?.text).toBe("No se guardó el enlace: el enlace no usa https. Debe ser un único enlace https://meli.la/...");
-      expect(await row("c1")).toEqual({ status: "pending", affiliate_link: null });
-    });
-  });
 });
