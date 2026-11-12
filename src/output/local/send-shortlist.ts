@@ -5,7 +5,7 @@ import type { TelegramClient } from "../telegram/client.js";
 
 const MAX_CANDIDATES = 10;
 
-export type RenderCard = (c: Candidate, opts: { run_date: string }) => Promise<Uint8Array>;
+export type RenderCard = (c: Candidate, opts: { run_date: string; category?: string | null }) => Promise<Uint8Array>;
 
 export type SendShortlistDeps = { db: SqlClient; telegram: TelegramClient; ownerChatId: string; render: RenderCard };
 
@@ -34,7 +34,7 @@ export async function sendShortlist(
       );
       if (rows.length === 0) throw new Error("candidate row not found");
       if (rows[0]!.telegram_message_id !== null) continue;
-      const png = await render(c, { run_date: list.run_date });
+      const png = await render(c, { run_date: list.run_date, category: list.category });
       const r = await telegram.sendPhoto({ chat_id: ownerChatId, photo: { png }, caption: buildShortlistCaption(c) });
       await db.run("UPDATE candidates SET telegram_file_id = ?, telegram_message_id = ? WHERE id = ?", [
         r.file_id,

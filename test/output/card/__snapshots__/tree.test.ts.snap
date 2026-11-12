@@ -76,18 +76,29 @@ exports[`buildCardTree > one rival 1`] = `
           "children": [
             {
               "props": {
-                "children": "Foto del producto",
+                "children": [
+                  {
+                    "props": {
+                      "height": 182,
+                      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTIwIiBmaWxsPSJub25lIj48ZWxsaXBzZSBjeD0iNjAiIGN5PSIxMDgiIHJ4PSIzOCIgcnk9IjYiIGZpbGw9IiM1QjY0NzIiIGZpbGwtb3BhY2l0eT0iLjI1Ii8+PHBhdGggZD0iTTYwIDE2TDEwMCAzNkw2MCA1NkwyMCAzNloiIGZpbGw9IiM1QjY0NzIiLz48cGF0aCBkPSJNMjAgMzZMNjAgNTZWMTAyTDIwIDgyWiIgZmlsbD0iIzNBNDM1MCIvPjxwYXRoIGQ9Ik0xMDAgMzZMNjAgNTZWMTAyTDEwMCA4MloiIGZpbGw9IiMwRTExMTYiLz48cGF0aCBkPSJNNDAgMjZMODAgNDZMNzAgNTFMMzAgMzFaIiBmaWxsPSIjQzI0MTBDIi8+PC9zdmc+",
+                      "style": {
+                        "height": 182,
+                        "width": 182,
+                      },
+                      "width": 182,
+                    },
+                    "type": "img",
+                  },
+                ],
                 "data-role": "photo",
                 "style": {
                   "alignItems": "center",
                   "background": "#E3E6EB",
                   "borderRadius": 20,
-                  "color": "#5B6472",
                   "display": "flex",
-                  "fontFamily": "Inter",
-                  "fontSize": 18,
                   "height": 260,
                   "justifyContent": "center",
+                  "overflow": "hidden",
                   "width": 260,
                 },
               },
@@ -409,18 +420,29 @@ exports[`buildCardTree > three rivals 1`] = `
           "children": [
             {
               "props": {
-                "children": "Foto del producto",
+                "children": [
+                  {
+                    "props": {
+                      "height": 182,
+                      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTIwIiBmaWxsPSJub25lIj48ZWxsaXBzZSBjeD0iNjAiIGN5PSIxMDgiIHJ4PSIzOCIgcnk9IjYiIGZpbGw9IiM1QjY0NzIiIGZpbGwtb3BhY2l0eT0iLjI1Ii8+PHBhdGggZD0iTTYwIDE2TDEwMCAzNkw2MCA1NkwyMCAzNloiIGZpbGw9IiM1QjY0NzIiLz48cGF0aCBkPSJNMjAgMzZMNjAgNTZWMTAyTDIwIDgyWiIgZmlsbD0iIzNBNDM1MCIvPjxwYXRoIGQ9Ik0xMDAgMzZMNjAgNTZWMTAyTDEwMCA4MloiIGZpbGw9IiMwRTExMTYiLz48cGF0aCBkPSJNNDAgMjZMODAgNDZMNzAgNTFMMzAgMzFaIiBmaWxsPSIjQzI0MTBDIi8+PC9zdmc+",
+                      "style": {
+                        "height": 182,
+                        "width": 182,
+                      },
+                      "width": 182,
+                    },
+                    "type": "img",
+                  },
+                ],
                 "data-role": "photo",
                 "style": {
                   "alignItems": "center",
                   "background": "#E3E6EB",
                   "borderRadius": 20,
-                  "color": "#5B6472",
                   "display": "flex",
-                  "fontFamily": "Inter",
-                  "fontSize": 18,
                   "height": 260,
                   "justifyContent": "center",
+                  "overflow": "hidden",
                   "width": 260,
                 },
               },

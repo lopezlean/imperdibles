@@ -125,7 +125,41 @@ describe("buildCardTree", () => {
     const accent = kids(logo).find((k): k is CardNode => typeof k !== "string" && textOf(k) === ".com.ar")!;
     expect(accent.props.style?.color).toBe(TOKENS.accent);
     expect(rootStyle(tree3).background).toBe(TOKENS.bg);
-    expect(textOf(tree3)).toContain("Foto del producto");
+    expect(textOf(tree3)).not.toContain("Foto del producto");
+  });
+
+  it("draws the category illustration as an svg data-uri image in the photo area", () => {
+    for (const category of ["aspiradoras-robot", null]) {
+      const t = buildCardTree(one, { ...opts, category });
+      const photo = byRole(t, "photo")[0]!;
+      const img = kids(photo).find((k): k is CardNode => typeof k !== "string")!;
+      expect(img.type).toBe("img");
+      expect(String(img.props.src)).toMatch(/^data:image\/svg\+xml;base64,/);
+      expect(img.props.width).toBe(182);
+      expect(img.props.height).toBe(182);
+    }
+    const a = buildCardTree(one, { ...opts, category: "aspiradoras-robot" });
+    const b = buildCardTree(one, opts);
+    expect(byRole(a, "photo")[0]).not.toEqual(byRole(b, "photo")[0]);
+  });
+
+  it("draws the real photo, contained on a white box, when a photo data uri is given", () => {
+    const src = "data:image/jpeg;base64,AAAA";
+    const t = buildCardTree(one, { ...opts, category: "aspiradoras-robot", photo: src });
+    const photo = byRole(t, "photo")[0]!;
+    const img = kids(photo).find((k): k is CardNode => typeof k !== "string")!;
+    expect(img.type).toBe("img");
+    expect(img.props.src).toBe(src);
+    expect(img.props.width).toBe(260);
+    expect(img.props.height).toBe(260);
+    expect(img.props.style?.objectFit).toBe("contain");
+    expect(photo.props.style?.background).toBe(TOKENS.surface);
+    expect(photo.props.style?.borderRadius).toBe(20);
+  });
+
+  it("uses the illustration when the photo is null or absent", () => {
+    const t = buildCardTree(one, { ...opts, photo: null });
+    expect(String(kids(byRole(t, "photo")[0]!)[0] && (kids(byRole(t, "photo")[0]!)[0] as CardNode).props.src)).toMatch(/^data:image\/svg\+xml/);
   });
 
   it("uses smaller rival prices and gaps with 2 or 3 rivals", () => {

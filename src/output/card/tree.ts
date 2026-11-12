@@ -1,5 +1,6 @@
 import type { Candidate } from "../../contract/candidate-list.js";
-import { CARD_FOOTER, DIFFERENCE, PCT_BADGE, PHOTO_PLACEHOLDER, storeName } from "../copy.js";
+import { CARD_FOOTER, DIFFERENCE, PCT_BADGE, storeName } from "../copy.js";
+import { categoryArtSvg } from "../category-art.js";
 import { TOKENS } from "../design-tokens.js";
 import { formatArs, formatDateShort, formatPct, truncate } from "../format.js";
 
@@ -19,6 +20,8 @@ const WIDTH = 1200;
 const HEIGHT = 675;
 const PADDING_X = 64;
 const PHOTO = 260;
+/** Illustration size inside the photo box: about 70%. */
+const ART_SIZE = Math.round(PHOTO * 0.7);
 const MIDDLE_GAP = 48;
 /** Width left for the text column: card width minus horizontal padding, photo and gap. */
 const COLUMN_WIDTH = WIDTH - 2 * PADDING_X - PHOTO - MIDDLE_GAP;
@@ -65,7 +68,7 @@ function priceRow(opts: {
 
 const labelStyleOf = (s: Record<string, string | number>): Record<string, string | number> => ({ display: "flex", fontFamily: "Inter", ...s });
 
-export function buildCardTree(c: Candidate, opts: { run_date: string }): CardNode {
+export function buildCardTree(c: Candidate, opts: { run_date: string; category?: string | null; photo?: string | null }): CardNode {
   const rivals = [...c.others].sort((a, b) => a.price_ars - b.price_ars).slice(0, MAX_RIVALS);
   const max = Math.max(c.ml.price_ars, ...rivals.map((r) => r.price_ars));
   const compact = rivals.length >= 2;
@@ -94,20 +97,27 @@ export function buildCardTree(c: Candidate, opts: { run_date: string }): CardNod
     ),
   ]);
 
+  const real = opts.photo ?? null;
   const photo = node(
     "div",
     flex({
       width: PHOTO,
       height: PHOTO,
       borderRadius: 20,
-      background: TOKENS.photoCard,
+      background: real ? TOKENS.surface : TOKENS.photoCard,
       alignItems: "center",
       justifyContent: "center",
-      fontFamily: "Inter",
-      fontSize: 18,
-      color: TOKENS.muted,
+      overflow: "hidden",
     }),
-    PHOTO_PLACEHOLDER,
+    [
+      real
+        ? node("img", { width: PHOTO, height: PHOTO, objectFit: "contain" }, undefined, { src: real, width: PHOTO, height: PHOTO })
+        : node("img", { width: ART_SIZE, height: ART_SIZE }, undefined, {
+            src: `data:image/svg+xml;base64,${btoa(categoryArtSvg(opts.category ?? null))}`,
+            width: ART_SIZE,
+            height: ART_SIZE,
+          }),
+    ],
     { "data-role": "photo" },
   );
 

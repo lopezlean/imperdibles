@@ -15,8 +15,6 @@ import {
   NAV,
   PAGE_TITLE_HERO,
   PCT_BADGE,
-  PHOTO_PLACEHOLDER,
-  PHOTO_PLACEHOLDER_LABEL,
   PRICES_NOTE,
   PUBLISHED_CHIP,
   TODAY_HEADING,
@@ -68,11 +66,9 @@ describe("design copy", () => {
     expect(PUBLISHED_CHIP(1)).toBe("1 publicado");
   });
 
-  it("exports the section and photo strings", () => {
+  it("exports the section strings", () => {
     expect(TODAY_HEADING).toBe("Los imperdibles de hoy");
     expect(HOW_HEADING).toBe("Cómo elegimos");
-    expect(PHOTO_PLACEHOLDER).toBe("Foto del producto");
-    expect(PHOTO_PLACEHOLDER_LABEL).toBe("Foto del producto pendiente");
     expect(EMPTY_PAGE).toBe("Todavía no hay imperdibles publicados.");
   });
 

@@ -16,21 +16,23 @@ import {
   NOT_AFFILIATED,
   PAGE_TITLE_HERO,
   PCT_BADGE,
-  PHOTO_PLACEHOLDER,
-  PHOTO_PLACEHOLDER_LABEL,
   PRICES_NOTE,
   PUBLISHED_CHIP,
   TODAY_HEADING,
   storeName,
 } from "../copy.js";
+import { categoryArtLabel, categoryArtSvg } from "../category-art.js";
 import { TOKENS } from "../design-tokens.js";
 import { formatArs, formatDateLong, formatPct, formatThreshold } from "../format.js";
 import { escapeHtml as e } from "../html.js";
+import { catalogPhotoUrl } from "../photo-url.js";
 
 export type PageInput = {
   mode: "today" | "archive" | "none";
   run_date: string | null;
   categoryName: string | null;
+  /** Category id that picks the illustration; the generic one is used when absent. */
+  categoryId?: string | null;
   threshold_pct: number;
   models_compared: number;
   items: { candidate: Candidate; affiliate_link: string }[];
@@ -43,7 +45,14 @@ const FONTS =
 const GROTESK = "font-family: 'Space Grotesk', sans-serif; font-weight: 700";
 const H2 = `margin: 0; ${GROTESK}; font-size: 28px; letter-spacing: -0.02em`;
 
-function article(item: PageInput["items"][number]): string {
+function photoBox(c: Candidate, categoryId: string | null): string {
+  const photo = catalogPhotoUrl(c.image_url);
+  if (photo)
+    return `<img src="${e(photo)}" alt="${e(c.title)}" loading="lazy" width="140" height="140" style="flex: 0 0 140px; width: 140px; height: 140px; border-radius: 12px; background: ${T.surface}; object-fit: contain">`;
+  return `<div role="img" aria-label="${e(categoryArtLabel(categoryId))}" style="flex: 0 0 140px; height: 140px; border-radius: 12px; background: ${T.photoPage}; display: flex; align-items: center; justify-content: center"><div style="width: 70%; height: 70%; display: flex" aria-hidden="true">${categoryArtSvg(categoryId).replace("<svg ", '<svg style="width: 100%; height: 100%" ')}</div></div>`;
+}
+
+function article(item: PageInput["items"][number], categoryId: string | null): string {
   const c = item.candidate;
   const rivals = [...c.others].sort((a, b) => a.price_ars - b.price_ars);
   const rows = rivals
@@ -53,7 +62,7 @@ function article(item: PageInput["items"][number]): string {
     )
     .join("\n");
   return `<article style="flex: 1 1 460px; min-width: 0; box-sizing: border-box; background: ${T.surface}; border: 1px solid ${T.line}; border-radius: 16px; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
-<div role="img" aria-label="${e(PHOTO_PLACEHOLDER_LABEL)}" style="flex: 0 0 140px; height: 140px; border-radius: 12px; background: ${T.photoPage}; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; color: ${T.muted}">${e(PHOTO_PLACEHOLDER)}</div>
+${photoBox(c, categoryId)}
 <div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
 <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
 <h3 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3">${e(c.title)}</h3>
@@ -110,7 +119,7 @@ function todaySection(input: PageInput): string {
   return `<section id="hoy" style="max-width: 1120px; margin: 0 auto; padding: 0 24px 72px; display: flex; flex-direction: column; gap: 24px">
 <h2 style="${H2}">${e(heading)}</h2>
 <div style="display: flex; flex-wrap: wrap; gap: 20px">
-${input.items.map(article).join("\n")}
+${input.items.map((i) => article(i, input.categoryId ?? null)).join("\n")}
 </div>
 <p style="margin: 0; font-size: 14px; color: ${T.muted}">${e(PRICES_NOTE(formatDateLong(input.run_date)))}</p>
 </section>`;

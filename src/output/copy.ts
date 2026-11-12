@@ -37,10 +37,6 @@ export const PUBLISHED_CHIP = (n: number): string => (n === 1 ? "1 publicado" : 
 
 export const TODAY_HEADING = "Los imperdibles de hoy";
 
-export const PHOTO_PLACEHOLDER = "Foto del producto";
-
-export const PHOTO_PLACEHOLDER_LABEL = "Foto del producto pendiente";
-
 export const CTA_ML = "Ver en Mercado Libre";
 
 export const IN_ML = "en Mercado Libre";

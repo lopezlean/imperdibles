@@ -37,6 +37,53 @@ const none: PageInput = {
   channelUrl: CHANNEL,
 };
 
+const noPhoto = (i: PageInput): PageInput => ({
+  ...i,
+  items: i.items.map((it) => ({ ...it, candidate: { ...it.candidate, image_url: null } })),
+});
+const withPhoto = (i: PageInput, image_url: string | null, title?: string): PageInput => ({
+  ...i,
+  items: i.items.map((it) => ({ ...it, candidate: { ...it.candidate, image_url, ...(title ? { title } : {}) } })),
+});
+
+describe("catalog photo", () => {
+  const base = inputFrom("valid-2026-11-10.json", "today");
+
+  it("renders the mlstatic photo with escaped alt, lazy loading and a fixed box", () => {
+    const h = renderHomePage(withPhoto(base, "https://http2.mlstatic.com/D_NQ_NP_1-O.webp?a=1&b=2", 'Robot "X" <b>'));
+    expect(h).toContain('<img src="https://http2.mlstatic.com/D_NQ_NP_1-O.webp?a=1&amp;b=2"');
+    expect(h).toContain('alt="Robot &quot;X&quot; &lt;b&gt;"');
+    expect(h).toContain('loading="lazy"');
+    expect(h).toContain('width="140" height="140"');
+    expect(h).toContain("object-fit: contain");
+    expect(h).not.toContain("Ilustración");
+  });
+
+  it.each([null, "http://http2.mlstatic.com/a.jpg", "https://evil.com/a.jpg", "javascript:alert(1)"])(
+    "falls back to the illustration for %s",
+    (u) => {
+      const h = renderHomePage(withPhoto(base, u));
+      expect(h).toContain('aria-label="Ilustración del producto"');
+      expect(h).not.toContain("<img ");
+    },
+  );
+});
+
+describe("category illustration", () => {
+  it("inlines the robot vacuum svg with its Spanish label and no placeholder text", () => {
+    const h = renderHomePage({ ...noPhoto(inputFrom("valid-2026-11-10.json", "today")), categoryId: "aspiradoras-robot" });
+    expect(h).toContain('aria-label="Ilustración de aspiradora robot"');
+    expect(h).toContain("<svg ");
+    expect(h).not.toContain("Foto del producto");
+  });
+
+  it("falls back to the generic label without a category", () => {
+    const h = renderHomePage(noPhoto(inputFrom("valid-2026-11-10.json", "today")));
+    expect(h).toContain('aria-label="Ilustración del producto"');
+    expect(h).toContain("<svg ");
+  });
+});
+
 describe("escapeHtml", () => {
   it("escapes & < > \" and '", () => {
     expect(escapeHtml(`a&b<c>d"e'f`)).toBe("a&amp;b&lt;c&gt;d&quot;e&#39;f");

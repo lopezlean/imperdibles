@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseCandidateList } from "../../../src/contract/candidate-list.js";
 import { Resvg } from "@resvg/resvg-js";
 import { renderCardPng, renderCardSvg } from "../../../src/output/card/render.js";
@@ -15,6 +15,26 @@ function expectPng(png: Uint8Array) {
   expect(view.getUint32(16)).toBe(1200);
   expect(view.getUint32(20)).toBe(675);
 }
+
+describe("renderCardPng photo", () => {
+  const list = load("valid-2026-11-10.json");
+  const c = { ...list.candidates[0]!, image_url: "https://http2.mlstatic.com/D_NQ_NP_1-O.webp" };
+
+  it("fetches the jpg variant once and still renders a PNG", async () => {
+    const fetchFn = vi.fn(async (_url: string) => new Response(new Uint8Array([1, 2, 3]), { headers: { "content-type": "image/jpeg" } }));
+    // Corrupt image bytes must degrade to the illustration, not throw.
+    expectPng(await renderCardPng(c, { run_date: list.run_date, fetch: fetchFn }));
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(fetchFn.mock.calls[0]![0]).toBe("https://http2.mlstatic.com/D_NQ_NP_1-O.jpg");
+  });
+
+  it("falls back to the illustration when the fetch fails", async () => {
+    const fetchFn = vi.fn(async (_url: string): Promise<Response> => {
+      throw new Error("offline");
+    });
+    expectPng(await renderCardPng(c, { run_date: list.run_date, fetch: fetchFn }));
+  });
+});
 
 describe("renderCardPng", () => {
   it("renders a 1200x675 PNG for the default fixture", async () => {
@@ -55,6 +75,25 @@ describe("renderCardPng", () => {
       expect(last).toBeGreaterThan(300);
       expect(last).toBeLessThanOrEqual(675);
     }
+  });
+
+  it("renders the category illustration inside the photo area", async () => {
+    const list = load("valid-three-rivals.json");
+    const c = list.candidates.find((x) => x.others.length === 3)!;
+    const accentPixels = async (category: string | null) => {
+      const img = new Resvg(await renderCardSvg(buildCardTree(c, { run_date: list.run_date, category }), { width: 1200, height: 675 })).render();
+      const px = img.pixels;
+      let n = 0;
+      // Photo area: left padding 64 .. 324 horizontally; the badge sits far to the right.
+      for (let y = 0; y < img.height; y++)
+        for (let x = 64; x < 324; x++) {
+          const i = (y * img.width + x) * 4;
+          if (px[i] === 0xc2 && px[i + 1] === 0x41 && px[i + 2] === 0x0c) n++;
+        }
+      return n;
+    };
+    expect(await accentPixels("aspiradoras-robot")).toBeGreaterThan(20);
+    expect(await accentPixels(null)).toBeGreaterThan(20);
   });
 
   it("lays out inside the 1200x675 canvas: badge ends at the right padding and the footer is visible", async () => {

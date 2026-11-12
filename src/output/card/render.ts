@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { Resvg } from "@resvg/resvg-js";
 import satori from "satori";
 import type { Candidate } from "../../contract/candidate-list.js";
+import { fetchCardPhoto, type FetchLike } from "./photo.js";
 import { buildCardTree, type CardNode } from "./tree.js";
 
 // Node-only: satori, resvg and node:fs must never enter the Worker import closure.
@@ -38,7 +39,20 @@ export async function renderCardSvg(tree: CardNode, size: { width: number; heigh
   return satori(tree as unknown as Parameters<typeof satori>[0], { ...size, fonts: cardFonts() });
 }
 
-export async function renderCardPng(c: Candidate, opts: { run_date: string }): Promise<Uint8Array> {
-  const svg = await renderCardSvg(buildCardTree(c, opts), { width: 1200, height: 675 });
-  return new Uint8Array(new Resvg(svg, { fitTo: { mode: "width", value: 1200 } }).render().asPng());
+export async function renderCardPng(
+  c: Candidate,
+  opts: { run_date: string; category?: string | null; fetch?: FetchLike },
+): Promise<Uint8Array> {
+  const photo = await fetchCardPhoto(c.image_url, opts.fetch);
+  const render = async (p: string | null) => {
+    const svg = await renderCardSvg(buildCardTree(c, { run_date: opts.run_date, category: opts.category, photo: p }), { width: 1200, height: 675 });
+    return new Uint8Array(new Resvg(svg, { fitTo: { mode: "width", value: 1200 } }).render().asPng());
+  };
+  if (photo === null) return render(null);
+  try {
+    return await render(photo);
+  } catch {
+    // Bytes that look like an image but do not decode: the photo never breaks the card.
+    return render(null);
+  }
 }

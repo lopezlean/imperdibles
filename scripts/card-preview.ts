@@ -16,7 +16,7 @@ async function main(): Promise<void> {
     for (const c of list.candidates) {
       n++;
       const file = path.join(OUT_DIR, `card-preview-${n}.png`);
-      writeFileSync(file, await renderCardPng(c, { run_date: list.run_date }));
+      writeFileSync(file, await renderCardPng(c, { run_date: list.run_date, category: list.category }));
       console.log(`${file}  (${name}: ${c.title})`);
     }
   }

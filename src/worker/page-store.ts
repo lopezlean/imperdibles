@@ -77,6 +77,7 @@ export async function regeneratePages(deps: Deps): Promise<void> {
     ...base,
     run_date,
     categoryName,
+    categoryId: rows[0]!.category,
     models_compared: Math.max(...rows.map((r) => r.models_compared)),
     items: pickItems(rows),
   };

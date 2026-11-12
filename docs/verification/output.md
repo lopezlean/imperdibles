@@ -47,10 +47,11 @@ pnpm wrangler secret put PUBLISH_NOW_SECRET
 
 ## V-O4 Catalog photos
 
-- Status: DONE 2026-11-12 (owner pasted the Argentine affiliate program terms).
+- Status: DONE 2026-11-12 (owner ruling).
 - Check: owner confirms whether the affiliate program terms allow catalog photos.
-- Result: the terms grant no right over catalog photos. Clause 8.4 makes the affiliate warrant all intellectual property rights over its content, third-party images included, and indemnify Mercado Libre; clause 6.1 requires compliance with intellectual property law. Catalog photos belong to brands or sellers, so they are not used.
-- Default kept: placeholder only ("Foto del producto"); `image_url` is ignored. A per-category icon or illustration, or brand photos with explicit written permission, are the allowed alternatives.
+- Terms analysis: the terms grant no right over catalog photos. Clause 8.4 makes the affiliate warrant all intellectual property rights over its content, third-party images included, and indemnify Mercado Libre; clause 6.1 requires compliance with intellectual property law. Catalog photos belong to brands or sellers.
+- Result: Owner ruling 2026-11-12: use the catalog photo; the owner accepts the clause 8.4 risk (photos belong to brands or sellers). Fallback: the category illustration when there is no photo or it fails to load.
+- Implementation: only https `*.mlstatic.com` URLs are used. The page hotlinks the photo; the card job downloads it (5 s timeout, 2 MB cap, JPEG/PNG, `.webp` swapped for `.jpg`).
 
 ## Affiliate links are never built by the system
 
