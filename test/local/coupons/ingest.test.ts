@@ -352,4 +352,59 @@ describe("ingestCoupons", () => {
     expect(t.channel()).toHaveLength(3);
     expect(t.channel()[2]!.text).toContain("MELIROMPETODO");
   });
+
+  it("a failed bookkeeping write after a successful send still notifies the owner, with code, message id and a hand-removal hint", async () => {
+    const t = setup({ posts: [fixturePost(2874)], extract: goldens(2874), now: "2026-11-04T13:20:00.000Z" });
+    await t.setLink();
+    t.wrapDb((db) => ({
+      all: (sql, params) => db.all(sql, params),
+      run: async (sql, params) => {
+        if (sql.includes("SET channel_message_id")) throw new Error("d1 caído");
+        return db.run(sql, params);
+      },
+    }));
+    const report = await t.run();
+    expect(report.published).toBe(3);
+    expect(t.owner()).toHaveLength(3);
+    const notice = t.owner().find((m) => m.text.includes("MELIROMPETODO"))!;
+    expect(notice.text).toMatch(/a mano/);
+    expect(notice.text).toMatch(/\b100\d\b/);
+  });
+
+  it("when the send AND the claim release fail, the owner hears it was published without a channel message", async () => {
+    const t = setup({ posts: [fixturePost(2874)], extract: goldens(2874), now: "2026-11-04T13:20:00.000Z", failChannelFor: new Set(["MELIROMPETODO"]) });
+    await t.setLink();
+    t.wrapDb((db) => ({
+      all: (sql, params) => db.all(sql, params),
+      run: async (sql, params) => {
+        if (sql.includes("SET status = 'pending'")) throw new Error("d1 caído");
+        return db.run(sql, params);
+      },
+    }));
+    await t.run();
+    const texts = t.owner().map((m) => m.text);
+    expect(texts.some((x) => x.includes("MELIROMPETODO") && x.includes("publicado sin mensaje en el canal"))).toBe(true);
+    expect(texts.some((x) => x.includes("Se reintenta"))).toBe(false);
+  });
+
+  it("a coupon announced for tomorrow while today's row is still valid is a new row, not an overnight extension", async () => {
+    const today = { ...fixturePost(2874), id: 1, text: CHEEKY_TEXT, date: new Date("2026-11-12T15:00:00.000Z") };
+    const tomorrow = { ...fixturePost(2874), id: 2, text: `${CHEEKY_TEXT} mañana`, date: new Date("2026-11-12T16:00:00.000Z") };
+    const t = setup({
+      posts: [today, tomorrow],
+      extract: new Map([
+        [1, [cheeky({ valid_from: "2026-11-12T12:00", valid_until: "2026-11-12T15:00" })]],
+        [2, [cheeky({ valid_from: "2026-11-13T12:00", valid_until: "2026-11-13T15:00" })]],
+      ]),
+      now: "2026-11-12T16:30:00.000Z",
+    });
+    await t.setLink();
+    const report = await t.run();
+    expect(report).toMatchObject({ stored: 2, extended: 0 });
+    const rows = await t.db.all<{ valid_from: string; valid_until: string }>("SELECT valid_from, valid_until FROM coupons ORDER BY id");
+    expect(rows.map((r) => [r.valid_from, r.valid_until])).toEqual([
+      ["2026-11-12T15:00:00.000Z", "2026-11-12T18:00:00.000Z"],
+      ["2026-11-13T15:00:00.000Z", "2026-11-13T18:00:00.000Z"],
+    ]);
+  });
 });

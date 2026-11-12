@@ -11,7 +11,7 @@ const QUOTE_HEADER = "Mensaje original:";
 const OWNER_HINT = 'Para bajarlo, responder "rechazar".';
 
 /** Plain single line: whitespace (including newlines) collapsed, trimmed, capped with "…". */
-function plainScope(scope: string): string {
+export function plainScope(scope: string): string {
   return truncate(scope.replace(/\s+/g, " ").trim(), SCOPE_LIMIT);
 }
 
@@ -41,6 +41,15 @@ function withQuote(head: string, sourceText: string, tail: string): string {
 /** Private notice to the owner after a coupon was published. */
 export function buildCouponOwnerNotice(c: Coupon, sourceText: string): string {
   return withQuote(`Cupón publicado: ${c.code} (${formatDiscount(c)})`, sourceText, OWNER_HINT);
+}
+
+/** Owner notice when the coupon was posted but its message id could not be saved, so reply-to-take-down will not work. */
+export function buildCouponUnrecordedNotice(c: Coupon, channelMessageId: number, sourceText: string): string {
+  return withQuote(
+    `Cupón publicado: ${c.code} (${formatDiscount(c)})`,
+    sourceText,
+    `No se pudo guardar el mensaje del canal (id ${channelMessageId}); responder "rechazar" no lo borrará. Si hay que bajarlo, borrarlo a mano.`,
+  );
 }
 
 const REJECTED_REASONS: Record<Exclude<GuardReason, "already_expired"> | "extraction_failed", string> = {

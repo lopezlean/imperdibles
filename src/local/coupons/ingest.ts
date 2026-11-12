@@ -1,5 +1,5 @@
 import type { ExtractedCoupon, GuardReason } from "../../contract/coupon.js";
-import { buildCouponChannelMessage, buildCouponOwnerNotice, buildCouponRejectedNotice } from "../../output/publish/coupon-messages.js";
+import { buildCouponChannelMessage, buildCouponOwnerNotice, buildCouponRejectedNotice, buildCouponUnrecordedNotice } from "../../output/publish/coupon-messages.js";
 import type { TelegramClient } from "../../output/telegram/client.js";
 import type { SqlClient } from "../../shared/db/sql-client.js";
 import { artDate } from "../../shared/time.js";
@@ -91,7 +91,12 @@ async function storeCoupons(deps: IngestDeps, post: ChannelPost, extracted: Extr
     const coupon = guarded.coupon;
     const existing = await findByCodeValidAt(deps.db, coupon.code, post.date);
     if (existing) {
-      if (existing.status !== "removed" && coupon.valid_until > existing.valid_until) {
+      // Extend only a window that touches or overlaps the existing one; a later window is a new coupon.
+      if (coupon.valid_from > existing.valid_until) {
+        const id = await insertPending(deps.db, coupon, { message_id: post.id, text: post.text }, now);
+        if (id === null) counts.duplicates++;
+        else counts.stored++;
+      } else if (existing.status !== "removed" && coupon.valid_until > existing.valid_until) {
         await extendValidity(deps.db, existing.id, coupon.valid_until, now);
         counts.extended++;
       } else {
@@ -127,14 +132,31 @@ async function publishPending(deps: IngestDeps, now: Date): Promise<number> {
     try {
       ({ message_id: channelMessageId } = await deps.telegram.sendMessage({ chat_id: deps.channelId, text: buildCouponChannelMessage(row, link) }));
     } catch {
-      await releaseClaim(deps.db, row.id).catch(() => undefined);
-      await tryNotifyOwner(deps, `No se pudo publicar el cupón ${row.code} en el canal. Se reintenta en la próxima revalidación.`);
+      let released = true;
+      await releaseClaim(deps.db, row.id).catch(() => {
+        released = false;
+      });
+      await tryNotifyOwner(
+        deps,
+        released
+          ? `No se pudo publicar el cupón ${row.code} en el canal. Se reintenta en la próxima revalidación.`
+          : `El cupón ${row.code} quedó publicado sin mensaje en el canal: falló el envío y no se pudo liberar. No se reintentará solo.`,
+      );
       continue;
     }
     published++;
-    await recordChannelMessage(deps.db, row.id, channelMessageId);
-    const notice = await tryNotifyOwner(deps, buildCouponOwnerNotice(row, row.source_text));
-    if (notice) await recordOwnerMessage(deps.db, row.id, notice.message_id);
+    // The message is already public: whatever happens to the bookkeeping, the owner must still hear about it.
+    let recorded = true;
+    try {
+      await recordChannelMessage(deps.db, row.id, channelMessageId);
+    } catch {
+      recorded = false;
+    }
+    const notice = await tryNotifyOwner(
+      deps,
+      recorded ? buildCouponOwnerNotice(row, row.source_text) : buildCouponUnrecordedNotice(row, channelMessageId, row.source_text),
+    );
+    if (notice) await recordOwnerMessage(deps.db, row.id, notice.message_id).catch(() => undefined);
   }
   return published;
 }
