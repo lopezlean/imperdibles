@@ -174,6 +174,13 @@ describe("afterRevalidation", () => {
     }
   });
 
+  it("tells the owner distinctly when only the channel publish failed (exit 2)", async () => {
+    const db = await setup({ fileId: "f" });
+    const { t, messages } = fakeTelegram();
+    await afterRevalidation(deps(db, t, fakeShip(2).runShip, AT_1245), { ...empty, validated: ["x"] });
+    expect(messages).toEqual(["Se actualizó la web, pero no se pudo publicar en el canal. Revisar el Worker."]);
+  });
+
   it("a failing first owner message does not stop re-uploads or ship", async () => {
     const db = await setup({ fileId: null });
     const { t, photos } = fakeTelegram({ failFirstMessage: true });

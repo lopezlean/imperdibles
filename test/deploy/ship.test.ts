@@ -72,7 +72,7 @@ describe("ship", () => {
     }
   });
 
-  it("still builds when publishing fails", async () => {
+  it("still builds when publishing fails, and exits 2 so the failure is never silent", async () => {
     const cases: ((n: number) => Response | Promise<Response>)[] = [
       () => json({}, 500),
       () => Promise.reject(new Error("offline")),
@@ -80,24 +80,44 @@ describe("ship", () => {
     ];
     for (const bodies of cases) {
       const h = harness({ bodies });
-      expect(await ship(h.deps, { siteOnly: false })).toBe(0);
+      expect(await ship(h.deps, { siteOnly: false })).toBe(2);
       expect(h.calls).toHaveLength(1);
       expect(h.logs.length).toBeGreaterThan(0);
       expect(h.execs).toEqual(["astro", "wrangler"]);
     }
   });
 
+  it("passes an abort signal to publish-now and treats a timeout as a publish failure", async () => {
+    const h = harness({
+      bodies: () => Promise.reject(new DOMException("The operation timed out.", "TimeoutError")),
+    });
+    expect(await ship(h.deps, { siteOnly: false })).toBe(2);
+    expect(h.calls[0]!.init.signal).toBeInstanceOf(AbortSignal);
+    expect(h.execs).toEqual(["astro", "wrangler"]);
+  });
+
+  it("a build failure after a failed publish still exits 1", async () => {
+    const h = harness({ bodies: () => json({}, 500), exitCodes: { astro: 1 } });
+    expect(await ship(h.deps, { siteOnly: false })).toBe(1);
+  });
+
   it("exits non-zero when the build fails", async () => {
-    const h = harness({ exitCodes: { astro: 1 } });
+    const h = harness({ bodies: () => json({ published: ["a"] }), exitCodes: { astro: 1 } });
     expect(await ship(h.deps, { siteOnly: false })).toBe(1);
     expect(h.execs).toEqual(["astro"]);
     expect(h.logs.some((l) => l.includes("Telegram posts already went out"))).toBe(true);
   });
 
   it("exits non-zero when the upload fails", async () => {
-    const h = harness({ exitCodes: { wrangler: 1 } });
+    const h = harness({ bodies: () => json({ published: ["a"] }), exitCodes: { wrangler: 1 } });
     expect(await ship(h.deps, { siteOnly: false })).toBe(1);
     expect(h.logs.some((l) => l.includes("Telegram posts already went out"))).toBe(true);
+  });
+
+  it("does not claim Telegram posts when nothing was published", async () => {
+    const h = harness({ exitCodes: { astro: 1 } });
+    expect(await ship(h.deps, { siteOnly: false })).toBe(1);
+    expect(h.logs.some((l) => l.includes("Telegram"))).toBe(false);
   });
 
   it("--site-only build failure does not claim Telegram posts", async () => {

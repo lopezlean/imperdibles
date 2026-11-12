@@ -1,5 +1,6 @@
 import { candidateSchema } from "../../contract/candidate-list.js";
 import type { RevalidationReport } from "../../contract/local-hooks.js";
+import { EXIT_PUBLISH_FAILED } from "../../deploy/ship.js";
 import { loadConfig } from "../../shared/config.js";
 import type { SqlClient } from "../../shared/db/sql-client.js";
 import { artDate, artTime } from "../../shared/time.js";
@@ -88,7 +89,10 @@ export async function afterRevalidation(deps: AfterRevalidationDeps, report: Rev
 
   try {
     const code = await deps.runShip();
-    if (code !== 0) throw new Error(`ship exited with code ${code}`);
+    if (code === EXIT_PUBLISH_FAILED) {
+      console.error("after-revalidation: ship deployed the site but a publish call failed");
+      await tell("Se actualizó la web, pero no se pudo publicar en el canal. Revisar el Worker.");
+    } else if (code !== 0) throw new Error(`ship exited with code ${code}`);
   } catch (e) {
     console.error(`after-revalidation: ship failed: ${errText(e)}`);
     await tell("No se pudo completar el ship (publicación y web). Revisar la salida del job.");

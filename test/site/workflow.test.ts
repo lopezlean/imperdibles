@@ -22,6 +22,11 @@ describe("deploy workflow", () => {
     expect(workflow).not.toContain("WORKER_BASE_URL");
   });
 
+  it("uses Node 24 and read-only permissions", () => {
+    expect(workflow).toContain("node-version: 24");
+    expect(workflow).toMatch(/permissions:\s*\n\s+contents: read/);
+  });
+
   it("passes the build and deploy credentials", () => {
     for (const name of [
       "CLOUDFLARE_API_TOKEN",
