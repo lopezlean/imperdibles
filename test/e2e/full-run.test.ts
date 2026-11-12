@@ -149,7 +149,7 @@ function createWorld(replay: typeof fetch, startIso: string) {
     env: ENV,
     now: () => clock.now,
     sleep: async () => {},
-    hooks: createOutputHooks({ db, env: ENV, now: () => clock.now, fetch: routed }),
+    hooks: createOutputHooks({ db, env: ENV, now: () => clock.now, fetch: routed, exec: async () => 0 }),
     logPath: path.join(mkdtempSync(path.join(tmpdir(), "imperdibles-e2e-")), "var", "run-log.jsonl"),
     stdout: () => {},
     stderr: () => {},
@@ -238,14 +238,15 @@ describe("end to end: replayed data to the published page", () => {
   );
 
   it(
-    "publishes once when revalidation runs after 11:00 and the hook asks the Worker, and the cron adds nothing",
+    "publishes once when revalidation runs after 11:00 and the hook ships (build and upload stubbed), and the cron adds nothing",
     async () => {
       const w = createWorld(routedReplay(composedRoutes()), "2026-11-10T10:00:00-03:00");
       await collectAndChoose(w, "2026-11-10");
 
       w.at("2026-11-10T11:05:00-03:00");
       expect(await runRevalidate(w.runDeps)).toBe(0);
-      expect(w.workerRequests).toEqual(["/internal/publish-now"]);
+      // ship loops until a call publishes nothing: one call that publishes, one that does not
+      expect(w.workerRequests).toEqual(["/internal/publish-now", "/internal/publish-now"]);
       expect(w.channelPosts()).toHaveLength(1);
 
       await handleScheduled("0 14 * * *", w.workerDeps);

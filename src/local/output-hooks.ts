@@ -1,4 +1,6 @@
+import { spawn } from "node:child_process";
 import type { LocalOutputHooks } from "../contract/local-hooks.js";
+import { ship } from "../deploy/ship.js";
 import { renderOwnerAlert } from "../output/alerts.js";
 import { afterRevalidation } from "../output/local/after-revalidation.js";
 import { renderCardPng } from "../output/card/render.js";
@@ -7,7 +9,21 @@ import { createTelegramClient } from "../output/telegram/client.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
 import type { LocalEnv } from "../shared/env.js";
 
-export type OutputHookDeps = { db: SqlClient; env: LocalEnv; now: () => Date; fetch: typeof fetch };
+const spawnExec = (cmd: string, args: string[]): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: "inherit" });
+    child.on("error", reject);
+    child.on("close", (code) => resolve(code ?? 1));
+  });
+
+export type OutputHookDeps = {
+  db: SqlClient;
+  env: LocalEnv;
+  now: () => Date;
+  fetch: typeof fetch;
+  /** Command runner for ship (build and upload); defaults to spawning with inherited stdio. */
+  exec?: (cmd: string, args: string[]) => Promise<number>;
+};
 
 export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
   const { db, env } = deps;
@@ -39,9 +55,17 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
           telegram,
           ownerChatId,
           render: renderCardPng,
-          fetch: deps.fetch,
-          workerBaseUrl: env.workerBaseUrl,
-          publishSecret: env.publishNowSecret,
+          runShip: () =>
+            ship(
+              {
+                fetch: deps.fetch,
+                exec: deps.exec ?? spawnExec,
+                log: console.log,
+                workerBaseUrl: env.workerBaseUrl,
+                publishNowSecret: env.publishNowSecret,
+              },
+              { siteOnly: false },
+            ),
           now: deps.now,
         },
         report,

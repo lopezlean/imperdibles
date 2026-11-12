@@ -9,8 +9,6 @@ import { createSqliteClient } from "../../support/sqlite-client.js";
 import { seedRun } from "../../worker/support/seed.js";
 
 const OWNER = "42";
-const SECRET = "publish-secret";
-const BASE = "https://worker.example";
 const RUN_DATE = "2026-11-10";
 // ART is UTC-3: 10:45 ART = 13:45Z, 12:45 ART = 15:45Z.
 const AT_1045 = new Date("2026-11-10T13:45:00Z");
@@ -66,28 +64,29 @@ function fakeTelegram(opts: { failFirstMessage?: boolean; failPhoto?: boolean } 
   return { t, messages, photos };
 }
 
-function fakeWorker(status = 200) {
-  const calls: { url: string; init: RequestInit }[] = [];
-  const f = (async (url: string, init: RequestInit) => {
-    calls.push({ url, init });
-    return new Response("{}", { status });
-  }) as unknown as typeof fetch;
-  return { f, calls };
+function fakeShip(result: number | Error = 0) {
+  const calls = { n: 0 };
+  const runShip = async (): Promise<number> => {
+    calls.n++;
+    if (result instanceof Error) throw result;
+    return result;
+  };
+  return { runShip, calls };
 }
 
 const render = async () => new Uint8Array([137, 80, 78, 71]);
 const empty: RevalidationReport = { run_date: RUN_DATE, validated: [], invalidated: [] };
 
-function deps(db: Awaited<ReturnType<typeof setup>>, tg: TelegramClient, f: typeof fetch, now: Date, r = render) {
-  return { db, telegram: tg, ownerChatId: OWNER, render: r, fetch: f, workerBaseUrl: BASE, publishSecret: SECRET, now: () => now };
+function deps(db: Awaited<ReturnType<typeof setup>>, tg: TelegramClient, runShip: () => Promise<number>, now: Date, r = render) {
+  return { db, telegram: tg, ownerChatId: OWNER, render: r, runShip, now: () => now };
 }
 
 describe("afterRevalidation", () => {
   it("tells the owner about every invalidated candidate", async () => {
     const db = await setup({ seedCandidate: false });
     const { t, messages } = fakeTelegram();
-    const w = fakeWorker();
-    await afterRevalidation(deps(db, t, w.f, AT_1045), {
+    const w = fakeShip();
+    await afterRevalidation(deps(db, t, w.runShip, AT_1045), {
       ...empty,
       invalidated: [
         { candidate_id: "a", title: "Robot A", reason: "below_threshold" },
@@ -103,7 +102,7 @@ describe("afterRevalidation", () => {
   it("re-uploads a validated card without file_id and stores the new one", async () => {
     const db = await setup({ fileId: null });
     const { t, photos } = fakeTelegram();
-    await afterRevalidation(deps(db, t, fakeWorker().f, AT_1045), empty);
+    await afterRevalidation(deps(db, t, fakeShip().runShip, AT_1045), empty);
     expect(photos).toEqual([{ caption: `Tarjeta actualizada: ${candidate.title}` }]);
     const rows = await db.all<{ telegram_file_id: string }>("SELECT telegram_file_id FROM candidates");
     expect(rows[0]!.telegram_file_id).toBe("new-file-id");
@@ -112,99 +111,78 @@ describe("afterRevalidation", () => {
   it("does not re-upload a card that already has a file_id", async () => {
     const db = await setup({ fileId: "kept" });
     const { t, photos } = fakeTelegram();
-    await afterRevalidation(deps(db, t, fakeWorker().f, AT_1045), empty);
+    await afterRevalidation(deps(db, t, fakeShip().runShip, AT_1045), empty);
     expect(photos).toEqual([]);
   });
 
-  it("a failed re-upload informs the owner, continues and does not stop publish-now", async () => {
+  it("a failed re-upload informs the owner, continues and does not stop ship", async () => {
     const db = await setup({ fileId: null });
     const { t, messages } = fakeTelegram({ failPhoto: true });
-    const w = fakeWorker();
-    await afterRevalidation(deps(db, t, w.f, AT_1245), { ...empty, validated: [candidate.candidate_id] });
+    const w = fakeShip();
+    await afterRevalidation(deps(db, t, w.runShip, AT_1245), { ...empty, validated: [candidate.candidate_id] });
     expect(messages.some((m) => m.includes(candidate.title))).toBe(true);
-    expect(w.calls).toHaveLength(1);
+    expect(w.calls.n).toBe(1);
   });
 
   it("a failing render is handled like a failing upload", async () => {
     const db = await setup({ fileId: null });
     const { t, messages } = fakeTelegram();
-    const w = fakeWorker();
+    const w = fakeShip();
     await afterRevalidation(
-      deps(db, t, w.f, AT_1245, () => Promise.reject(new Error("no renderer"))),
+      deps(db, t, w.runShip, AT_1245, () => Promise.reject(new Error("no renderer"))),
       { ...empty, validated: [candidate.candidate_id] },
     );
     expect(messages.some((m) => m.includes(candidate.title))).toBe(true);
-    expect(w.calls).toHaveLength(1);
+    expect(w.calls.n).toBe(1);
   });
 
-  it("does not call publish-now before the publication hour", async () => {
+  it("does not run ship before publish_time", async () => {
     const db = await setup({ fileId: "f" });
-    const w = fakeWorker();
-    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1045), { ...empty, validated: [candidate.candidate_id] });
-    expect(w.calls).toHaveLength(0);
+    const w = fakeShip();
+    await afterRevalidation(deps(db, fakeTelegram().t, w.runShip, AT_1045), { ...empty, validated: [candidate.candidate_id] });
+    expect(w.calls.n).toBe(0);
   });
 
-  it("calls publish-now once with the Bearer secret after the hour when something validated", async () => {
+  it("runs ship once when the hour has passed and something is pending", async () => {
     const db = await setup({ fileId: "f" });
-    const w = fakeWorker();
-    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1245), { ...empty, validated: [candidate.candidate_id] });
-    expect(w.calls).toHaveLength(1);
-    expect(w.calls[0]!.url).toBe(`${BASE}/internal/publish-now`);
-    expect(w.calls[0]!.init.method).toBe("POST");
-    expect((w.calls[0]!.init.headers as Record<string, string>).Authorization).toBe(`Bearer ${SECRET}`);
+    const w = fakeShip();
+    await afterRevalidation(deps(db, fakeTelegram().t, w.runShip, AT_1245), { ...empty, validated: [candidate.candidate_id] });
+    expect(w.calls.n).toBe(1);
   });
 
-  it("trims one trailing slash from the base url", async () => {
-    const db = await setup({ fileId: "f" });
-    const w = fakeWorker();
-    await afterRevalidation(
-      { ...deps(db, fakeTelegram().t, w.f, AT_1245), workerBaseUrl: `${BASE}/` },
-      { ...empty, validated: ["x"] },
-    );
-    expect(w.calls[0]!.url).toBe(`${BASE}/internal/publish-now`);
-  });
-
-  it("does not call publish-now with an empty report and nothing pending", async () => {
+  it("does not run ship when nothing is pending", async () => {
     const db = await setup({ fileId: "f", withPost: true });
-    const w = fakeWorker();
-    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1245), empty);
-    expect(w.calls).toHaveLength(0);
+    const w = fakeShip();
+    await afterRevalidation(deps(db, fakeTelegram().t, w.runShip, AT_1245), empty);
+    expect(w.calls.n).toBe(0);
   });
 
-  it("calls publish-now with an empty report when a validated candidate of today has no post", async () => {
+  it("runs ship with an empty report when a validated candidate of today has no post", async () => {
     const db = await setup({ fileId: "f" });
-    const w = fakeWorker();
-    await afterRevalidation(deps(db, fakeTelegram().t, w.f, AT_1245), empty);
-    expect(w.calls).toHaveLength(1);
+    const w = fakeShip();
+    await afterRevalidation(deps(db, fakeTelegram().t, w.runShip, AT_1245), empty);
+    expect(w.calls.n).toBe(1);
   });
 
-  it("a publish-now 500 informs the owner and does not throw", async () => {
-    const db = await setup({ fileId: "f" });
-    const { t, messages } = fakeTelegram();
-    await afterRevalidation(deps(db, t, fakeWorker(500).f, AT_1245), { ...empty, validated: ["x"] });
-    expect(messages).toHaveLength(1);
-    expect(messages[0]).not.toContain(SECRET);
+  it("tells the owner when ship fails", async () => {
+    const msg = "No se pudo completar el ship (publicación y web). Revisar la salida del job.";
+    for (const result of [1, new Error("boom")]) {
+      const db = await setup({ fileId: "f" });
+      const { t, messages } = fakeTelegram();
+      await afterRevalidation(deps(db, t, fakeShip(result).runShip, AT_1245), { ...empty, validated: ["x"] });
+      expect(messages).toEqual([msg]);
+    }
   });
 
-  it("a network failure on publish-now informs the owner and does not throw", async () => {
-    const db = await setup({ fileId: "f" });
-    const { t, messages } = fakeTelegram();
-    const f = (async () => {
-      throw new Error("offline");
-    }) as unknown as typeof fetch;
-    await afterRevalidation(deps(db, t, f, AT_1245), { ...empty, validated: ["x"] });
-    expect(messages).toHaveLength(1);
-  });
-
-  it("a failing first owner message does not stop re-uploads or publish-now", async () => {
+  it("a failing first owner message does not stop re-uploads or ship", async () => {
     const db = await setup({ fileId: null });
     const { t, photos } = fakeTelegram({ failFirstMessage: true });
-    const w = fakeWorker();
-    await afterRevalidation(deps(db, t, w.f, AT_1245), {
+    const w = fakeShip();
+    await afterRevalidation(deps(db, t, w.runShip, AT_1245), {
       ...empty,
       invalidated: [{ candidate_id: "a", title: "Robot A", reason: "offer_missing" }],
     });
     expect(photos).toHaveLength(1);
-    expect(w.calls).toHaveLength(1);
+    expect(w.calls.n).toBe(1);
   });
 });

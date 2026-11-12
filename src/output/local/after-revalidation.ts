@@ -12,9 +12,8 @@ export type AfterRevalidationDeps = {
   telegram: TelegramClient;
   ownerChatId: string;
   render: RenderCard;
-  fetch: typeof fetch;
-  workerBaseUrl: string;
-  publishSecret: string;
+  /** Runs the full ship (publish + build + upload); resolves with the exit code. */
+  runShip: () => Promise<number>;
   now: () => Date;
 };
 
@@ -25,7 +24,7 @@ const padTime = (t: string): string => t.trim().padStart(5, "0");
 
 /**
  * Runs after the data pipeline revalidated the chosen candidates: tells the owner what dropped, re-uploads cards
- * whose prices changed, and asks the Worker to publish when the publication hour has passed and something is pending.
+ * whose prices changed, and runs the full ship (publish, build and upload) when the publication hour has passed and something is pending.
  * Every owner message and every re-upload is isolated, so one failure never blocks the rest.
  */
 export async function afterRevalidation(deps: AfterRevalidationDeps, report: RevalidationReport): Promise<void> {
@@ -87,13 +86,11 @@ export async function afterRevalidation(deps: AfterRevalidationDeps, report: Rev
   }
   if (!pending) return;
 
-  const url = `${deps.workerBaseUrl.replace(/\/$/, "")}/internal/publish-now`;
-  const doFetch = deps.fetch; // never deps.fetch(...): a foreign `this` breaks the global fetch
   try {
-    const res = await doFetch(url, { method: "POST", headers: { Authorization: `Bearer ${deps.publishSecret}` } });
-    if (!res.ok) throw new Error(`publish-now answered ${res.status}`);
+    const code = await deps.runShip();
+    if (code !== 0) throw new Error(`ship exited with code ${code}`);
   } catch (e) {
-    console.error(`after-revalidation: publish-now failed: ${errText(e)}`);
-    await tell("No se pudo pedir la publicación inmediata. Revisar el Worker o publicar más tarde.");
+    console.error(`after-revalidation: ship failed: ${errText(e)}`);
+    await tell("No se pudo completar el ship (publicación y web). Revisar la salida del job.");
   }
 }
