@@ -1,0 +1,85 @@
+---
+import {
+  AFFILIATE_LEGEND,
+  COUPONS_EMPTY,
+  COUPONS_EMPTY_LEAD,
+  COUPONS_H1,
+  COUPONS_HOW,
+  COUPONS_HOW_HEADING,
+  COUPONS_LEAD,
+  COUPONS_TITLE,
+} from "../../src/output/copy.js";
+import CouponCard from "../components/CouponCard.astro";
+import Base from "../layouts/Base.astro";
+import { COUPON_PAGE_SCRIPT } from "../lib/coupon-script.js";
+import { readSiteEnv } from "../lib/env.js";
+import { absoluteUrl, breadcrumbLd } from "../lib/seo.js";
+import { getCouponSiteData, getSiteData } from "../lib/site-data.js";
+
+const d = await getSiteData();
+const { link, coupons } = await getCouponSiteData();
+const { siteUrl, channelUrl } = readSiteEnv(process.env);
+
+// Initial visibility only; the inline script is the source of truth once the page runs.
+const buildNow = Date.now();
+const liveAtBuild = (c: { valid_from: string; valid_until: string }) =>
+  Date.parse(c.valid_from) <= buildNow && buildNow < Date.parse(c.valid_until);
+const anyVisible = coupons.some(liveAtBuild);
+---
+
+<Base
+  title={COUPONS_TITLE}
+  description={COUPONS_LEAD}
+  path="/cupones/"
+  ogImage={null}
+  jsonLd={[
+    breadcrumbLd([
+      { name: "Inicio", url: absoluteUrl(siteUrl, "/") },
+      { name: "Cupones", url: absoluteUrl(siteUrl, "/cupones/") },
+    ]),
+  ]}
+  threshold_pct={d.threshold_pct}
+  channelUrl={channelUrl}
+>
+  <style is:inline>
+    [hidden]{display:none!important}
+    .coupon.card{grid-template-columns:minmax(0,1fr) 220px;align-items:center}
+    .coupon-info{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
+    .coupon-code{font-size:26px;line-height:1.2;overflow-wrap:anywhere;margin:0}
+    .coupon-facts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--muted)}
+    .coupon .cta{width:100%}
+    .how{display:flex;flex-direction:column;gap:12px}
+    .how h2{font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:24px;letter-spacing:-.03em}
+    .how ol{display:flex;flex-direction:column;gap:8px;padding-left:22px;list-style:decimal}
+    .lead{color:var(--muted);max-width:60ch}
+    @media (max-width:899px){
+      .coupon.card{grid-template-columns:minmax(0,1fr)}
+      .coupon-code{font-size:22px}
+    }
+  </style>
+  <main id="cupones" class="wrap today">
+    <div class="sel">
+      <h1>{COUPONS_H1}</h1>
+    </div>
+    <p class="lead">{COUPONS_LEAD}</p>
+    {
+      coupons.length > 0 && link !== null && (
+        <div class="list">
+          {coupons.map((coupon) => <CouponCard coupon={coupon} link={link} hidden={!liveAtBuild(coupon)} />)}
+        </div>
+      )
+    }
+    <div class="empty" id="cupones-empty" hidden={anyVisible}>
+      <h2>{COUPONS_EMPTY}</h2>
+      <p>{COUPONS_EMPTY_LEAD}</p>
+    </div>
+    <section class="how" aria-labelledby="como-usar">
+      <h2 id="como-usar">{COUPONS_HOW_HEADING}</h2>
+      <ol>
+        {COUPONS_HOW.map((step) => <li>{step}</li>)}
+      </ol>
+    </section>
+    <p class="note">{AFFILIATE_LEGEND}</p>
+  </main>
+  <script is:inline set:html={COUPON_PAGE_SCRIPT}></script>
+</Base>

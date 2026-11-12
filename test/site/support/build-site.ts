@@ -1,10 +1,33 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type Database from "better-sqlite3";
 import type { SqlClient } from "../../../src/shared/db/sql-client.js";
 import { createSqliteClient } from "../../support/sqlite-client.js";
+
+const LOCK = join(tmpdir(), "imperdibles-astro-build.lock");
+
+/** `astro build` writes to a shared `.astro/` directory, so concurrent builds from parallel test files must take turns. */
+function withBuildLock<T>(fn: () => T): T {
+  const pause = new Int32Array(new SharedArrayBuffer(4));
+  for (;;) {
+    try {
+      mkdirSync(LOCK);
+      break;
+    } catch {
+      try {
+        if (Date.now() - statSync(LOCK).mtimeMs > 300_000) rmSync(LOCK, { recursive: true, force: true });
+      } catch {}
+      Atomics.wait(pause, 0, 0, 100);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    rmSync(LOCK, { recursive: true, force: true });
+  }
+}
 
 export type BuiltSite = { dir: string; read(rel: string): string; exists(rel: string): boolean };
 
@@ -18,17 +41,19 @@ export async function buildSite(opts: {
   const fixture = join(root, "fixture.db");
   writeFileSync(fixture, db.raw.serialize());
   const dir = join(root, "out");
-  execFileSync("pnpm", ["exec", "astro", "build"], {
-    cwd: process.cwd(),
-    stdio: "pipe",
-    env: {
-      ...process.env,
-      SITE_FIXTURE_DB: fixture,
-      SITE_URL: "https://imperdibles.com.ar",
-      TELEGRAM_CHANNEL_URL: "https://t.me/x",
-      SITE_OUT_DIR: dir,
-    },
-  });
+  withBuildLock(() =>
+    execFileSync("pnpm", ["exec", "astro", "build"], {
+      cwd: process.cwd(),
+      stdio: "pipe",
+      env: {
+        ...process.env,
+        SITE_FIXTURE_DB: fixture,
+        SITE_URL: "https://imperdibles.com.ar",
+        TELEGRAM_CHANNEL_URL: "https://t.me/x",
+        SITE_OUT_DIR: dir,
+      },
+    }),
+  );
   return {
     dir,
     read: (rel) => readFileSync(join(dir, rel), "utf8"),

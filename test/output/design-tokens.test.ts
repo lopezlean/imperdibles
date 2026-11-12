@@ -121,6 +121,6 @@ describe("design copy", () => {
   });
 
   it("exports the navigation labels", () => {
-    expect(NAV).toEqual({ hoy: "Hoy", como: "Cómo elegimos", canal: "Canal de Telegram" });
+    expect(NAV).toEqual({ hoy: "Hoy", como: "Cómo elegimos", canal: "Canal de Telegram", cupones: "Cupones" });
   });
 });

@@ -74,7 +74,23 @@ export const NAV = {
   hoy: "Hoy",
   como: "Cómo elegimos",
   canal: "Canal de Telegram",
+  cupones: "Cupones",
 } as const;
+
+/** /cupones page copy. */
+export const COUPONS_TITLE = "Cupones de Mercado Libre vigentes hoy | imperdibles";
+export const COUPONS_H1 = "Cupones de Mercado Libre vigentes hoy";
+export const COUPONS_LEAD = "Códigos exclusivos que Mercado Libre publica para afiliados. Copiá el código y usalo en tu compra.";
+export const COUPONS_USE = "Usar";
+export const COUPONS_COPIED = "Código copiado";
+export const COUPONS_EMPTY = "No hay cupones vigentes ahora.";
+export const COUPONS_EMPTY_LEAD = "Volvé más tarde: se actualizan cada vez que Mercado Libre publica uno nuevo.";
+export const COUPONS_HOW_HEADING = "Cómo usar un cupón";
+export const COUPONS_HOW = [
+  "Tocá Usar: se copia el código y se abre Mercado Libre.",
+  "Elegí tus productos y pegá el código al pagar.",
+  "Revisá el mínimo de compra y el tope antes de confirmar.",
+] as const;
 
 export const EMPTY_PAGE = "Todavía no hay imperdibles publicados.";
 

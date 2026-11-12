@@ -1,0 +1,29 @@
+---
+import { COUPONS_USE } from "../../src/output/copy.js";
+import { formatDiscount, formatValidity } from "../../src/output/coupon-format.js";
+import { formatArs } from "../../src/output/format.js";
+import type { CouponView } from "../lib/coupons.js";
+
+export interface Props {
+  coupon: CouponView;
+  link: string;
+  /** Initial state only; the page script re-evaluates it against the validity window. */
+  hidden?: boolean;
+}
+
+const { coupon, link, hidden = false } = Astro.props;
+---
+
+<article class="card coupon" data-coupon data-from={coupon.valid_from} data-until={coupon.valid_until} hidden={hidden}>
+  <div class="coupon-info">
+    <span class="badge">{formatDiscount(coupon)}</span>
+    <p class="coupon-code mono">{coupon.code}</p>
+    <ul class="coupon-facts">
+      {coupon.min_purchase !== null && <li>Compra mínima: {formatArs(coupon.min_purchase)}</li>}
+      {coupon.cap !== null && <li>Tope de reintegro: {formatArs(coupon.cap)}</li>}
+      {coupon.scope !== "" && <li>Aplica a: {coupon.scope}</li>}
+    </ul>
+    <p class="note">{formatValidity(coupon.valid_from, coupon.valid_until)}</p>
+  </div>
+  <a class="cta" href={link} target="_blank" rel="sponsored noopener" data-copy={coupon.code}>{COUPONS_USE}</a>
+</article>

@@ -59,6 +59,7 @@ describe("site build", () => {
     const html = site.read("index.html");
     expect(html).toContain("/ofertas/10-de-noviembre-de-2026/");
     expect(html).toContain("/ofertas/noviembre-de-2026/");
+    expect(html).toContain('href="/cupones/"');
   });
 
   it("lists the home in the sitemap with a lastmod", () => {

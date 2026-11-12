@@ -1,5 +1,5 @@
 ---
-import { COMPARED_CHIP, EMPTY_PAGE, EMPTY_PAGE_LEAD, PUBLISHED_CHIP, TODAY_HEADING } from "../../src/output/copy.js";
+import { COMPARED_CHIP, EMPTY_PAGE, NAV, EMPTY_PAGE_LEAD, PUBLISHED_CHIP, TODAY_HEADING } from "../../src/output/copy.js";
 import { MONTH_NAMES, formatDateDots, formatDateLong } from "../../src/output/format.js";
 import DealList from "../components/DealList.astro";
 import HistoryNav from "../components/HistoryNav.astro";
@@ -52,14 +52,17 @@ const eyebrow = page ? [formatDateDots(page.run_date), categoryName].filter(Bool
       <h1>{heading}</h1>
       {page && <p class="meta mono">{eyebrow}</p>}
     </div>
-    {
-      page && (
-        <div class="chips">
-          <span class="chip">{COMPARED_CHIP(page.models_compared)}</span>
-          <span class="chip">{PUBLISHED_CHIP(items.length)}</span>
-        </div>
-      )
-    }
+    <div class="chips">
+      {
+        page && (
+          <>
+            <span class="chip">{COMPARED_CHIP(page.models_compared)}</span>
+            <span class="chip">{PUBLISHED_CHIP(items.length)}</span>
+          </>
+        )
+      }
+      <a class="chip" href="/cupones/">{NAV.cupones}</a>
+    </div>
     {
       empty ? (
         <div class="empty">
