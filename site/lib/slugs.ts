@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { MONTH_NAMES } from "../../src/output/format.js";
 
 const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -71,4 +72,26 @@ export function weekdayName(runDate: string): string {
 /** "2026-11-12" -> "2026-11". */
 export function monthOf(runDate: string): string {
   return runDate.slice(0, 7);
+}
+
+const hash6 = (value: string): string => createHash("sha1").update(value).digest("hex").slice(0, 6);
+
+/** "HP:15FD0333LA" -> "hp-15fd0333la". Nothing usable left (or an empty id) falls back to "p-<hash6>". */
+export function productSlug(modelId: string): string {
+  const slug = modelId
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug === "" ? `p-${hash6(modelId)}` : slug;
+}
+
+/** Suffix used to keep two product slugs apart; stable because it only depends on the model id. */
+export const slugSuffix = hash6;
+
+export function productPath(slug: string): string {
+  return `/producto/${slug}/`;
+}
+
+export function categoryPath(id: string): string {
+  return `/categoria/${id}/`;
 }

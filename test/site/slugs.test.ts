@@ -7,6 +7,9 @@ import {
   monthSlug,
   parseDaySlug,
   parseMonthSlug,
+  productPath,
+  productSlug,
+  categoryPath,
   weekdayName,
 } from "../../site/lib/slugs.js";
 
@@ -64,5 +67,19 @@ describe("slugs", () => {
 
   it("extracts the month", () => {
     expect(monthOf("2026-11-12")).toBe("2026-11");
+  });
+});
+
+describe("product and category paths", () => {
+  it("slugs a model id to lowercase ascii", () => {
+    expect(productSlug("HP:15FD0333LA")).toBe("hp-15fd0333la");
+  });
+  it("falls back to a stable hash slug when nothing usable is left", () => {
+    expect(productSlug("::")).toMatch(/^p-[0-9a-f]{6}$/);
+    expect(productSlug("::")).toBe(productSlug("::"));
+  });
+  it("builds product and category paths", () => {
+    expect(productPath("x")).toBe("/producto/x/");
+    expect(categoryPath("smart-tv")).toBe("/categoria/smart-tv/");
   });
 });
