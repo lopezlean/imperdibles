@@ -66,3 +66,9 @@ export function categoryProducts(products: Product[], categoryId: string): Produ
 
 /** model_id -> final product slug, so list pages link to the same URL the product page is built at. */
 export const productSlugs = (products: Product[]): Map<string, string> => new Map(products.map((p) => [p.model_id, p.slug]));
+
+/** Categories that own at least one product (by latest deal): the only ones that get a page or a nav link. */
+export function activeCategories(d: SiteData): SiteData["categories"] {
+  const owned = new Set(buildProducts(d).map((p) => p.category));
+  return d.categories.filter((c) => owned.has(c.id));
+}

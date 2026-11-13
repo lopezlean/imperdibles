@@ -4,6 +4,8 @@ import { PAGE_CSS, PAGE_FONTS } from "../../src/output/page/styles.js";
 import { PRICES_NOTE } from "../../src/output/copy.js";
 import { formatDateLong } from "../../src/output/format.js";
 import { absoluteUrl, jsonLdScript } from "../lib/seo.js";
+import { activeCategories } from "../lib/products.js";
+import { getSiteData } from "../lib/site-data.js";
 import ChannelBand from "../components/ChannelBand.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
@@ -25,6 +27,7 @@ export interface Props {
 
 const { title, description, path, ogImage, jsonLd, noindex, threshold_pct, channelUrl, pricesDate } = Astro.props;
 const url = absoluteUrl(String(Astro.site), path);
+const categories = activeCategories(await getSiteData());
 const og = [
   { property: "og:title", content: title },
   { property: "og:type", content: "website" },
@@ -67,10 +70,10 @@ const openGraph = ogImage
     {jsonLd.map((data) => <script type="application/ld+json" set:html={jsonLdScript(data)} />)}
   </head>
   <body>
-    <Header />
+    <Header categories={categories} />
     <slot />
     <Method threshold_pct={threshold_pct} />
     <ChannelBand channelUrl={channelUrl} />
-    <Footer pricesNote={pricesDate ? PRICES_NOTE(formatDateLong(pricesDate)) : null} />
+    <Footer pricesNote={pricesDate ? PRICES_NOTE(formatDateLong(pricesDate)) : null} categories={categories} />
   </body>
 </html>

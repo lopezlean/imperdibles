@@ -1,5 +1,12 @@
 ---
-import { NAV } from "../../src/output/copy.js";
+import { CATEGORIES_LABEL, NAV } from "../../src/output/copy.js";
+import { categoryPath } from "../lib/slugs.js";
+
+export interface Props {
+  categories?: { id: string; name: string }[];
+}
+
+const { categories = [] } = Astro.props;
 ---
 
 <header class="hd">
@@ -15,5 +22,14 @@ import { NAV } from "../../src/output/copy.js";
       <a href="/#canal">{NAV.canal}</a>
     </nav>
   </div>
+  {
+    categories.length > 0 && (
+      <div class="wrap">
+        <nav class="nav" aria-label={CATEGORIES_LABEL}>
+          {categories.map((c) => <a href={categoryPath(c.id)}>{c.name}</a>)}
+        </nav>
+      </div>
+    )
+  }
   <div class="wrap"><div class="rule"></div></div>
 </header>
