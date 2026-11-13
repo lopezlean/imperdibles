@@ -15,7 +15,7 @@ describe("product pages build", () => {
   beforeAll(async () => {
     site = await buildSite({
       seed: async (db) => {
-        await seedDeal(db, { id: "a1", run_date: FRESH_OLD, model_id: "HP:I3", category: "smart-tv", title: "Notebook HP I3" });
+        await seedDeal(db, { id: "a1", run_date: FRESH_OLD, model_id: "HP:I3", category: "smart-tv", title: "Notebook HP I3", ml: 120000 });
         await seedDeal(db, { id: "a2", run_date: FRESH_NEW, model_id: "HP:I3", category: "monitores", title: "Notebook HP I3", ml: 100000 });
         await seedDeal(db, { id: "x1", run_date: FRESH_NEW, model_id: "GONE:1", category: "removida", title: "Sin categoria" });
         await seedDeal(db, { id: "b1", run_date: STALE, model_id: "OLD:1", title: "Producto viejo" });
@@ -44,6 +44,14 @@ describe("product pages build", () => {
     const buy = message.indexOf("Comprar en Mercado Libre: https://meli.la/a2");
     expect(page).toBeGreaterThan(-1);
     expect(buy).toBeGreaterThan(page);
+  });
+
+  it("draws the price history chart when a model has two or more points and a verdict", () => {
+    const html = site.read("producto/hp-i3/index.html");
+    expect(html).toContain("Historial de precio en Mercado Libre");
+    expect(html).toContain("<polyline");
+    expect(html).toContain("el precio más bajo que registramos");
+    expect(site.read("producto/old-1/index.html")).not.toContain("<polyline");
   });
 
   it("builds one page per model", () => {

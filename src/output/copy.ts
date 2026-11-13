@@ -151,3 +151,10 @@ export const TRANSPARENCY_COL_COMPARED = "Revisados";
 export const TRANSPARENCY_COL_PUBLISHED = "Publicados";
 export const TRANSPARENCY_EMPTY = "Todavía no hay datos para mostrar.";
 export const TRANSPARENCY_LINK = "Transparencia";
+
+/** Price history block on product pages. */
+export const PRICE_HISTORY_HEADING = "Historial de precio en Mercado Libre";
+export const PRICE_VERDICT_FIRST = "Es la primera vez que publicamos este modelo: todavía no hay con qué comparar.";
+export const PRICE_VERDICT_LOWEST = "Hoy está en el precio más bajo que registramos.";
+export const PRICE_VERDICT_ABOVE = (pct: number): string =>
+  `Hoy está ${pct}% por encima del precio más bajo que registramos.`;

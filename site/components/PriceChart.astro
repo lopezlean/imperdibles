@@ -1,0 +1,49 @@
+---
+import {
+  PRICE_HISTORY_HEADING,
+  PRICE_VERDICT_ABOVE,
+  PRICE_VERDICT_FIRST,
+  PRICE_VERDICT_LOWEST,
+} from "../../src/output/copy.js";
+import { formatArs, formatDateShort } from "../../src/output/format.js";
+import type { PriceHistory } from "../lib/price-history.js";
+
+export interface Props {
+  history: PriceHistory;
+}
+
+const { history } = Astro.props;
+const { points, min, max, verdict } = history;
+const W = 600;
+const H = 140;
+const PAD = 16;
+const span = max - min || 1;
+const xy = points.map((p, i) => ({
+  x: PAD + (points.length === 1 ? (W - 2 * PAD) / 2 : (i * (W - 2 * PAD)) / (points.length - 1)),
+  y: H - PAD - ((p.price - min) / span) * (H - 2 * PAD),
+  p,
+}));
+const verdictText =
+  verdict.kind === "first" ? PRICE_VERDICT_FIRST : verdict.kind === "lowest" ? PRICE_VERDICT_LOWEST : PRICE_VERDICT_ABOVE(verdict.pct);
+---
+
+<section aria-labelledby="precio-historial">
+  <h2 id="precio-historial">{PRICE_HISTORY_HEADING}</h2>
+  <p><strong>{verdictText}</strong></p>
+  {
+    points.length >= 2 && (
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={PRICE_HISTORY_HEADING} class="chart">
+        <polyline points={xy.map((q) => `${q.x},${q.y}`).join(" ")} fill="none" stroke="currentColor" stroke-width="2" />
+        {xy.map((q) => (
+          <circle cx={q.x} cy={q.y} r="4" fill="currentColor">
+            <title>{`${formatDateShort(q.p.run_date)}: ${formatArs(q.p.price)}`}</title>
+          </circle>
+        ))}
+      </svg>
+    )
+  }
+</section>
+
+<style>
+  .chart { width: 100%; max-width: 600px; height: auto; color: var(--accent, currentColor); }
+</style>
