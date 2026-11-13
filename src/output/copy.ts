@@ -112,6 +112,7 @@ export const PCT_BADGE = (pct: string): string => `${pct}% menos`;
 /** Product and category pages. */
 export const STALE_NOTICE = (fecha: string): string => `Este precio es del ${fecha}; puede haber cambiado.`;
 export const PRICE_AS_OF = (fecha: string): string => `precio al ${fecha}`;
+export const BUY_LINE = "Comprar en Mercado Libre:";
 export const SHARE_LABEL = "Compartir";
 export const WHATSAPP_LABEL = "WhatsApp";
 export const COPY_LINK_LABEL = "Copiar link";

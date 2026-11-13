@@ -60,7 +60,7 @@ const text = shareText(c.title, c.ml.price_ars, formatPct(c));
     <div class="list">
       <DealCard deal={product.latest} />
     </div>
-    <ShareButtons title={c.title} text={text} url={pageUrl} />
+    <ShareButtons title={c.title} text={text} url={pageUrl} buyUrl={product.latest.affiliate_link} />
     <p class="reviews">
       <a href={product.latest.affiliate_link} rel="sponsored noopener" target="_blank">{REVIEWS_LINK}</a>
     </p>

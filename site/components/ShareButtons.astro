@@ -1,19 +1,21 @@
 ---
 import { COPY_LINK_LABEL, LINK_COPIED, SHARE_LABEL, WHATSAPP_LABEL } from "../../src/output/copy.js";
-import { whatsappUrl } from "../lib/share.js";
+import { shareMessage, whatsappUrl } from "../lib/share.js";
 
 export interface Props {
   title: string;
   text: string;
   url: string;
+  buyUrl: string;
 }
 
-const { title, text, url } = Astro.props;
+const { title, text, url, buyUrl } = Astro.props;
+const message = shareMessage(text, url, buyUrl);
 ---
 
-<div class="share" data-share-root data-title={title} data-text={text} data-url={url}>
+<div class="share" data-share-root data-title={title} data-message={message} data-url={url}>
   <button type="button" class="chip" data-share hidden>{SHARE_LABEL}</button>
-  <a class="chip" data-wa href={whatsappUrl(text, url)} target="_blank" rel="noopener">{WHATSAPP_LABEL}</a>
+  <a class="chip" data-wa href={whatsappUrl(message)} target="_blank" rel="noopener">{WHATSAPP_LABEL}</a>
   <button type="button" class="chip" data-copy-link data-done={LINK_COPIED}>{COPY_LINK_LABEL}</button>
 </div>
 
@@ -24,7 +26,7 @@ const { title, text, url } = Astro.props;
     var share = root.querySelector("[data-share]");
     var wa = root.querySelector("[data-wa]");
     var copy = root.querySelector("[data-copy-link]");
-    var data = { title: root.dataset.title, text: root.dataset.text, url: root.dataset.url };
+    var data = { title: root.dataset.title, text: root.dataset.message };
     if (navigator.share) {
       share.hidden = false;
       wa.hidden = true;
@@ -35,7 +37,7 @@ const { title, text, url } = Astro.props;
     copy.addEventListener("click", function () {
       var label = copy.textContent;
       if (!navigator.clipboard || !navigator.clipboard.writeText) return;
-      navigator.clipboard.writeText(data.url).then(function () {
+      navigator.clipboard.writeText(root.dataset.url).then(function () {
         copy.textContent = copy.dataset.done;
         setTimeout(function () { copy.textContent = label; }, 2000);
       }, function () {});
