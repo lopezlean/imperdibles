@@ -1,7 +1,8 @@
-import { MONTH_NAMES, formatDateLong, formatPct, pctTenths, truncate } from "../../src/output/format.js";
+import { MONTH_NAMES, formatArs, formatDateLong, formatPct, pctTenths, truncate } from "../../src/output/format.js";
 import { catalogPhotoUrl } from "../../src/output/photo-url.js";
 import type { Deal } from "./deals.js";
-import { weekdayName } from "./slugs.js";
+import type { Product } from "./products.js";
+import { productPath, weekdayName } from "./slugs.js";
 
 const SUFFIX = "en Mercado Libre | imperdibles";
 
@@ -65,3 +66,46 @@ export const jsonLdScript = (data: object): string => JSON.stringify(data).repla
 
 export const buildRobotsTxt = (siteUrl: string): string =>
   `User-agent: *\nAllow: /\nDisallow: /internal/\nDisallow: /telegram/\n\nSitemap: ${absoluteUrl(siteUrl, "/sitemap-index.xml")}\n`;
+
+export const productTitle = (p: Product): string =>
+  `${p.latest.candidate.title}: ${formatPct(p.latest.candidate)}% más barato en Mercado Libre | imperdibles`;
+
+export const productDescription = (p: Product): string => {
+  const c = p.latest.candidate;
+  return truncate(
+    `${c.title} a ${formatArs(c.ml.price_ars)} en Mercado Libre, ${formatPct(c)}% más barato que en otras tiendas (precio al ${formatDateLong(p.latest.run_date)}).`,
+    155,
+  );
+};
+
+/** Product JSON-LD. A stale page carries no Offer: it must not claim a price that may have changed. */
+export const productLd = (p: Product, siteUrl: string, stale: boolean): object => {
+  const c = p.latest.candidate;
+  const image = catalogPhotoUrl(c.image_url);
+  const url = absoluteUrl(siteUrl, productPath(p.slug));
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: c.title,
+    brand: { "@type": "Brand", name: c.brand },
+    url,
+    ...(image ? { image } : {}),
+    ...(stale ? {} : { offers: { "@type": "Offer", price: c.ml.price_ars, priceCurrency: "ARS", url } }),
+  };
+};
+
+export const categoryTitle = (name: string): string => `Mejores ofertas de ${name} en Mercado Libre | imperdibles`;
+
+export const categoryDescription = (name: string, count: number): string =>
+  truncate(`${count === 1 ? "1 producto" : `${count} productos`} de ${name} que estuvieron más baratos en Mercado Libre que en otras tiendas.`, 155);
+
+export const categoryItemListLd = (products: Product[], siteUrl: string): object => ({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  itemListElement: products.map((p, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: p.latest.candidate.title,
+    url: absoluteUrl(siteUrl, productPath(p.slug)),
+  })),
+});
