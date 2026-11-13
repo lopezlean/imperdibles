@@ -34,6 +34,20 @@ describe("buildProducts", () => {
     expect(first.some((s) => s === "a-b")).toBe(true);
   });
 
+  it("keeps the bare slug with the model that appeared first, even when a later model sorts before it", async () => {
+    await seedDeal(db, { id: "a", run_date: "2026-11-10", model_id: "A:B" });
+    await seedDeal(db, { id: "b", run_date: "2026-11-12", model_id: "A-B" });
+    const bySlug = Object.fromEntries((await products()).map((p) => [p.model_id, p.slug]));
+    expect(bySlug["A:B"]).toBe("a-b");
+    expect(bySlug["A-B"]).not.toBe("a-b");
+  });
+
+  it("builds the products once per site data", async () => {
+    await seedDeal(db, { id: "a", run_date: "2026-11-12", model_id: "m1" });
+    const d = await loadSiteData(db);
+    expect(buildProducts(d)).toBe(buildProducts(d));
+  });
+
   it("falls back to a hash slug when the model id has no usable characters", async () => {
     await seedDeal(db, { id: "a", run_date: "2026-11-12", model_id: "::" });
     expect((await products())[0]!.slug).toMatch(/^p-[0-9a-f]{6}$/);

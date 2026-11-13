@@ -17,6 +17,7 @@ describe("product pages build", () => {
       seed: async (db) => {
         await seedDeal(db, { id: "a1", run_date: FRESH_OLD, model_id: "HP:I3", category: "smart-tv", title: "Notebook HP I3" });
         await seedDeal(db, { id: "a2", run_date: FRESH_NEW, model_id: "HP:I3", category: "monitores", title: "Notebook HP I3", ml: 100000 });
+        await seedDeal(db, { id: "x1", run_date: FRESH_NEW, model_id: "GONE:1", category: "removida", title: "Sin categoria" });
         await seedDeal(db, { id: "b1", run_date: STALE, model_id: "OLD:1", title: "Producto viejo" });
       },
     });
@@ -55,5 +56,11 @@ describe("product pages build", () => {
   it("links card titles on day pages to the product page", () => {
     const html = site.read(`ofertas/${daySlug(FRESH_NEW)}/index.html`);
     expect(html).toContain('href="/producto/hp-i3/"');
+  });
+
+  it("does not link a category page that is not generated", () => {
+    expect(site.exists("categoria/removida/index.html")).toBe(false);
+    const html = site.read("producto/gone-1/index.html");
+    expect(html).not.toContain("/categoria/removida/");
   });
 });

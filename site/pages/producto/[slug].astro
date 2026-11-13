@@ -4,7 +4,7 @@ import { formatArs, formatDateLong, formatPct } from "../../../src/output/format
 import { ogImageOf } from "../../lib/seo.js";
 import DealCard from "../../components/DealCard.astro";
 import Base from "../../layouts/Base.astro";
-import { buildProducts, isStale } from "../../lib/products.js";
+import { activeCategories, buildProducts, isStale } from "../../lib/products.js";
 import { readSiteEnv } from "../../lib/env.js";
 import { absoluteUrl, breadcrumbLd, productDescription, productLd, productTitle } from "../../lib/seo.js";
 import { getSiteData } from "../../lib/site-data.js";
@@ -24,7 +24,7 @@ const { siteUrl, channelUrl } = readSiteEnv(process.env);
 const today = new Date().toISOString().slice(0, 10);
 const stale = isStale(product.latest.run_date, today);
 const c = product.latest.candidate;
-const categoryName = d.categories.find((x) => x.id === product.category)?.name ?? product.category;
+const category = activeCategories(d).find((x) => x.id === product.category);
 const related = products.filter((p) => p.category === product.category && p.slug !== product.slug).slice(0, 6);
 const path = productPath(product.slug);
 ---
@@ -37,7 +37,7 @@ const path = productPath(product.slug);
   jsonLd={[
     breadcrumbLd([
       { name: "Inicio", url: absoluteUrl(siteUrl, "/") },
-      { name: categoryName, url: absoluteUrl(siteUrl, categoryPath(product.category)) },
+      ...(category ? [{ name: category.name, url: absoluteUrl(siteUrl, categoryPath(category.id)) }] : []),
       { name: c.title, url: absoluteUrl(siteUrl, path) },
     ]),
     productLd(product, siteUrl, stale),
@@ -48,7 +48,7 @@ const path = productPath(product.slug);
 >
   <main class="wrap today">
     <nav class="crumbs" aria-label="Ruta">
-      <a href="/">Inicio</a> / <a href={categoryPath(product.category)}>{categoryName}</a>
+      <a href="/">Inicio</a>{category && <> / <a href={categoryPath(category.id)}>{category.name}</a></>}
     </nav>
     <div class="sel">
       <h1>{c.title}</h1>

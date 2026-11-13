@@ -27,10 +27,24 @@ export function isStale(latestRunDate: string, today: string): boolean {
 
 const byTitle = (a: Product, b: Product) => a.latest.candidate.title.localeCompare(b.latest.candidate.title, "es");
 
-/** Groups published deals into one product per model, newest first, with unique stable slugs. */
+const cache = new WeakMap<SiteData, Product[]>();
+
+/** Groups published deals into one product per model, newest first, with unique stable slugs. Memoized per SiteData. */
 export function buildProducts(d: SiteData): Product[] {
+  const cached = cache.get(d);
+  if (cached) return cached;
+  const built = groupProducts(d);
+  cache.set(d, built);
+  return built;
+}
+
+function groupProducts(d: SiteData): Product[] {
   const byModel = new Map<string, Deal[]>();
-  for (const deal of d.deals) byModel.set(deal.model_id, [...(byModel.get(deal.model_id) ?? []), deal]);
+  for (const deal of d.deals) {
+    const list = byModel.get(deal.model_id);
+    if (list) list.push(deal);
+    else byModel.set(deal.model_id, [deal]);
+  }
 
   const products: Product[] = [];
   for (const [model_id, deals] of byModel) {
@@ -49,9 +63,11 @@ export function buildProducts(d: SiteData): Product[] {
     });
   }
 
-  // Slug collisions: the first model id (sorted) keeps the bare slug, the others get a stable suffix.
+  // Slug collisions: the model that appeared first keeps the bare slug (so an indexed URL never changes hands
+  // when a later model slugs alike); the others get a stable suffix.
+  const firstSeen = (p: Product) => p.history[p.history.length - 1]!.run_date;
   const seen = new Set<string>();
-  for (const p of [...products].sort((a, b) => a.model_id.localeCompare(b.model_id))) {
+  for (const p of [...products].sort((a, b) => firstSeen(a).localeCompare(firstSeen(b)) || a.model_id.localeCompare(b.model_id))) {
     if (seen.has(p.slug)) p.slug = `${p.slug}-${slugSuffix(p.model_id)}`;
     seen.add(p.slug);
   }
