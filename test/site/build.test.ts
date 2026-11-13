@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { INDEXNOW_KEY } from "../../src/deploy/indexnow.js";
 import { seedDeal } from "./support/seed-deals.js";
 import { buildSite, type BuiltSite } from "./support/build-site.js";
 
@@ -102,6 +103,10 @@ describe("site build", () => {
     expect(m).not.toBeNull();
     expect(new Date(m![1]!).getTime()).toBe(new Date("2026-11-12T09:30:00-03:00").getTime());
     expect(xml).not.toContain("/404");
+  });
+
+  it("serves the IndexNow key as its own text file", () => {
+    expect(site.read(`${INDEXNOW_KEY}.txt`)).toBe(INDEXNOW_KEY);
   });
 
   it("emits 404.html", () => {

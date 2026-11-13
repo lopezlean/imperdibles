@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { MessageCreateParamsNonStreaming } from "@anthropic-ai/sdk/resources/messages";
 import { randomUUID } from "node:crypto";
 import { ship } from "../../deploy/ship.js";
+import { siteShipDeps } from "../../deploy/site-deps.js";
 import { spawnExec } from "../../deploy/spawn-exec.js";
 import { createTelegramClient } from "../../output/telegram/client.js";
 import type { SqlClient } from "../../shared/db/sql-client.js";
@@ -155,6 +156,7 @@ export function createCouponRound(deps: CouponRoundDeps, log: (line: string) => 
                 log: console.log,
                 workerBaseUrl: env.workerBaseUrl,
                 publishNowSecret: env.publishNowSecret,
+                ...siteShipDeps(),
               },
               { siteOnly: true },
             ),

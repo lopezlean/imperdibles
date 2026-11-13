@@ -1,5 +1,6 @@
 import type { LocalOutputHooks } from "../contract/local-hooks.js";
 import { ship } from "../deploy/ship.js";
+import { siteShipDeps } from "../deploy/site-deps.js";
 import { spawnExec } from "../deploy/spawn-exec.js";
 import { renderOwnerAlert } from "../output/alerts.js";
 import { afterRevalidation } from "../output/local/after-revalidation.js";
@@ -57,6 +58,7 @@ export function createOutputHooks(deps: OutputHookDeps): LocalOutputHooks {
                 log: console.log,
                 workerBaseUrl: env.workerBaseUrl,
                 publishNowSecret: env.publishNowSecret,
+                ...siteShipDeps(),
               },
               { siteOnly: false },
             ),
