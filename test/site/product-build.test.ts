@@ -35,6 +35,13 @@ describe("product pages build", () => {
     expect(html).not.toContain("https://meli.la/a1");
   });
 
+  it("offers a reviews link that reuses the latest affiliate link", () => {
+    const html = site.read("producto/hp-i3/index.html");
+    expect(html).toContain("Ver opiniones en Mercado Libre");
+    const link = html.match(/<a[^>]*href="https:\/\/meli\.la\/a2"[^>]*>\s*Ver opiniones en Mercado Libre/);
+    expect(link?.[0]).toContain('rel="sponsored noopener"');
+  });
+
   it("lists every appearance in the history, linking to the day pages", () => {
     const html = site.read("producto/hp-i3/index.html");
     expect(html).toContain(`/ofertas/${daySlug(FRESH_NEW)}/`);

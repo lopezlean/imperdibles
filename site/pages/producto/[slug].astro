@@ -1,5 +1,5 @@
 ---
-import { HISTORY_HEADING, RELATED_HEADING, STALE_NOTICE } from "../../../src/output/copy.js";
+import { HISTORY_HEADING, RELATED_HEADING, REVIEWS_LINK, STALE_NOTICE } from "../../../src/output/copy.js";
 import { formatArs, formatDateLong, formatPct } from "../../../src/output/format.js";
 import { ogImageOf } from "../../lib/seo.js";
 import DealCard from "../../components/DealCard.astro";
@@ -57,6 +57,9 @@ const path = productPath(product.slug);
     <div class="list">
       <DealCard deal={product.latest} />
     </div>
+    <p class="reviews">
+      <a href={product.latest.affiliate_link} rel="sponsored noopener" target="_blank">{REVIEWS_LINK}</a>
+    </p>
     <section aria-labelledby="historial">
       <h2 id="historial">{HISTORY_HEADING}</h2>
       <ul class="plain">
@@ -85,5 +88,6 @@ const path = productPath(product.slug);
 <style>
   .crumbs { font-size: 13px; }
   .stale { font-weight: 700; }
+  .reviews { font-size: 14px; }
   .plain { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 </style>

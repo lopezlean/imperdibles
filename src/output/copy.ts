@@ -110,6 +110,7 @@ export const PCT_BADGE = (pct: string): string => `${pct}% menos`;
 /** Product and category pages. */
 export const STALE_NOTICE = (fecha: string): string => `Este precio es del ${fecha}; puede haber cambiado.`;
 export const PRICE_AS_OF = (fecha: string): string => `precio al ${fecha}`;
+export const REVIEWS_LINK = "Ver opiniones en Mercado Libre";
 export const HISTORY_HEADING = "Cuándo fue imperdible";
 export const RELATED_HEADING = "Otros imperdibles de la categoría";
 export const CATEGORIES_LABEL = "Categorías";
