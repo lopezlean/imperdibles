@@ -1,5 +1,5 @@
 ---
-import { AFFILIATE_LEGEND, CATEGORIES_LABEL, NOT_AFFILIATED } from "../../src/output/copy.js";
+import { AFFILIATE_LEGEND, CATEGORIES_LABEL, NOT_AFFILIATED, TRANSPARENCY_LINK } from "../../src/output/copy.js";
 import { categoryPath } from "../lib/slugs.js";
 
 export interface Props {
@@ -20,6 +20,7 @@ export interface Props {
   <div class="notes">
     <p>{AFFILIATE_LEGEND}</p>
     <p>{NOT_AFFILIATED}</p>
+    <p><a href="/transparencia/">{TRANSPARENCY_LINK}</a></p>
     {Astro.props.pricesNote && <p>{Astro.props.pricesNote}</p>}
   </div>
 </footer>

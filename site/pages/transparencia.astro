@@ -1,0 +1,83 @@
+---
+import {
+  TRANSPARENCY_COL_COMPARED,
+  TRANSPARENCY_COL_DAY,
+  TRANSPARENCY_COL_PUBLISHED,
+  TRANSPARENCY_DAYS_HEADING,
+  TRANSPARENCY_DESCRIPTION,
+  TRANSPARENCY_EMPTY,
+  TRANSPARENCY_H1,
+  TRANSPARENCY_LEAD,
+  TRANSPARENCY_PASS,
+  TRANSPARENCY_TITLE,
+  TRANSPARENCY_TOTAL,
+} from "../../src/output/copy.js";
+import { formatDateLong } from "../../src/output/format.js";
+import Base from "../layouts/Base.astro";
+import { readSiteEnv } from "../lib/env.js";
+import { absoluteUrl, breadcrumbLd } from "../lib/seo.js";
+import { getSiteData } from "../lib/site-data.js";
+import { dayPath } from "../lib/slugs.js";
+import { transparencyStats } from "../lib/transparency.js";
+
+const d = await getSiteData();
+const { siteUrl, channelUrl } = readSiteEnv(process.env);
+const stats = transparencyStats(d);
+const empty = stats.days.length === 0;
+const threshold = String(d.threshold_pct).replace(".", ",");
+---
+
+<Base
+  title={TRANSPARENCY_TITLE}
+  description={TRANSPARENCY_DESCRIPTION(stats.compared, stats.published)}
+  path="/transparencia/"
+  ogImage={null}
+  jsonLd={[
+    breadcrumbLd([
+      { name: "Inicio", url: absoluteUrl(siteUrl, "/") },
+      { name: "Transparencia", url: absoluteUrl(siteUrl, "/transparencia/") },
+    ]),
+  ]}
+  noindex={empty}
+  threshold_pct={d.threshold_pct}
+  channelUrl={channelUrl}
+>
+  <main class="wrap today">
+    <div class="sel">
+      <h1>{TRANSPARENCY_H1}</h1>
+      <p>{TRANSPARENCY_LEAD(threshold)}</p>
+    </div>
+    {
+      empty ? (
+        <p>{TRANSPARENCY_EMPTY}</p>
+      ) : (
+        <>
+          <p>
+            <strong>{TRANSPARENCY_TOTAL(stats.compared, stats.published)}</strong>
+            {stats.passPct !== null && <> · {TRANSPARENCY_PASS(String(stats.passPct).replace(".", ","))}</>}
+          </p>
+          <h2>{TRANSPARENCY_DAYS_HEADING}</h2>
+          <table class="tp">
+            <thead>
+              <tr><th>{TRANSPARENCY_COL_DAY}</th><th>{TRANSPARENCY_COL_COMPARED}</th><th>{TRANSPARENCY_COL_PUBLISHED}</th></tr>
+            </thead>
+            <tbody>
+              {stats.days.map((x) => (
+                <tr>
+                  <td>{x.published > 0 ? <a href={dayPath(x.run_date)}>{formatDateLong(x.run_date)}</a> : formatDateLong(x.run_date)}</td>
+                  <td>{x.compared}</td>
+                  <td>{x.published}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )
+    }
+  </main>
+</Base>
+
+<style>
+  .tp { border-collapse: collapse; width: 100%; max-width: 560px; }
+  .tp th, .tp td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border); }
+</style>

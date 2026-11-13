@@ -134,3 +134,20 @@ export const BLACK_FRIDAY_DESCRIPTION = (count: number): string =>
   `${count === 1 ? "1 producto" : `${count} productos`} de Mercado Libre más baratos que en otras tiendas, con precios comparados y fecha. Sin descuentos inflados.`;
 export const BLACK_FRIDAY_EMPTY = "Todavía no hay imperdibles vigentes.";
 export const BLACK_FRIDAY_EMPTY_LEAD = "Mientras tanto, mirá los cupones vigentes o seguí el canal de Telegram.";
+
+/** /transparencia page. */
+export const TRANSPARENCY_TITLE = "Cuántos productos revisamos y cuántos publicamos | imperdibles";
+export const TRANSPARENCY_H1 = "Revisamos muchos productos y publicamos pocos";
+export const TRANSPARENCY_LEAD = (threshold: string): string =>
+  `Cada día comparamos el mismo modelo en Mercado Libre y en otras tiendas. Solo se publica si Mercado Libre cuesta ${threshold}% o más menos. Estos son los números reales.`;
+export const TRANSPARENCY_DESCRIPTION = (compared: number, published: number): string =>
+  `Revisamos ${compared} modelos y publicamos ${published}. Así de exigente es el filtro de imperdibles.`;
+export const TRANSPARENCY_TOTAL = (compared: number, published: number): string =>
+  `${compared} modelos revisados, ${published} publicados`;
+export const TRANSPARENCY_PASS = (pct: string): string => `${pct}% pasó el filtro`;
+export const TRANSPARENCY_DAYS_HEADING = "Día por día";
+export const TRANSPARENCY_COL_DAY = "Día";
+export const TRANSPARENCY_COL_COMPARED = "Revisados";
+export const TRANSPARENCY_COL_PUBLISHED = "Publicados";
+export const TRANSPARENCY_EMPTY = "Todavía no hay datos para mostrar.";
+export const TRANSPARENCY_LINK = "Transparencia";
