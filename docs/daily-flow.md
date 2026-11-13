@@ -41,6 +41,8 @@ pnpm run ship --site-only   # skip publishing; only rebuild and deploy the site
 
 Exit codes: `0` ok, `1` build or upload failed, `2` site deployed but a publish call failed.
 
+After a successful deploy, `ship` also tells IndexNow (Bing, Yandex and others) about the URLs that are new or whose sitemap `lastmod` changed since the live site, comparing the live sitemap fetched before the build with the built one. A failure there only prints a warning and never changes the exit code. The key is served at `/<key>.txt` (constant in `src/deploy/indexnow.ts`). Google does not use IndexNow: submit `sitemap-index.xml` in Search Console and it covers Google.
+
 ## Coupons
 
 One fixed `meli.la` link is used on every coupon in the channel:
