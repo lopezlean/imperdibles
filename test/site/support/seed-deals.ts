@@ -14,9 +14,10 @@ export type SeedDeal = {
   link?: string | null;
   payload?: string;
   status?: string;
+  imageUrl?: string | null;
 };
 
-function payloadFor(id: string, modelId: string, title: string, ml: number, rival: number): string {
+function payloadFor(id: string, modelId: string, title: string, ml: number, rival: number, imageUrl: string | null): string {
   const offer = (store: string, price: number) => ({
     store,
     listing_title: title,
@@ -31,7 +32,7 @@ function payloadFor(id: string, modelId: string, title: string, ml: number, riva
     model_id: modelId,
     brand: "Fake",
     title,
-    image_url: null,
+    image_url: imageUrl,
     ml: { ...offer("ml", ml), ml_product_id: "MLA1", ml_seller_id: "1" },
     others: [offer("fravega", rival)],
     difference_ars: rival - ml,
@@ -61,7 +62,7 @@ export async function seedDeal(db: SqlClient, o: SeedDeal): Promise<void> {
       o.id,
       runId,
       o.model_id,
-      o.payload ?? payloadFor(o.id, o.model_id, o.title ?? `Robot ${o.id}`, o.ml ?? 329999, o.rival ?? 399999),
+      o.payload ?? payloadFor(o.id, o.model_id, o.title ?? `Robot ${o.id}`, o.ml ?? 329999, o.rival ?? 399999, o.imageUrl ?? null),
       o.status ?? "published",
       link,
       `file-${o.id}`,

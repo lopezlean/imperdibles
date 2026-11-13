@@ -11,6 +11,7 @@ export type SeedCoupon = {
   minPurchase?: number | null;
   cap?: number | null;
   scope?: string;
+  updatedAt?: string;
 };
 
 let nextSource = 1;
@@ -36,7 +37,7 @@ export async function seedCoupon(db: SqlClient, o: SeedCoupon): Promise<void> {
       source,
       `post ${o.code}`,
       stamp,
-      stamp,
+      o.updatedAt ?? stamp,
     ],
   );
 }

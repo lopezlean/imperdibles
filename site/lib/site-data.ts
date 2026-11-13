@@ -1,4 +1,4 @@
-import { loadCouponSiteData, type CouponSiteData } from "./coupons.js";
+import { loadCouponSiteData, loadCouponsLastmod, type CouponSiteData } from "./coupons.js";
 import { loadSiteData, type SiteData } from "./deals.js";
 import { openSiteDb } from "./db.js";
 
@@ -15,4 +15,9 @@ export function getSiteData(): Promise<SiteData> {
 export function getCouponSiteData(): Promise<CouponSiteData> {
   cachedCoupons ??= openSiteDb(process.env).then((db) => loadCouponSiteData(db, new Date()));
   return cachedCoupons;
+}
+
+/** Latest change to the shown coupons, or null; loaded once at config time for the sitemap. */
+export function getCouponsLastmod(): Promise<string | null> {
+  return openSiteDb(process.env).then(loadCouponsLastmod);
 }

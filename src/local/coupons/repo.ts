@@ -54,13 +54,16 @@ export async function listPendingToPublish(db: SqlClient, now: Date): Promise<St
 }
 
 /** Atomically takes a pending row (pending -> published); false when someone else already did. */
-export async function claimForPublish(db: SqlClient, id: number): Promise<boolean> {
-  const { changes } = await db.run("UPDATE coupons SET status = 'published' WHERE id = ? AND status = 'pending'", [id]);
+export async function claimForPublish(db: SqlClient, id: number, now: Date): Promise<boolean> {
+  const { changes } = await db.run("UPDATE coupons SET status = 'published', updated_at = ? WHERE id = ? AND status = 'pending'", [
+    artIso(now),
+    id,
+  ]);
   return changes > 0;
 }
 
-export async function releaseClaim(db: SqlClient, id: number): Promise<void> {
-  await db.run("UPDATE coupons SET status = 'pending' WHERE id = ? AND status = 'published'", [id]);
+export async function releaseClaim(db: SqlClient, id: number, now: Date): Promise<void> {
+  await db.run("UPDATE coupons SET status = 'pending', updated_at = ? WHERE id = ? AND status = 'published'", [artIso(now), id]);
 }
 
 export async function recordChannelMessage(db: SqlClient, id: number, messageId: number): Promise<void> {

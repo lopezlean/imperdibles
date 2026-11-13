@@ -127,13 +127,13 @@ async function publishPending(deps: IngestDeps, now: Date): Promise<number> {
   let published = 0;
   for (const row of pending) {
     // Claim before sending: whoever wins the conditional update is the only one that posts.
-    if (!(await claimForPublish(deps.db, row.id))) continue;
+    if (!(await claimForPublish(deps.db, row.id, now))) continue;
     let channelMessageId: number;
     try {
       ({ message_id: channelMessageId } = await deps.telegram.sendMessage({ chat_id: deps.channelId, text: buildCouponChannelMessage(row, link) }));
     } catch {
       let released = true;
-      await releaseClaim(deps.db, row.id).catch(() => {
+      await releaseClaim(deps.db, row.id, now).catch(() => {
         released = false;
       });
       await tryNotifyOwner(

@@ -14,6 +14,7 @@ import {
   releaseClaim,
   setConfig,
 } from "../../../src/local/coupons/repo.js";
+import { artIso } from "../../../src/shared/time.js";
 import { createSqliteClient } from "../../support/sqlite-client.js";
 
 const NOW = new Date("2026-11-12T15:00:00.000Z");
@@ -63,7 +64,7 @@ describe("coupon repository", () => {
     const db = createSqliteClient();
     const id = (await insertPending(db, coupon(), src(), NOW))!;
     await db.run("UPDATE coupons SET status = 'removed' WHERE id = ?", [id]);
-    await releaseClaim(db, id);
+    await releaseClaim(db, id, NOW);
     expect((await findByCodeValidAt(db, "ABC123", NOW))!.status).toBe("removed");
   });
 
@@ -89,10 +90,23 @@ describe("coupon repository", () => {
   it("claimForPublish is true once, then false; releaseClaim makes it claimable again", async () => {
     const db = createSqliteClient();
     const id = (await insertPending(db, coupon(), src(), NOW))!;
-    expect(await claimForPublish(db, id)).toBe(true);
-    expect(await claimForPublish(db, id)).toBe(false);
-    await releaseClaim(db, id);
-    expect(await claimForPublish(db, id)).toBe(true);
+    expect(await claimForPublish(db, id, NOW)).toBe(true);
+    expect(await claimForPublish(db, id, NOW)).toBe(false);
+    await releaseClaim(db, id, NOW);
+    expect(await claimForPublish(db, id, NOW)).toBe(true);
+  });
+
+  it("claimForPublish and releaseClaim stamp updated_at so publication moves the page lastmod", async () => {
+    const db = createSqliteClient();
+    const id = (await insertPending(db, coupon(), src(), NOW))!;
+    const updatedAt = async () =>
+      (await db.all<{ updated_at: string }>("SELECT updated_at FROM coupons WHERE id = ?", [id]))[0]!.updated_at;
+    const later = new Date(NOW.getTime() + 60_000);
+    await claimForPublish(db, id, later);
+    expect(await updatedAt()).toBe(artIso(later));
+    const evenLater = new Date(NOW.getTime() + 120_000);
+    await releaseClaim(db, id, evenLater);
+    expect(await updatedAt()).toBe(artIso(evenLater));
   });
 
   it("listPendingToPublish skips expired, published and removed, ordered by id", async () => {
@@ -102,7 +116,7 @@ describe("coupon repository", () => {
     const published = (await insertPending(db, coupon({ code: "P" }), src(3), NOW))!;
     const removed = (await insertPending(db, coupon({ code: "R" }), src(4), NOW))!;
     const b = (await insertPending(db, coupon({ code: "B" }), src(5), NOW))!;
-    await claimForPublish(db, published);
+    await claimForPublish(db, published, NOW);
     await db.run("UPDATE coupons SET status = 'removed' WHERE id = ?", [removed]);
     const list = await listPendingToPublish(db, NOW);
     expect(list.map((c) => c.id)).toEqual([a, b]);
