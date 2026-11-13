@@ -14,7 +14,7 @@ export interface Props {
         <h2 class="display">{CHANNEL_HEADING}</h2>
         <p>{CHANNEL_LEAD}</p>
       </div>
-      <a href={Astro.props.channelUrl} class="channel-btn"><span aria-hidden="true">↗</span>{CHANNEL_CTA}</a>
+      <a href={Astro.props.channelUrl} class="channel-btn" data-channel-cta><span aria-hidden="true">↗</span>{CHANNEL_CTA}</a>
     </div>
   </div>
 </section>

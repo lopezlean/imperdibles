@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   ExtractionError,
   SYSTEM_PROMPT,
@@ -9,6 +10,7 @@ import {
   type CouponExtractor,
 } from "./extractor.js";
 import { CodexAuthError, type CodexAuth } from "./codex-auth.js";
+import type { CouponAiObservability } from "./posthog-ai.js";
 
 export const DEFAULT_CODEX_MODEL = "gpt-5.6-luna";
 
@@ -72,6 +74,7 @@ export function createCodexExtractor(cfg: {
   model: string;
   fetch?: typeof fetch;
   timeoutMs?: number;
+  aiObservability?: CouponAiObservability | null;
 }): CouponExtractor {
   const doFetch = cfg.fetch ?? fetch;
   return {
@@ -85,7 +88,15 @@ export function createCodexExtractor(cfg: {
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? TIMEOUT_MS);
+      const traceId = randomUUID();
+      const startedAt = Date.now();
+      const userInput = userContent(post);
+      const input = [
+        { role: "system" as const, content: INSTRUCTIONS },
+        { role: "user" as const, content: userInput },
+      ];
       let body: string;
+      let httpStatus: number | undefined;
       try {
         const res = await doFetch(URL, {
           method: "POST",
@@ -104,7 +115,7 @@ export function createCodexExtractor(cfg: {
             store: false,
             stream: true,
             instructions: INSTRUCTIONS,
-            input: [{ role: "user", content: userContent(post) }],
+            input: [{ role: "user", content: userInput }],
             text: { verbosity: "medium" },
             include: ["reasoning.encrypted_content"],
             tool_choice: "auto",
@@ -112,17 +123,35 @@ export function createCodexExtractor(cfg: {
             tools: [{ type: "function", name: TOOL_NAME, description: TOOL_DESCRIPTION, parameters: couponToolSchema() }],
           }),
         });
+        httpStatus = res.status;
         if (!res.ok) throw new ExtractionError(`Codex request failed (HTTP ${res.status})`);
         body = await res.text();
       } catch (err) {
+        // Only fixed descriptions leave the process: transport errors can echo headers.
+        const error = err instanceof ExtractionError ? "request failed" : controller.signal.aborted ? "request timed out" : "network error";
+        cfg.aiObservability?.captureCodexGeneration({
+          traceId,
+          model: cfg.model,
+          input,
+          latencyMs: Date.now() - startedAt,
+          httpStatus,
+          error,
+        });
         if (err instanceof ExtractionError) throw err;
-        // Only a fixed description: transport errors can echo headers.
         throw new ExtractionError(controller.signal.aborted ? "Codex request timed out" : "Codex request failed (network error)");
       } finally {
         clearTimeout(timer);
       }
 
       const { args, text } = collect(body);
+      cfg.aiObservability?.captureCodexGeneration({
+        traceId,
+        model: cfg.model,
+        input,
+        output: args !== "" ? args : text,
+        latencyMs: Date.now() - startedAt,
+        httpStatus,
+      });
       const payload = args !== "" ? tryJson(args) : text !== "" ? tryJson(stripFence(text)) : undefined;
       if (payload === undefined) throw new ExtractionError("Codex response had no parseable coupon payload");
       const parsed = extractionResultSchema.safeParse(payload);

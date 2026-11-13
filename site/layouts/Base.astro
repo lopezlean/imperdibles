@@ -10,6 +10,7 @@ import ChannelBand from "../components/ChannelBand.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import Method from "../components/Method.astro";
+import PostHog from "../components/posthog.astro";
 
 export interface Props {
   title: string;
@@ -67,6 +68,7 @@ const openGraph = ogImage
       a.chip:hover{text-decoration:underline}
       a.chip:focus-visible,.empty a:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
     </style>
+    <PostHog />
     {jsonLd.map((data) => <script type="application/ld+json" set:html={jsonLdScript(data)} />)}
   </head>
   <body>
@@ -75,5 +77,23 @@ const openGraph = ogImage
     <Method threshold_pct={threshold_pct} />
     <ChannelBand channelUrl={channelUrl} />
     <Footer pricesNote={pricesDate ? PRICES_NOTE(formatDateLong(pricesDate)) : null} categories={categories} />
+    <script is:inline>
+      document.addEventListener("click", function (event) {
+        var target = event.target;
+        var affiliateLink = target && target.closest ? target.closest("[data-affiliate-link]") : null;
+        if (affiliateLink) {
+          window.posthog?.capture("affiliate_link_clicked", {
+            placement: affiliateLink.dataset.affiliatePlacement,
+            product_id: affiliateLink.dataset.productId || undefined,
+          });
+          return;
+        }
+
+        var channelLink = target && target.closest ? target.closest("[data-channel-cta]") : null;
+        if (channelLink) {
+          window.posthog?.capture("channel_cta_clicked");
+        }
+      });
+    </script>
   </body>
 </html>
