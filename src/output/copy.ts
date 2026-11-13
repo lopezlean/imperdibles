@@ -106,3 +106,10 @@ export const CARD_FOOTER = (fechaCorta: string, label: "lista" | "actual" = PRIC
 
 /** `pct` is the formatted percentage ("19,7"). */
 export const PCT_BADGE = (pct: string): string => `${pct}% menos`;
+
+/** Product and category pages. */
+export const STALE_NOTICE = (fecha: string): string => `Este precio es del ${fecha}; puede haber cambiado.`;
+export const PRICE_AS_OF = (fecha: string): string => `precio al ${fecha}`;
+export const HISTORY_HEADING = "Cuándo fue imperdible";
+export const RELATED_HEADING = "Otros imperdibles de la categoría";
+export const CATEGORIES_LABEL = "Categorías";

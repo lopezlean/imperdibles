@@ -1,0 +1,89 @@
+---
+import { HISTORY_HEADING, RELATED_HEADING, STALE_NOTICE } from "../../../src/output/copy.js";
+import { formatArs, formatDateLong, formatPct } from "../../../src/output/format.js";
+import { ogImageOf } from "../../lib/seo.js";
+import DealCard from "../../components/DealCard.astro";
+import Base from "../../layouts/Base.astro";
+import { activeCategories, buildProducts, isStale } from "../../lib/products.js";
+import { readSiteEnv } from "../../lib/env.js";
+import { absoluteUrl, breadcrumbLd, productDescription, productLd, productTitle } from "../../lib/seo.js";
+import { getSiteData } from "../../lib/site-data.js";
+import { categoryPath, dayPath, productPath } from "../../lib/slugs.js";
+
+export async function getStaticPaths() {
+  const d = await getSiteData();
+  return buildProducts(d).map((p) => ({ params: { slug: p.slug }, props: { slug: p.slug } }));
+}
+
+const { slug } = Astro.props;
+const d = await getSiteData();
+const products = buildProducts(d);
+const product = products.find((p) => p.slug === slug)!;
+const { siteUrl, channelUrl } = readSiteEnv(process.env);
+
+const today = new Date().toISOString().slice(0, 10);
+const stale = isStale(product.latest.run_date, today);
+const c = product.latest.candidate;
+const category = activeCategories(d).find((x) => x.id === product.category);
+const related = products.filter((p) => p.category === product.category && p.slug !== product.slug).slice(0, 6);
+const path = productPath(product.slug);
+---
+
+<Base
+  title={productTitle(product)}
+  description={productDescription(product)}
+  path={path}
+  ogImage={ogImageOf([product.latest])}
+  jsonLd={[
+    breadcrumbLd([
+      { name: "Inicio", url: absoluteUrl(siteUrl, "/") },
+      ...(category ? [{ name: category.name, url: absoluteUrl(siteUrl, categoryPath(category.id)) }] : []),
+      { name: c.title, url: absoluteUrl(siteUrl, path) },
+    ]),
+    productLd(product, siteUrl, stale),
+  ]}
+  threshold_pct={d.threshold_pct}
+  channelUrl={channelUrl}
+  pricesDate={product.latest.run_date}
+>
+  <main class="wrap today">
+    <nav class="crumbs" aria-label="Ruta">
+      <a href="/">Inicio</a>{category && <> / <a href={categoryPath(category.id)}>{category.name}</a></>}
+    </nav>
+    <div class="sel">
+      <h1>{c.title}</h1>
+    </div>
+    {stale && <p class="stale">{STALE_NOTICE(formatDateLong(product.latest.run_date))}</p>}
+    <div class="list">
+      <DealCard deal={product.latest} />
+    </div>
+    <section aria-labelledby="historial">
+      <h2 id="historial">{HISTORY_HEADING}</h2>
+      <ul class="plain">
+        {
+          product.history.map((deal) => (
+            <li>
+              <a href={dayPath(deal.run_date)}>{formatDateLong(deal.run_date)}</a>: {formatArs(deal.candidate.ml.price_ars)} ({formatPct(deal.candidate)}% menos)
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+    {
+      related.length > 0 && (
+        <section aria-labelledby="relacionados">
+          <h2 id="relacionados">{RELATED_HEADING}</h2>
+          <ul class="plain">
+            {related.map((p) => <li><a href={productPath(p.slug)}>{p.latest.candidate.title}</a></li>)}
+          </ul>
+        </section>
+      )
+    }
+  </main>
+</Base>
+
+<style>
+  .crumbs { font-size: 13px; }
+  .stale { font-weight: 700; }
+  .plain { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+</style>

@@ -1,14 +1,21 @@
 ---
 import type { Deal } from "../lib/deals.js";
+import { productPath } from "../lib/slugs.js";
 import DealCard from "./DealCard.astro";
 
 export interface Props {
   items: Deal[];
+  /** model_id -> product slug; cards without an entry render no link. */
+  slugs: Map<string, string>;
 }
 
-const { items } = Astro.props;
+const { items, slugs } = Astro.props;
+const hrefOf = (modelId: string) => {
+  const slug = slugs.get(modelId);
+  return slug ? productPath(slug) : undefined;
+};
 ---
 
 <div class="list">
-  {items.map((deal) => <DealCard deal={deal} />)}
+  {items.map((deal) => <DealCard deal={deal} href={hrefOf(deal.model_id)} />)}
 </div>

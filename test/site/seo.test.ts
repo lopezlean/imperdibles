@@ -4,6 +4,9 @@ import {
   breadcrumbLd,
   buildDescription,
   buildRobotsTxt,
+  categoryItemListLd,
+  productLd,
+  productTitle,
   dayTitle,
   homeTitle,
   itemListLd,
@@ -13,6 +16,7 @@ import {
   topPct,
 } from "../../site/lib/seo.js";
 import type { Deal } from "../../site/lib/deals.js";
+import type { Product } from "../../site/lib/products.js";
 
 function deal(o: { id?: string; title?: string; ml?: number; rival?: number; image?: string | null }): Deal {
   const offer = (store: string, price: number) => ({
@@ -138,5 +142,39 @@ describe("buildRobotsTxt", () => {
     expect(buildRobotsTxt("https://imperdibles.com.ar")).toBe(
       "User-agent: *\nAllow: /\nDisallow: /internal/\nDisallow: /telegram/\n\nSitemap: https://imperdibles.com.ar/sitemap-index.xml\n",
     );
+  });
+});
+
+describe("product and category SEO", () => {
+  const product = (o: { title?: string; ml?: number; rival?: number; image?: string | null; id?: string } = {}): Product => {
+    const latest = deal(o);
+    return { slug: `p-${o.id ?? "a"}`, model_id: latest.model_id, category: "smart-tv", latest, history: [latest], lastmod: latest.run_date };
+  };
+
+  it("emits an Offer with the printed ML price on a fresh product", () => {
+    const ld = productLd(product({ ml: 329999 }), "https://imperdibles.com.ar", false) as { offers?: { price: number; priceCurrency: string } };
+    expect(ld.offers?.price).toBe(329999);
+    expect(ld.offers?.priceCurrency).toBe("ARS");
+  });
+
+  it("omits the Offer on a stale product", () => {
+    const ld = productLd(product(), "https://imperdibles.com.ar", true);
+    expect(ld).not.toHaveProperty("offers");
+  });
+
+  it("lists absolute product URLs in order in the category ItemList", () => {
+    const ld = categoryItemListLd([product({ id: "a" }), product({ id: "b" })], "https://imperdibles.com.ar") as {
+      itemListElement: { url: string }[];
+    };
+    expect(ld.itemListElement.map((i) => i.url)).toEqual([
+      "https://imperdibles.com.ar/producto/p-a/",
+      "https://imperdibles.com.ar/producto/p-b/",
+    ]);
+  });
+
+  it("puts the product title and the percentage in the product title tag", () => {
+    const title = productTitle(product({ title: "Robot Zeta" }));
+    expect(title).toContain("Robot Zeta");
+    expect(title).toMatch(/\d+,\d%/);
   });
 });

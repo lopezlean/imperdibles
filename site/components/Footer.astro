@@ -1,5 +1,6 @@
 ---
-import { AFFILIATE_LEGEND, NOT_AFFILIATED } from "../../src/output/copy.js";
+import { AFFILIATE_LEGEND, CATEGORIES_LABEL, NOT_AFFILIATED } from "../../src/output/copy.js";
+import { categoryPath } from "../lib/slugs.js";
 
 export interface Props {
   pricesNote: string | null;
@@ -9,6 +10,13 @@ export interface Props {
 <footer class="wrap legal">
   <p class="sign" aria-hidden="true"><b>imperdibles</b><i>.com.ar</i></p>
   <div class="rule"></div>
+  {
+    (Astro.props.categories ?? []).length > 0 && (
+      <nav aria-label={CATEGORIES_LABEL} class="nav">
+        {(Astro.props.categories ?? []).map((c) => <a href={categoryPath(c.id)}>{c.name}</a>)}
+      </nav>
+    )
+  }
   <div class="notes">
     <p>{AFFILIATE_LEGEND}</p>
     <p>{NOT_AFFILIATED}</p>

@@ -14,8 +14,8 @@ describe("0003_seed_vtex_stores", () => {
   });
 });
 
-describe("0004_more_categories", () => {
-  it("keeps aspiradoras-robot first and adds the six new categories", async () => {
+describe("0004_more_categories and 0007_even_more_categories", () => {
+  it("keeps aspiradoras-robot first, the 0004 categories in order, then the 0007 ones", async () => {
     const rows = await createSqliteClient().all<{ value: string }>("SELECT value FROM config WHERE name = 'categories'");
     const categories = JSON.parse(rows[0]!.value) as { id: string; name: string; terms: string[] }[];
     expect(categories.map((c) => c.id)).toEqual([
@@ -26,6 +26,14 @@ describe("0004_more_categories", () => {
       "aires-acondicionados",
       "lavarropas",
       "heladeras",
+      "notebooks",
+      "auriculares",
+      "microondas",
+      "cafeteras",
+      "monitores",
+      "tablets",
+      "parlantes",
+      "smartwatches",
     ]);
     expect(categories[0]).toEqual({ id: "aspiradoras-robot", name: "Aspiradoras robot", terms: ["aspiradora robot"] });
     expect(categories.find((c) => c.id === "smart-tv")).toEqual({ id: "smart-tv", name: "Smart TV", terms: ["smart tv"] });

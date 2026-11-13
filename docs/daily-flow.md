@@ -60,3 +60,12 @@ pnpm run db:migrate:remote
 ```
 
 Keep existing entries first so the daily rotation order does not shift.
+
+## Site pages
+
+`pnpm run ship` rebuilds the whole static site, so besides the home, day and month pages it generates:
+
+- `/producto/<slug>/`: one page per model ever published, with its latest price (dated), the Mercado Libre button and its history. Prices older than 7 days carry a staleness notice.
+- `/categoria/<id>/`: the 48 newest products of each category.
+
+All of them are in the sitemap with `lastmod`. Google no longer supports sitemap pings, so there is no notify step.

@@ -5,6 +5,7 @@ import DealList from "../components/DealList.astro";
 import HistoryNav from "../components/HistoryNav.astro";
 import Base from "../layouts/Base.astro";
 import { dayPage, listDays } from "../lib/deals.js";
+import { buildProducts, productSlugs } from "../lib/products.js";
 import { readSiteEnv } from "../lib/env.js";
 import {
   absoluteUrl,
@@ -19,6 +20,7 @@ import { getSiteData } from "../lib/site-data.js";
 import { weekdayName } from "../lib/slugs.js";
 
 const d = await getSiteData();
+const slugs = productSlugs(buildProducts(d));
 const { siteUrl, channelUrl } = readSiteEnv(process.env);
 const latest = listDays(d).at(-1);
 const page = latest ? dayPage(d, latest) : null;
@@ -71,7 +73,7 @@ const eyebrow = page ? [formatDateDots(page.run_date), categoryName].filter(Bool
           <p>{EMPTY_PAGE_LEAD}</p>
         </div>
       ) : (
-        <DealList items={items} />
+        <DealList items={items} slugs={slugs} />
       )
     }
     {page && <HistoryNav prev={page.prev} month={page.month} />}

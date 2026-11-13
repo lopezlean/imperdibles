@@ -5,6 +5,7 @@ import DealList from "../../components/DealList.astro";
 import HistoryNav from "../../components/HistoryNav.astro";
 import Base from "../../layouts/Base.astro";
 import { dayPage, listDays, listMonths, monthPage } from "../../lib/deals.js";
+import { buildProducts, productSlugs } from "../../lib/products.js";
 import { readSiteEnv } from "../../lib/env.js";
 import {
   absoluteUrl,
@@ -29,6 +30,7 @@ export async function getStaticPaths() {
 
 const { kind, key } = Astro.props;
 const d = await getSiteData();
+const slugs = productSlugs(buildProducts(d));
 const { siteUrl, channelUrl } = readSiteEnv(process.env);
 
 const monthLabel = (month: string) => {
@@ -81,7 +83,7 @@ const pricesDate = day ? key : null;
         </div>
       )
     }
-    <DealList items={items} />
+    <DealList items={items} slugs={slugs} />
     {
       day && (
         <nav class="chips" aria-label="Historial">

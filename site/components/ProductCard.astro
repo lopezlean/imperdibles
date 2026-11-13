@@ -1,0 +1,43 @@
+---
+import { CTA_ML, PCT_BADGE, PRICE_AS_OF } from "../../src/output/copy.js";
+import { categoryArtLabel, categoryArtSvg } from "../../src/output/category-art.js";
+import { formatArs, formatDateShort, formatPct } from "../../src/output/format.js";
+import { catalogPhotoUrl } from "../../src/output/photo-url.js";
+import type { Product } from "../lib/products.js";
+import { productPath } from "../lib/slugs.js";
+
+export interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+const { latest } = product;
+const c = latest.candidate;
+const photo = catalogPhotoUrl(c.image_url);
+---
+
+<article class="pcard">
+  {
+    photo ? (
+      <img src={photo} alt={c.title} loading="lazy" width="132" height="120" />
+    ) : (
+      <div class="art" role="img" aria-label={categoryArtLabel(latest.category)} set:html={categoryArtSvg(latest.category)} />
+    )
+  }
+  <div class="pinfo">
+    <h2><a href={productPath(product.slug)}>{c.title}</a></h2>
+    <p>
+      <span class="badge">{PCT_BADGE(formatPct(c))}</span>
+      <strong>{formatArs(c.ml.price_ars)}</strong>
+      <small>{PRICE_AS_OF(formatDateShort(latest.run_date))}</small>
+    </p>
+    <a class="cta" href={latest.affiliate_link} rel="sponsored noopener">{CTA_ML}</a>
+  </div>
+</article>
+
+<style>
+  .pcard { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 16px; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .pcard img, .pcard .art { width: 132px; height: 120px; object-fit: contain; }
+  .pinfo { display: flex; flex-direction: column; gap: 8px; }
+  .pinfo h2 { font-size: 16px; margin: 0; }
+</style>
