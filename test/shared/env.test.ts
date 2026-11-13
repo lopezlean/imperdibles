@@ -83,7 +83,8 @@ describe("loadLocalEnv", () => {
     const env = loadLocalEnv({ ...full, ANTHROPIC_API_KEY: "k", ANTHROPIC_MODEL: "m" });
     expect(env.anthropicApiKey).toBe("k");
     expect(env.anthropicModel).toBe("m");
-    expect(() => loadLocalEnv(full, [...BASE_ENV_KEYS, ...COUPON_ENV_KEYS])).toThrow(/ANTHROPIC_API_KEY/);
+    expect(() => loadLocalEnv(full, [...BASE_ENV_KEYS, ...COUPON_ENV_KEYS, "anthropicApiKey"])).toThrow(/ANTHROPIC_API_KEY/);
+    expect(COUPON_ENV_KEYS).not.toContain("anthropicApiKey");
   });
 
   it("COUPON_ENV_KEYS lists only the absent coupon names, never values", () => {
@@ -97,9 +98,14 @@ describe("loadLocalEnv", () => {
     expect((err as MissingEnvError).names).toEqual([
       "TELEGRAM_API_HASH",
       "TELEGRAM_SOURCE_CHANNEL_ID",
-      "ANTHROPIC_API_KEY",
     ]);
     expect((err as Error).message).not.toContain("session-value");
+  });
+
+  it("reads the Codex extractor keys, all optional", () => {
+    const env = loadLocalEnv({ ...full, COUPON_EXTRACTOR: "anthropic", COUPON_CODEX_MODEL: "m", CODEX_AUTH_FILE: "/x/auth.json" });
+    expect([env.couponExtractor, env.couponCodexModel, env.codexAuthFile]).toEqual(["anthropic", "m", "/x/auth.json"]);
+    expect(loadLocalEnv(full).couponExtractor).toBe("");
   });
 
   it("reads the Telegram user-session keys and keeps them out of the default required list", () => {

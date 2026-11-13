@@ -25,6 +25,9 @@ TELEGRAM_SESSION=
 TELEGRAM_SOURCE_CHANNEL_ID=
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=
+COUPON_EXTRACTOR=
+COUPON_CODEX_MODEL=
+CODEX_AUTH_FILE=
 ```
 
 `ML_REDIRECT_URI` takes the value `https://imperdibles.com.ar`.
@@ -45,7 +48,7 @@ Expected: wrangler reports `0001_initial.sql` and `0002_seed.sql` applied.
 
 ## Owner step: coupon reading
 
-The coupon step reads the official Mercado Libre affiliates channel with your own Telegram user account and extracts coupons with Claude.
+The coupon step reads the official Mercado Libre affiliates channel with your own Telegram user account and extracts coupons with a model (Codex by default, Anthropic optional).
 
 Do these in order:
 
@@ -56,7 +59,9 @@ Do these in order:
 1. Create an app at https://my.telegram.org (API development tools) and copy its `api_id` and `api_hash` into the local `.env` as `TELEGRAM_API_ID` and `TELEGRAM_API_HASH`.
 2. Run `pnpm telegram:login`. It asks for your phone number, the login code and, if you have one, your 2FA password. It prints one line `TELEGRAM_SESSION=...` and the list of your channels (id and title).
 3. Copy `TELEGRAM_SESSION` and the affiliates channel id (`TELEGRAM_SOURCE_CHANNEL_ID`) into the local `.env` only.
-4. Set `ANTHROPIC_API_KEY` in the local `.env`. `ANTHROPIC_MODEL` is optional (default `claude-haiku-5-5`).
+4. Choose the extractor with `COUPON_EXTRACTOR` (`codex`, the default, or `anthropic`). An invalid value skips the round.
+   - `codex`: uses your ChatGPT sign-in from the Codex CLI. Run `codex login` (ChatGPT) on this Mac once; no API key is needed. The access token is refreshed automatically and the rotated tokens are written back to `~/.codex/auth.json` (atomically, mode 0600), so the Codex CLI login keeps working. `CODEX_AUTH_FILE` overrides that path; `COUPON_CODEX_MODEL` is optional (default `gpt-5.6-luna`). If the refresh fails, run `codex login` again. Tokens are never logged.
+   - `anthropic`: set `ANTHROPIC_API_KEY` (required only in this mode). `ANTHROPIC_MODEL` is optional (default `claude-haiku-5-5`).
 
 Warning: the session string gives full access to your Telegram account. Never put it in Wrangler secrets, CI or git. To revoke it, end the session in Telegram under Settings > Devices.
 

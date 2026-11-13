@@ -577,6 +577,9 @@ const ENV: LocalEnv = {
   tgSourceChannelId: "",
   anthropicApiKey: "",
   anthropicModel: "",
+  couponExtractor: "",
+  couponCodexModel: "",
+  codexAuthFile: "",
 };
 
 type Routes = Map<string, () => Response>;

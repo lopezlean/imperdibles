@@ -21,6 +21,9 @@ const ENV: LocalEnv = {
   tgSourceChannelId: "-100999",
   anthropicApiKey: "sk-SECRET",
   anthropicModel: "",
+  couponExtractor: "",
+  couponCodexModel: "",
+  codexAuthFile: "",
 };
 
 function build(env: LocalEnv) {
@@ -34,11 +37,10 @@ function build(env: LocalEnv) {
 
 describe("createCouponRound", () => {
   it("returns null and logs only variable names when a coupon variable is missing", () => {
-    const { round, log } = build({ ...ENV, tgSession: "", anthropicApiKey: "" });
+    const { round, log } = build({ ...ENV, tgSession: "" });
     expect(round).toBeNull();
     const text = log.join("\n");
     expect(text).toContain("TELEGRAM_SESSION");
-    expect(text).toContain("ANTHROPIC_API_KEY");
     expect(text).not.toContain("HASH-SECRET");
     expect(text).not.toContain("BOT-SECRET");
   });
@@ -50,6 +52,24 @@ describe("createCouponRound", () => {
     const text = log.join("\n");
     expect(text).toContain("TELEGRAM_API_ID");
     expect(text).not.toContain("HASH-SECRET");
+  });
+
+  it("codex is the default extractor and does not need ANTHROPIC_API_KEY", () => {
+    expect(build({ ...ENV, anthropicApiKey: "", couponExtractor: "" }).round).toBeTypeOf("function");
+    expect(build({ ...ENV, anthropicApiKey: "", couponExtractor: "codex" }).round).toBeTypeOf("function");
+  });
+
+  it("anthropic mode still requires ANTHROPIC_API_KEY", () => {
+    const { round, log } = build({ ...ENV, anthropicApiKey: "", couponExtractor: "anthropic" });
+    expect(round).toBeNull();
+    expect(log.join("\n")).toContain("ANTHROPIC_API_KEY");
+    expect(build({ ...ENV, couponExtractor: "anthropic" }).round).toBeTypeOf("function");
+  });
+
+  it("skips the round naming COUPON_EXTRACTOR when its value is invalid", () => {
+    const { round, log } = build({ ...ENV, couponExtractor: "gemini" });
+    expect(round).toBeNull();
+    expect(log.join("\n")).toContain("COUPON_EXTRACTOR");
   });
 
   it("returns a round when everything is set", () => {

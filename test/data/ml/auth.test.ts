@@ -29,6 +29,9 @@ const env: LocalEnv = {
   tgSourceChannelId: "",
   anthropicApiKey: "",
   anthropicModel: "",
+  couponExtractor: "",
+  couponCodexModel: "",
+  codexAuthFile: "",
 };
 const NOW = new Date("2026-11-10T12:00:00Z");
 const now = () => NOW;

@@ -177,6 +177,9 @@ const env = (over: Partial<LocalEnv> = {}): LocalEnv => ({
   tgSourceChannelId: "",
   anthropicApiKey: "",
   anthropicModel: "",
+  couponExtractor: "",
+  couponCodexModel: "",
+  codexAuthFile: "",
   ...over,
 });
 

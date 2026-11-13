@@ -51,6 +51,9 @@ const ENV: LocalEnv = {
   tgSourceChannelId: "",
   anthropicApiKey: "",
   anthropicModel: "",
+  couponExtractor: "",
+  couponCodexModel: "",
+  codexAuthFile: "",
 };
 
 const urlOf = (input: Parameters<typeof fetch>[0]): string =>

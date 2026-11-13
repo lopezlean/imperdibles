@@ -16,6 +16,9 @@ export type LocalEnv = {
   tgSourceChannelId: string;
   anthropicApiKey: string;
   anthropicModel: string;
+  couponExtractor: string;
+  couponCodexModel: string;
+  codexAuthFile: string;
 };
 
 /** Keys every local command has always required; the default `required` list. */
@@ -33,7 +36,7 @@ export const BASE_ENV_KEYS: readonly (keyof LocalEnv)[] = [
   "workerBaseUrl",
 ];
 
-/** Opt-in: required only by the coupon pipeline (ANTHROPIC_MODEL is optional, it has a default). */
+/** Opt-in: required only by the coupon pipeline (ANTHROPIC_API_KEY is added by the factory only when COUPON_EXTRACTOR=anthropic; the rest are optional). */
 export const COUPON_ENV_KEYS: readonly (keyof LocalEnv)[] = [
   "telegramBotToken",
   "telegramOwnerChatId",
@@ -42,7 +45,6 @@ export const COUPON_ENV_KEYS: readonly (keyof LocalEnv)[] = [
   "tgApiHash",
   "tgSession",
   "tgSourceChannelId",
-  "anthropicApiKey",
 ];
 
 export const DATA_ENV_KEYS: readonly (keyof LocalEnv)[] = [
@@ -72,6 +74,9 @@ const VAR_NAMES: Record<keyof LocalEnv, string> = {
   tgSourceChannelId: "TELEGRAM_SOURCE_CHANNEL_ID",
   anthropicApiKey: "ANTHROPIC_API_KEY",
   anthropicModel: "ANTHROPIC_MODEL",
+  couponExtractor: "COUPON_EXTRACTOR",
+  couponCodexModel: "COUPON_CODEX_MODEL",
+  codexAuthFile: "CODEX_AUTH_FILE",
 };
 
 /** The `.env` variable name of a key; safe to log, unlike its value. */

@@ -6,6 +6,9 @@ import { createTelegramClient } from "../../output/telegram/client.js";
 import type { SqlClient } from "../../shared/db/sql-client.js";
 import { COUPON_ENV_KEYS, envVarName, type LocalEnv } from "../../shared/env.js";
 import { DEFAULT_MODEL, createAnthropicExtractor, type AnthropicLike } from "./anthropic-extractor.js";
+import { createCodexAuth } from "./codex-auth.js";
+import { DEFAULT_CODEX_MODEL, createCodexExtractor } from "./codex-extractor.js";
+import type { CouponExtractor } from "./extractor.js";
 import { createGramjsReader } from "./gramjs-reader.js";
 import { ingestCoupons } from "./ingest.js";
 import { runCouponRound } from "./round.js";
@@ -43,7 +46,13 @@ export function createRedactor(env: LocalEnv): (text: string) => string {
  */
 export function createCouponRound(deps: CouponRoundDeps, log: (line: string) => void): (() => Promise<void>) | null {
   const { db, env, now } = deps;
-  const missing = COUPON_ENV_KEYS.filter((key) => env[key] === "").map(envVarName);
+  const kind = env.couponExtractor === "" ? "codex" : env.couponExtractor;
+  if (kind !== "codex" && kind !== "anthropic") {
+    log(`coupons: round skipped, ${envVarName("couponExtractor")} must be "codex" or "anthropic"`);
+    return null;
+  }
+  const required = kind === "anthropic" ? [...COUPON_ENV_KEYS, "anthropicApiKey" as const] : COUPON_ENV_KEYS;
+  const missing = required.filter((key) => env[key] === "").map(envVarName);
   if (missing.length > 0) {
     log(`coupons: round skipped, missing environment variables: ${missing.join(", ")}`);
     return null;
@@ -65,7 +74,15 @@ export function createCouponRound(deps: CouponRoundDeps, log: (line: string) => 
   };
 
   const reader = createGramjsReader({ apiId, apiHash: env.tgApiHash, session: env.tgSession, channelId: env.tgSourceChannelId });
-  const extractor = createAnthropicExtractor({ client: anthropicAdapter(env.anthropicApiKey), model: env.anthropicModel || DEFAULT_MODEL });
+  // Codex tokens live in ~/.codex/auth.json and never enter the env, a log line or an error message.
+  const extractor: CouponExtractor =
+    kind === "anthropic"
+      ? createAnthropicExtractor({ client: anthropicAdapter(env.anthropicApiKey), model: env.anthropicModel || DEFAULT_MODEL })
+      : createCodexExtractor({
+          auth: createCodexAuth({ filePath: env.codexAuthFile || undefined, fetch: deps.fetch }),
+          model: env.couponCodexModel || DEFAULT_CODEX_MODEL,
+          fetch: deps.fetch,
+        });
 
   return () =>
     runCouponRound({
