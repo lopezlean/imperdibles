@@ -4,6 +4,7 @@ import { formatArs, formatDateLong, formatPct } from "../../../src/output/format
 import DealCard from "../../components/DealCard.astro";
 import ShareButtons from "../../components/ShareButtons.astro";
 import Base from "../../layouts/Base.astro";
+import { cardVersion } from "../../lib/card-version.js";
 import { activeCategories, buildProducts, isStale } from "../../lib/products.js";
 import { readSiteEnv } from "../../lib/env.js";
 import { absoluteUrl, breadcrumbLd, ogCardUrl, productDescription, productLd, productTitle } from "../../lib/seo.js";
@@ -35,7 +36,7 @@ const text = shareText(c.title, c.ml.price_ars, formatPct(c));
   title={productTitle(product)}
   description={productDescription(product)}
   path={path}
-  ogImage={ogCardUrl(siteUrl, product.slug)}
+  ogImage={ogCardUrl(siteUrl, product.slug, cardVersion(c))}
   jsonLd={[
     breadcrumbLd([
       { name: "Inicio", url: absoluteUrl(siteUrl, "/") },

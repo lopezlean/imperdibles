@@ -32,7 +32,7 @@ describe("product pages build", () => {
     expect([...site.bytes("og/hp-i3.png").subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
     expect(site.exists("og/old-1.png")).toBe(true);
     const html = site.read("producto/hp-i3/index.html");
-    expect(html).toMatch(/property="og:image"[^>]*content="https:\/\/imperdibles\.com\.ar\/og\/hp-i3\.png"/);
+    expect(html).toMatch(/property="og:image"[^>]*content="https:\/\/imperdibles\.com\.ar\/og\/hp-i3\.png\?v=[0-9a-f]+"/);
   });
 
   it("renders a share control that shares the product page, never the affiliate link", () => {

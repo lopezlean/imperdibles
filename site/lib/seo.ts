@@ -39,8 +39,9 @@ export const ogImageOf = (items: Deal[]): string | null => {
 
 export const absoluteUrl = (site: string, path: string): string => `${site.replace(/\/+$/, "")}${path}`;
 
-/** Absolute URL of a product's share card. */
-export const ogCardUrl = (site: string, slug: string): string => absoluteUrl(site, ogPath(slug));
+/** Absolute URL of a product's share card; `version` busts the chat apps' image cache when prices change. */
+export const ogCardUrl = (site: string, slug: string, version: string): string =>
+  `${absoluteUrl(site, ogPath(slug))}?v=${version}`;
 
 export const breadcrumbLd = (crumbs: { name: string; url: string }[]): object => ({
   "@context": "https://schema.org",

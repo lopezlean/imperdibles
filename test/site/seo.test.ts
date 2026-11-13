@@ -174,7 +174,7 @@ describe("product and category SEO", () => {
   });
 
   it("builds the absolute share card URL", () => {
-    expect(ogCardUrl("https://imperdibles.com.ar", "hp-i3")).toBe("https://imperdibles.com.ar/og/hp-i3.png");
+    expect(ogCardUrl("https://imperdibles.com.ar", "hp-i3", "abc")).toBe("https://imperdibles.com.ar/og/hp-i3.png?v=abc");
   });
 
   it("puts the product title and the percentage in the product title tag", () => {

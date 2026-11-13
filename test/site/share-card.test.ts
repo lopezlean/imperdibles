@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadSiteData } from "../../site/lib/deals.js";
 import { buildProducts } from "../../site/lib/products.js";
+import { cardVersion } from "../../site/lib/card-version.js";
 import { cardCachePath, productCardPng } from "../../site/lib/share-card.js";
 import { createSqliteClient } from "../support/sqlite-client.js";
 import { seedDeal } from "./support/seed-deals.js";
@@ -28,18 +29,36 @@ describe("productCardPng", () => {
     expect([...png.slice(0, 4)]).toEqual(PNG);
   });
 
-  it("reuses the cached file instead of rendering and fetching again", async () => {
-    await seedDeal(db, { id: "a", run_date: "2026-11-12", model_id: "HP:I3", imageUrl: IMG });
+  it("reuses the cached file when the product has no photo to fetch", async () => {
+    await seedDeal(db, { id: "a", run_date: "2026-11-12", model_id: "HP:I3", imageUrl: null });
     const p = await firstProduct();
+    const first = await productCardPng(p, { cacheDir, fetch: notFound() });
+    expect(existsSync(cardCachePath(cacheDir, "a", cardVersion(p.latest.candidate)))).toBe(true);
     const fetch = notFound();
-    await productCardPng(p, { cacheDir, fetch });
-    expect(existsSync(cardCachePath(cacheDir, "a", p.latest.candidate.ml.price_ars))).toBe(true);
-    await productCardPng(p, { cacheDir, fetch });
-    expect(fetch).toHaveBeenCalledTimes(1);
+    const second = await productCardPng(p, { cacheDir, fetch });
+    expect(second).toEqual(first);
+    expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("keys the cache by price so a price change is not served stale", () => {
-    expect(cardCachePath(cacheDir, "a", 100)).not.toBe(cardCachePath(cacheDir, "a", 200));
+  it("does not cache a card whose photo fetch failed, so the next build retries it", async () => {
+    await seedDeal(db, { id: "a", run_date: "2026-11-12", model_id: "HP:I3", imageUrl: IMG });
+    const p = await firstProduct();
+    const png = await productCardPng(p, { cacheDir, fetch: notFound() });
+    expect([...png.slice(0, 4)]).toEqual(PNG);
+    expect(existsSync(cardCachePath(cacheDir, "a", cardVersion(p.latest.candidate)))).toBe(false);
+  });
+
+  it("changes the version when the Mercado Libre price or any rival price changes", async () => {
+    await seedDeal(db, { id: "a", run_date: "2026-11-12", model_id: "HP:I3", ml: 100, rival: 200 });
+    const base = (await firstProduct()).latest.candidate;
+    const clone = (f: (c: typeof base) => void) => {
+      const c = structuredClone(base);
+      f(c);
+      return cardVersion(c);
+    };
+    expect(cardVersion(base)).toBe(cardVersion(structuredClone(base)));
+    expect(clone((c) => (c.ml.price_ars = 99))).not.toBe(cardVersion(base));
+    expect(clone((c) => (c.others[0]!.price_ars = 201))).not.toBe(cardVersion(base));
   });
 
   it("still renders when the product has no photo", async () => {
