@@ -1,12 +1,11 @@
 ---
 import { HISTORY_HEADING, RELATED_HEADING, REVIEWS_LINK, STALE_NOTICE } from "../../../src/output/copy.js";
 import { formatArs, formatDateLong, formatPct } from "../../../src/output/format.js";
-import { ogImageOf } from "../../lib/seo.js";
 import DealCard from "../../components/DealCard.astro";
 import Base from "../../layouts/Base.astro";
 import { activeCategories, buildProducts, isStale } from "../../lib/products.js";
 import { readSiteEnv } from "../../lib/env.js";
-import { absoluteUrl, breadcrumbLd, productDescription, productLd, productTitle } from "../../lib/seo.js";
+import { absoluteUrl, breadcrumbLd, ogCardUrl, productDescription, productLd, productTitle } from "../../lib/seo.js";
 import { getSiteData } from "../../lib/site-data.js";
 import { categoryPath, dayPath, productPath } from "../../lib/slugs.js";
 
@@ -33,7 +32,7 @@ const path = productPath(product.slug);
   title={productTitle(product)}
   description={productDescription(product)}
   path={path}
-  ogImage={ogImageOf([product.latest])}
+  ogImage={ogCardUrl(siteUrl, product.slug)}
   jsonLd={[
     breadcrumbLd([
       { name: "Inicio", url: absoluteUrl(siteUrl, "/") },

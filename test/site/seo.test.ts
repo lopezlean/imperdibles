@@ -5,6 +5,7 @@ import {
   buildDescription,
   buildRobotsTxt,
   categoryItemListLd,
+  ogCardUrl,
   productLd,
   productTitle,
   dayTitle,
@@ -170,6 +171,10 @@ describe("product and category SEO", () => {
       "https://imperdibles.com.ar/producto/p-a/",
       "https://imperdibles.com.ar/producto/p-b/",
     ]);
+  });
+
+  it("builds the absolute share card URL", () => {
+    expect(ogCardUrl("https://imperdibles.com.ar", "hp-i3")).toBe("https://imperdibles.com.ar/og/hp-i3.png");
   });
 
   it("puts the product title and the percentage in the product title tag", () => {

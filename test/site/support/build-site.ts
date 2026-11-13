@@ -29,7 +29,7 @@ function withBuildLock<T>(fn: () => T): T {
   }
 }
 
-export type BuiltSite = { dir: string; read(rel: string): string; exists(rel: string): boolean };
+export type BuiltSite = { dir: string; read(rel: string): string; bytes(rel: string): Buffer; exists(rel: string): boolean };
 
 /** Seeds a SQLite fixture and runs a real `astro build` against it, into a temp directory. */
 export async function buildSite(opts: {
@@ -51,12 +51,14 @@ export async function buildSite(opts: {
         SITE_URL: "https://imperdibles.com.ar",
         TELEGRAM_CHANNEL_URL: "https://t.me/x",
         SITE_OUT_DIR: dir,
+        SITE_OG_CACHE: join(root, "og-cache"),
       },
     }),
   );
   return {
     dir,
     read: (rel) => readFileSync(join(dir, rel), "utf8"),
+    bytes: (rel) => readFileSync(join(dir, rel)),
     exists: (rel) => existsSync(join(dir, rel)),
   };
 }

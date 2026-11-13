@@ -88,6 +88,11 @@ export function productSlug(modelId: string): string {
 /** Suffix used to keep two product slugs apart; stable because it only depends on the model id. */
 export const slugSuffix = hash6;
 
+/** Path of the share card PNG built for a product. */
+export function ogPath(slug: string): string {
+  return `/og/${slug}.png`;
+}
+
 export function productPath(slug: string): string {
   return `/producto/${slug}/`;
 }

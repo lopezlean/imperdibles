@@ -2,7 +2,7 @@ import { MONTH_NAMES, formatArs, formatDateLong, formatPct, pctTenths, truncate 
 import { catalogPhotoUrl } from "../../src/output/photo-url.js";
 import type { Deal } from "./deals.js";
 import type { Product } from "./products.js";
-import { productPath, weekdayName } from "./slugs.js";
+import { ogPath, productPath, weekdayName } from "./slugs.js";
 
 const SUFFIX = "en Mercado Libre | imperdibles";
 
@@ -38,6 +38,9 @@ export const ogImageOf = (items: Deal[]): string | null => {
 };
 
 export const absoluteUrl = (site: string, path: string): string => `${site.replace(/\/+$/, "")}${path}`;
+
+/** Absolute URL of a product's share card. */
+export const ogCardUrl = (site: string, slug: string): string => absoluteUrl(site, ogPath(slug));
 
 export const breadcrumbLd = (crumbs: { name: string; url: string }[]): object => ({
   "@context": "https://schema.org",
