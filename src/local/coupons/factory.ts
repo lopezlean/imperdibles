@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { MessageCreateParamsNonStreaming } from "@anthropic-ai/sdk/resources/messages";
+import { randomUUID } from "node:crypto";
 import { ship } from "../../deploy/ship.js";
 import { spawnExec } from "../../deploy/spawn-exec.js";
 import { createTelegramClient } from "../../output/telegram/client.js";
@@ -10,6 +11,7 @@ import { createCodexAuth } from "./codex-auth.js";
 import { DEFAULT_CODEX_MODEL, createCodexExtractor } from "./codex-extractor.js";
 import type { CouponExtractor } from "./extractor.js";
 import { createGramjsReader } from "./gramjs-reader.js";
+import type { CouponAiObservability } from "./posthog-ai.js";
 import { ingestCoupons } from "./ingest.js";
 import { runCouponRound } from "./round.js";
 import { syncSiteIfChanged } from "./site-sync.js";
@@ -19,17 +21,46 @@ export type CouponRoundDeps = {
   env: LocalEnv;
   now: () => Date;
   fetch: typeof fetch;
+  aiObservability?: CouponAiObservability | null;
   exec?: (cmd: string, args: string[]) => Promise<number>;
 };
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
 /** The SDK client behind the extractor's narrow interface; the cast is confined to the request params. */
-function anthropicAdapter(apiKey: string): AnthropicLike {
+function anthropicAdapter(apiKey: string, aiObservability: CouponAiObservability | null): AnthropicLike {
   const client = new Anthropic({ apiKey, timeout: 30_000, maxRetries: 1 });
   return {
     messages: {
-      create: (params) => client.messages.create(params as unknown as MessageCreateParamsNonStreaming),
+      create: async (params) => {
+        const traceId = randomUUID();
+        const startedAt = Date.now();
+        try {
+          const response = await client.messages.create(params as unknown as MessageCreateParamsNonStreaming);
+          aiObservability?.captureAnthropicGeneration({
+            traceId,
+            model: String(params.model),
+            input: params,
+            outputChoices: response.content,
+            inputTokens: response.usage.input_tokens,
+            outputTokens: response.usage.output_tokens,
+            latencyMs: Date.now() - startedAt,
+          });
+          return response;
+        } catch (error) {
+          aiObservability?.captureAnthropicGeneration({
+            traceId,
+            model: String(params.model),
+            input: params,
+            outputChoices: [],
+            inputTokens: null,
+            outputTokens: null,
+            latencyMs: Date.now() - startedAt,
+            error: error instanceof Error ? error.name : "unknown_error",
+          });
+          throw error;
+        }
+      },
     },
   };
 }
@@ -74,14 +105,19 @@ export function createCouponRound(deps: CouponRoundDeps, log: (line: string) => 
   };
 
   const reader = createGramjsReader({ apiId, apiHash: env.tgApiHash, session: env.tgSession, channelId: env.tgSourceChannelId });
+  const aiObservability = deps.aiObservability ?? null;
   // Codex tokens live in ~/.codex/auth.json and never enter the env, a log line or an error message.
   const extractor: CouponExtractor =
     kind === "anthropic"
-      ? createAnthropicExtractor({ client: anthropicAdapter(env.anthropicApiKey), model: env.anthropicModel || DEFAULT_MODEL })
+      ? createAnthropicExtractor({
+          client: anthropicAdapter(env.anthropicApiKey, aiObservability),
+          model: env.anthropicModel || DEFAULT_MODEL,
+        })
       : createCodexExtractor({
           auth: createCodexAuth({ filePath: env.codexAuthFile || undefined, fetch: deps.fetch }),
           model: env.couponCodexModel || DEFAULT_CODEX_MODEL,
           fetch: deps.fetch,
+          aiObservability,
         });
 
   return () =>

@@ -25,6 +25,7 @@ export const COUPON_PAGE_SCRIPT = `(function () {
   }
 
   function confirmCopy(button) {
+    window.posthog?.capture("coupon_code_copied");
     button.textContent = COPIED;
     setTimeout(function () {
       button.textContent = USE;
