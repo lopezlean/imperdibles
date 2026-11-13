@@ -9,7 +9,7 @@ export interface Props {
   deal: Deal;
 }
 
-const { deal } = Astro.props;
+const { deal, href } = Astro.props;
 const c = deal.candidate;
 const photo = catalogPhotoUrl(c.image_url);
 const rivals = [...c.others].sort((a, b) => a.price_ars - b.price_ars);
@@ -32,7 +32,7 @@ const scale = (price: number) => `${Math.round((price / max) * 1000) / 10}%`;
       )
     }
     <div class="info">
-      <h2 class="title">{c.title}</h2>
+      <h2 class="title">{href ? <a href={href}>{c.title}</a> : c.title}</h2>
       <span class="badge">{PCT_BADGE(formatPct(c))}</span>
       <p class="diff">{DIFFERENCE}: {formatArs(c.difference_ars)}</p>
     </div>

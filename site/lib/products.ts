@@ -63,3 +63,6 @@ export function buildProducts(d: SiteData): Product[] {
 export function categoryProducts(products: Product[], categoryId: string): Product[] {
   return products.filter((p) => p.category === categoryId).slice(0, CATEGORY_LIMIT);
 }
+
+/** model_id -> final product slug, so list pages link to the same URL the product page is built at. */
+export const productSlugs = (products: Product[]): Map<string, string> => new Map(products.map((p) => [p.model_id, p.slug]));
