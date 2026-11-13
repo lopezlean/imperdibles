@@ -1,0 +1,141 @@
+[
+  {
+    "productId": "2746",
+    "productName": "Aspiradora Electrolux ERB44 Robot 4/1 Wifi control remoto",
+    "brand": "Electrolux",
+    "productReference": "ED6610",
+    "linkText": "aspiradora-electrolux-erb44-robot-4-1-wifi-control-remoto-ed6610",
+    "link": "https://www.cetrogar.com.ar/aspiradora-electrolux-erb44-robot-4-1-wifi-control-remoto-ed6610/p",
+    "items": [
+      {
+        "itemId": "2743",
+        "name": "Aspiradora Electrolux ERB44 Robot 4/1 Wifi control remoto",
+        "ean": "7909569491430",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Cetrogar",
+            "commertialOffer": {
+              "Price": 321299,
+              "ListPrice": 414499,
+              "AvailableQuantity": 100
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "695",
+    "productName": "Aspiradora robot Laser M7 Midea",
+    "brand": "Midea",
+    "productReference": "ED4815",
+    "linkText": "aspiradora-robot-laser-m7-midea-ed4815",
+    "link": "https://www.cetrogar.com.ar/aspiradora-robot-laser-m7-midea-ed4815/p",
+    "items": [
+      {
+        "itemId": "693",
+        "name": "Aspiradora robot Laser M7 Midea",
+        "ean": "7797087508057",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Cetrogar",
+            "commertialOffer": {
+              "Price": 806399,
+              "ListPrice": 806399,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "6648",
+    "productName": "Aspiradora Robot Ezviz Smart Home RE5",
+    "brand": "Ezviz",
+    "productReference": "214437",
+    "linkText": "aspiradora-robot-ezviz-smart-home-re5",
+    "link": "https://www.cetrogar.com.ar/aspiradora-robot-ezviz-smart-home-re5/p",
+    "items": [
+      {
+        "itemId": "9118",
+        "name": "Aspiradora Robot Ezviz Smart Home RE5",
+        "ean": "214437",
+        "sellers": [
+          {
+            "sellerId": "aircomputers501",
+            "sellerName": "Tecnomundo",
+            "commertialOffer": {
+              "Price": 469099,
+              "ListPrice": 625465,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "Cetrogar",
+            "commertialOffer": {
+              "Price": 0,
+              "ListPrice": 0,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "2745",
+    "productName": "Aspiradora Electrolux ERB62 Robot 4/1 Wifi control remoto",
+    "brand": "Electrolux",
+    "productReference": "ED6611",
+    "linkText": "aspiradora-electrolux-erb62-robot-4-1-wifi-control-remoto-ed6611",
+    "link": "https://www.cetrogar.com.ar/aspiradora-electrolux-erb62-robot-4-1-wifi-control-remoto-ed6611/p",
+    "items": [
+      {
+        "itemId": "2742",
+        "name": "Aspiradora Electrolux ERB62 Robot 4/1 Wifi control remoto",
+        "ean": "7909569501665",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Cetrogar",
+            "commertialOffer": {
+              "Price": 425899,
+              "ListPrice": 549399,
+              "AvailableQuantity": 100
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "3071",
+    "productName": "Aspiradora Robot Electrolux ERB80 4 en 1 WiFi Autolimpieza",
+    "brand": "Electrolux",
+    "productReference": "900921796",
+    "linkText": "aspiradora-robot-electrolux-4-en-1-wi-fi-experience-mapeo-inteligente-y-base-autolimpieza-erb80-3071",
+    "link": "https://www.cetrogar.com.ar/aspiradora-robot-electrolux-4-en-1-wi-fi-experience-mapeo-inteligente-y-base-autolimpieza-erb80-3071/p",
+    "items": [
+      {
+        "itemId": "3068",
+        "name": "Aspiradora Robot Electrolux ERB80 4 en 1 WiFi Autolimpieza",
+        "ean": "7909569491539",
+        "sellers": [
+          {
+            "sellerId": "Frimetal",
+            "sellerName": "Electrolux",
+            "commertialOffer": {
+              "Price": 569000,
+              "ListPrice": 966666,
+              "AvailableQuantity": 100
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

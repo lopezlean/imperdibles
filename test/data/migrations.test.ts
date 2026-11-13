@@ -2,14 +2,32 @@ import { describe, expect, it } from "vitest";
 import { createSqliteClient } from "../support/sqlite-client.js";
 
 describe("0003_seed_vtex_stores", () => {
-  it("adds jumbo, easy and coppel next to ml and fravega, all enabled", async () => {
+  it("adds jumbo, easy and coppel next to ml and fravega, all enabled (plus the 0008 stores)", async () => {
     const rows = await createSqliteClient().all<{ id: string; name: string; enabled: number }>("SELECT id, name, enabled FROM stores ORDER BY id");
     expect(rows).toEqual([
+      { id: "carrefour", name: "Carrefour", enabled: 1 },
+      { id: "cetrogar", name: "Cetrogar", enabled: 1 },
       { id: "coppel", name: "Coppel", enabled: 1 },
       { id: "easy", name: "Easy", enabled: 1 },
       { id: "fravega", name: "Frávega", enabled: 1 },
       { id: "jumbo", name: "Jumbo", enabled: 1 },
       { id: "ml", name: "Mercado Libre", enabled: 1 },
+      { id: "naldo", name: "Naldo", enabled: 1 },
+      { id: "oncity", name: "On City", enabled: 1 },
+    ]);
+  });
+});
+
+describe("0008_seed_more_vtex_stores", () => {
+  it("adds cetrogar, naldo, carrefour and oncity, all enabled", async () => {
+    const rows = await createSqliteClient().all<{ id: string; name: string; enabled: number }>(
+      "SELECT id, name, enabled FROM stores WHERE id IN ('cetrogar', 'naldo', 'carrefour', 'oncity') ORDER BY id",
+    );
+    expect(rows).toEqual([
+      { id: "carrefour", name: "Carrefour", enabled: 1 },
+      { id: "cetrogar", name: "Cetrogar", enabled: 1 },
+      { id: "naldo", name: "Naldo", enabled: 1 },
+      { id: "oncity", name: "On City", enabled: 1 },
     ]);
   });
 });

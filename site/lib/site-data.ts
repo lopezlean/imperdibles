@@ -1,4 +1,5 @@
 import { loadCouponSiteData, loadCouponsLastmod, type CouponSiteData } from "./coupons.js";
+import { loadCategoryChannels } from "./category-channels.js";
 import { loadSiteData, type SiteData } from "./deals.js";
 import { openSiteDb } from "./db.js";
 
@@ -20,4 +21,11 @@ export function getCouponSiteData(): Promise<CouponSiteData> {
 /** Latest change to the shown coupons, or null; loaded once at config time for the sitemap. */
 export function getCouponsLastmod(): Promise<string | null> {
   return openSiteDb(process.env).then(loadCouponsLastmod);
+}
+
+/** Telegram channel handle per category, loaded once per build process. */
+let cachedChannels: Promise<Record<string, string>> | undefined;
+export function getCategoryChannels(): Promise<Record<string, string>> {
+  cachedChannels ??= openSiteDb(process.env).then(loadCategoryChannels);
+  return cachedChannels;
 }

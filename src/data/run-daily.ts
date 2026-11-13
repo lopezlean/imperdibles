@@ -47,6 +47,8 @@ export const USAGE = `Uso:
   imperdibles revalidar           Vuelve a leer los precios de los candidatos elegidos antes de publicar.
   imperdibles cupones-link <enlace>
                                   Guarda el enlace meli.la fijo que se usa en todos los cupones del canal.
+  imperdibles canal-categoria <categoria> <@canal>
+                                  Guarda el canal público de Telegram que recibe también los avisos de esa categoría.
   imperdibles --help             Muestra esta ayuda.
 `;
 
@@ -200,7 +202,7 @@ export async function runDaily(deps: RunDeps, opts: { force: boolean; category?:
   }
 }
 
-export type Command = { name: "correr"; force: boolean; category: string | null } | { name: "revalidar" } | { name: "cupones-link"; url: string } | { name: "help" };
+export type Command = { name: "correr"; force: boolean; category: string | null } | { name: "revalidar" } | { name: "cupones-link"; url: string } | { name: "canal-categoria"; category: string; handle: string } | { name: "help" };
 
 /** The one place that decides what argv means; `cli.ts` uses it to skip the environment for help and unknown input. */
 export function parseCommand(argv: string[]): Command | null {
@@ -222,6 +224,7 @@ export function parseCommand(argv: string[]): Command | null {
   }
   if (command === "revalidar" && flags.length === 0) return { name: "revalidar" };
   if (command === "cupones-link" && flags.length === 1) return { name: "cupones-link", url: flags[0]! };
+  if (command === "canal-categoria" && flags.length === 2) return { name: "canal-categoria", category: flags[0]!, handle: flags[1]! };
   return null;
 }
 

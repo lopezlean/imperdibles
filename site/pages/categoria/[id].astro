@@ -1,10 +1,12 @@
 ---
+import { FOLLOW_CATEGORY } from "../../../src/output/copy.js";
 import ProductCard from "../../components/ProductCard.astro";
 import Base from "../../layouts/Base.astro";
 import { readSiteEnv } from "../../lib/env.js";
 import { activeCategories, buildProducts, categoryProducts } from "../../lib/products.js";
 import { absoluteUrl, breadcrumbLd, categoryDescription, categoryItemListLd, categoryTitle, ogImageOf } from "../../lib/seo.js";
-import { getSiteData } from "../../lib/site-data.js";
+import { channelUrlOf } from "../../lib/category-channels.js";
+import { getCategoryChannels, getSiteData } from "../../lib/site-data.js";
 import { categoryPath } from "../../lib/slugs.js";
 
 export async function getStaticPaths() {
@@ -16,6 +18,7 @@ const { id } = Astro.props;
 const d = await getSiteData();
 const { siteUrl, channelUrl } = readSiteEnv(process.env);
 const category = d.categories.find((c) => c.id === id)!;
+const handle = (await getCategoryChannels())[id];
 const items = categoryProducts(buildProducts(d), id);
 const path = categoryPath(id);
 ---
@@ -39,6 +42,7 @@ const path = categoryPath(id);
     <div class="sel">
       <h1>Imperdibles de {category.name}</h1>
     </div>
+    {handle && <p><a class="cta" href={channelUrlOf(handle)} rel="noopener" target="_blank">{FOLLOW_CATEGORY(category.name)}</a></p>}
     <div class="list">
       {items.map((product) => <ProductCard product={product} />)}
     </div>

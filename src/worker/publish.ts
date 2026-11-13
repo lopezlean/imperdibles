@@ -3,6 +3,7 @@ import { buildChannelCaption, buildXPost } from "../output/publish/messages.js";
 import { isInvalidFileId, type TelegramClient } from "../output/telegram/client.js";
 import type { SqlClient } from "../shared/db/sql-client.js";
 import { artDate, artIso } from "../shared/time.js";
+import { getCategoryChannel } from "./category-channels.js";
 
 /**
  * Candidates published per call. Raise to 10 only after V-O2 records the D1 per-invocation limit and the
@@ -22,7 +23,7 @@ type Deps = {
   now: () => Date;
 };
 
-type Row = { id: string; model_id: string; payload: string; affiliate_link: string; telegram_file_id: string; validated_at: string | null };
+type Row = { category: string; id: string; model_id: string; payload: string; affiliate_link: string; telegram_file_id: string; validated_at: string | null };
 
 async function sendWithRetry(telegram: TelegramClient, chatId: string, fileId: string, caption: string) {
   let last: unknown;
@@ -45,7 +46,7 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
   const report: PublishReport = { published: [], failed: [], stale: [] };
 
   const rows = await db.all<Row>(
-    `SELECT c.* FROM candidates c JOIN runs r ON r.id = c.run_id
+    `SELECT c.*, r.category AS category FROM candidates c JOIN runs r ON r.id = c.run_id
      WHERE r.run_date = ? AND c.status = 'validated' AND c.affiliate_link IS NOT NULL AND c.telegram_file_id IS NOT NULL
        AND NOT EXISTS (SELECT 1 FROM posts s WHERE s.candidate_id = c.id AND s.channel = 'telegram_channel')
      ORDER BY c.id`,
@@ -118,6 +119,14 @@ export async function publishValidated(deps: Deps): Promise<PublishReport> {
         await alertOwner(`Se publicó ${candidate.title} en el canal, pero no se pudo registrar la salida. Queda publicado; no se reenvía.`);
       }
       report.published.push(row.id);
+
+      try {
+        // Best effort: the category channel is an extra audience, never a reason to fail the post.
+        const handle = await getCategoryChannel(db, row.category);
+        if (handle) await telegram.sendPhoto({ chat_id: handle, photo: { fileId: row.telegram_file_id }, caption: buildChannelCaption(candidate, row.affiliate_link) });
+      } catch {
+        // Ignored on purpose.
+      }
 
       try {
         const x = await telegram.sendPhoto({

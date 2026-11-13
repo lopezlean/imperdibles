@@ -7,6 +7,7 @@ import { DATA_ENV_KEYS, MissingEnvError, loadLocalEnv } from "../shared/env.js";
 import { createCouponRound } from "./coupons/factory.js";
 import { createCouponAiObservability } from "./coupons/posthog-ai.js";
 import { createCouponLogCapture } from "./coupons/posthog-logs.js";
+import { runCategoryChannelCommand } from "./category-channel.js";
 import { runCouponsLinkCommand } from "./coupons/link.js";
 import { createOutputHooks } from "./output-hooks.js";
 
@@ -20,7 +21,7 @@ async function run(): Promise<number> {
     (command === null ? process.stderr : process.stdout).write(USAGE);
     return command === null ? 2 : 0;
   }
-  const requiredKeys = command.name === "cupones-link" ? (["cfAccountId", "cfApiToken", "d1DatabaseId"] as const) : DATA_ENV_KEYS;
+  const requiredKeys = command.name === "cupones-link" || command.name === "canal-categoria" ? (["cfAccountId", "cfApiToken", "d1DatabaseId"] as const) : DATA_ENV_KEYS;
   let env;
   try {
     env = loadLocalEnv(process.env, requiredKeys);
@@ -34,6 +35,13 @@ async function run(): Promise<number> {
     return runCouponsLinkCommand(
       { db, stdout: (s) => void process.stdout.write(s), stderr: (s) => void process.stderr.write(s) },
       command.url,
+    );
+  }
+  if (command.name === "canal-categoria") {
+    return runCategoryChannelCommand(
+      { db, stdout: (s) => void process.stdout.write(s), stderr: (s) => void process.stderr.write(s) },
+      command.category,
+      command.handle,
     );
   }
   const now = () => new Date();

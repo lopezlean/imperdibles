@@ -63,7 +63,7 @@ Para construir, en este orden:
 
 ## Fase 2: ampliar (diciembre de 2026)
 
-- Sumar dos o tres tiendas más (Cetrogar, Musimundo, otras).
+- Sumar más tiendas (Cetrogar, Naldo, Carrefour y On City ya están; faltan Musimundo, otras).
 - Rotación de una categoría por día.
 - Medir clics y comisiones por canal y por categoría; ajustar el umbral con esos datos.
 - Canal de WhatsApp si Telegram muestra que el formato funciona.

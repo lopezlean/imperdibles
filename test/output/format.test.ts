@@ -85,6 +85,9 @@ describe("copy", () => {
     expect(storeName("jumbo")).toBe("Jumbo");
     expect(storeName("easy")).toBe("Easy");
     expect(storeName("coppel")).toBe("Coppel");
+    expect(storeName("naldo")).toBe("Naldo");
+    expect(storeName("carrefour")).toBe("Carrefour");
+    expect(storeName("oncity")).toBe("On City");
     expect(storeName("tienda-nueva")).toBe("tienda-nueva");
   });
   it("carries the spec-fixed legends", () => {

@@ -1,9 +1,13 @@
 import { createBudgetedHttp } from "../src/data/http.js";
 import { STORE_HEADERS, type ListingParse } from "../src/data/stores/common.js";
+import { carrefourSearchUrl, parseCarrefourListing } from "../src/data/stores/carrefour.js";
+import { cetrogarSearchUrl, parseCetrogarListing } from "../src/data/stores/cetrogar.js";
 import { coppelSearchUrl, parseCoppelListing } from "../src/data/stores/coppel.js";
 import { easySearchUrl, parseEasyListing } from "../src/data/stores/easy.js";
 import { fravegaSearchUrl, parseFravegaListing } from "../src/data/stores/fravega.js";
 import { jumboSearchUrl, parseJumboListing } from "../src/data/stores/jumbo.js";
+import { naldoSearchUrl, parseNaldoListing } from "../src/data/stores/naldo.js";
+import { oncitySearchUrl, parseOncityListing } from "../src/data/stores/oncity.js";
 import { VTEX_HEADERS } from "../src/data/stores/vtex.js";
 import { StoreFormatError } from "../src/data/types.js";
 import { artIso } from "../src/shared/time.js";
@@ -17,6 +21,10 @@ const STORES: Store[] = [
   { id: "jumbo", searchUrl: jumboSearchUrl, parse: parseJumboListing, headers: VTEX_HEADERS },
   { id: "easy", searchUrl: easySearchUrl, parse: parseEasyListing, headers: VTEX_HEADERS },
   { id: "coppel", searchUrl: coppelSearchUrl, parse: parseCoppelListing, headers: VTEX_HEADERS },
+  { id: "cetrogar", searchUrl: cetrogarSearchUrl, parse: parseCetrogarListing, headers: VTEX_HEADERS },
+  { id: "naldo", searchUrl: naldoSearchUrl, parse: parseNaldoListing, headers: VTEX_HEADERS },
+  { id: "carrefour", searchUrl: carrefourSearchUrl, parse: parseCarrefourListing, headers: VTEX_HEADERS },
+  { id: "oncity", searchUrl: oncitySearchUrl, parse: parseOncityListing, headers: VTEX_HEADERS },
 ];
 
 const http = createBudgetedHttp({ fetch, budget: STORES.length, sleep: (ms) => new Promise((r) => setTimeout(r, ms)) });

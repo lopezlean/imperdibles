@@ -257,7 +257,7 @@ describe("revalidateChosen", () => {
 
   it("does not validate on the remaining rival when another rival store fails to read", async () => {
     const db = await setupDb();
-    await db.run("INSERT INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
+    await db.run("INSERT OR IGNORE INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
     const c = candidate({ rivals: [["fravega", "/p/fake-aaa111-1", 150000], ["cetrogar", "/p/fake-aaa111-c", 160000]] });
     await seedCandidate(db, c);
     const before = await stateOf(db, c.candidate_id);
@@ -370,7 +370,7 @@ describe("revalidateChosen", () => {
 
   it("drops a missing rival, keeps the other and clears telegram_file_id because the shown list changed", async () => {
     const db = await setupDb();
-    await db.run("INSERT INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
+    await db.run("INSERT OR IGNORE INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
     const c = candidate({ rivals: [["fravega", "/p/fake-aaa111-1", 150000], ["cetrogar", "/p/fake-aaa111-c", 160000]] });
     await seedCandidate(db, c, { telegram_file_id: "AgACfile" });
     const f = fakes({
@@ -388,7 +388,7 @@ describe("revalidateChosen", () => {
 
   it("revalidates when the cheapest rival changes to another store, keeping rivals sorted", async () => {
     const db = await setupDb();
-    await db.run("INSERT INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
+    await db.run("INSERT OR IGNORE INTO stores (id, name) VALUES ('cetrogar', 'Cetrogar')");
     const c = candidate({ rivals: [["fravega", "/p/fake-aaa111-1", 150000], ["cetrogar", "/p/fake-aaa111-c", 160000]] });
     await seedCandidate(db, c);
     const f = fakes({
@@ -603,7 +603,7 @@ type Hooks = LocalOutputHooks & { reports: RevalidationReport[]; alerts: OwnerAl
 function setup(opts: { routes?: Routes; fetchImpl?: typeof fetch } = {}) {
   const sqlite = createSqliteClient();
   // These tests replay a Frávega-only world; the VTEX stores seeded by 0003 have their own tests.
-  sqlite.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel')");
+  sqlite.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel', 'cetrogar', 'naldo', 'carrefour', 'oncity')");
   sqlite.raw.prepare("INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, ?, ?, '2026-11-12T00:00:00.000Z')").run(SECRETS.token, SECRETS.refresh);
   const routes = opts.routes ?? composedRoutes();
   const fetched: string[] = [];

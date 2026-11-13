@@ -10,6 +10,9 @@ export const STORE_NAMES: Record<string, string> = {
   easy: "Easy",
   coppel: "Coppel",
   cetrogar: "Cetrogar",
+  naldo: "Naldo",
+  carrefour: "Carrefour",
+  oncity: "On City",
   musimundo: "Musimundo",
 };
 
@@ -158,3 +161,6 @@ export const PRICE_VERDICT_FIRST = "Es la primera vez que publicamos este modelo
 export const PRICE_VERDICT_LOWEST = "Hoy está en el precio más bajo que registramos.";
 export const PRICE_VERDICT_ABOVE = (pct: number): string =>
   `Hoy está ${pct}% por encima del precio más bajo que registramos.`;
+
+/** Category page: follow that category on Telegram. */
+export const FOLLOW_CATEGORY = (name: string): string => `Seguir ${name} en Telegram`;

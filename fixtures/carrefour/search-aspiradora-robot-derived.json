@@ -1,0 +1,168 @@
+[
+  {
+    "productId": "1767089",
+    "productName": "Aspiradora Robot Electrolux 4 en 1 Wi-Fi Experience Azul ERB44",
+    "brand": "Electrolux",
+    "productReference": "7909569491447",
+    "linkText": "aspiradora-robot-electrolux-4-en-1-wi-fi-experience-azul-erb44-1767089",
+    "link": "https://www.carrefour.com.ar/aspiradora-robot-electrolux-4-en-1-wi-fi-experience-azul-erb44-1767089/p",
+    "items": [
+      {
+        "itemId": "277882",
+        "name": "Aspiradora Robot Electrolux 4 en 1 Wi-Fi Experience Azul ERB44",
+        "ean": "7909569491447",
+        "sellers": [
+          {
+            "sellerId": "electroluxar",
+            "sellerName": "Electrolux",
+            "commertialOffer": {
+              "Price": 343999,
+              "ListPrice": 477777,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "CARREFOUR",
+            "commertialOffer": {
+              "Price": 359999,
+              "ListPrice": 399999,
+              "AvailableQuantity": 3
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1760622",
+    "productName": "Aspiradora Robot ATMA Trapeadora ATAR21C1PI Filtro Hepa",
+    "brand": "ATMA",
+    "productReference": "7427251182751",
+    "linkText": "aspiradora-robot-atma-trapeadora-atar21c1dh-filtro-hepa-1760622",
+    "link": "https://www.carrefour.com.ar/aspiradora-robot-atma-trapeadora-atar21c1dh-filtro-hepa-1760622/p",
+    "items": [
+      {
+        "itemId": "265175",
+        "name": "Aspiradora Robot ATMA Trapeadora ATAR21C1PI Filtro Hepa",
+        "ean": "7427251182751",
+        "sellers": [
+          {
+            "sellerId": "Producteca247683",
+            "sellerName": "Bidcom",
+            "commertialOffer": {
+              "Price": 279499,
+              "ListPrice": 363349,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "CARREFOUR",
+            "commertialOffer": {
+              "Price": 0,
+              "ListPrice": 0,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1777786",
+    "productName": "Aspiradora Robot Midea I5C Smart Giroscópica Trapeadora WiFi 4000Pa",
+    "brand": "Midea",
+    "productReference": "7797087508064",
+    "linkText": "aspiradora-robot-midea-i5c-smart-giroscopica-trapeadora-wifi-4000pa-1777786",
+    "link": "https://www.carrefour.com.ar/aspiradora-robot-midea-i5c-smart-giroscopica-trapeadora-wifi-4000pa-1777786/p",
+    "items": [
+      {
+        "itemId": "323232",
+        "name": "Aspiradora Robot Midea I5C Smart Giroscópica Trapeadora WiFi 4000Pa",
+        "ean": "7797087508064",
+        "sellers": [
+          {
+            "sellerId": "demelf394",
+            "sellerName": "Demelf",
+            "commertialOffer": {
+              "Price": 499999,
+              "ListPrice": 550000,
+              "AvailableQuantity": 10
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "CARREFOUR",
+            "commertialOffer": {
+              "Price": 449999,
+              "ListPrice": 499999,
+              "AvailableQuantity": 3
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1779831",
+    "productName": "Aspiradora Robot Aspira Y Trapea C/App Philco Phra26n",
+    "brand": "Philco",
+    "productReference": "94PHRA26N-NWSN",
+    "linkText": "bb2404c2-b5da-4755-9669-134ba6b62cd8",
+    "link": "https://www.carrefour.com.ar/bb2404c2-b5da-4755-9669-134ba6b62cd8/p",
+    "items": [
+      {
+        "itemId": "329452",
+        "name": "Aspiradora Robot Aspira Y Trapea C/App Philco Phra26n",
+        "ean": "",
+        "sellers": [
+          {
+            "sellerId": "Producteca241968",
+            "sellerName": "Newsan",
+            "commertialOffer": {
+              "Price": 192999,
+              "ListPrice": 247999,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "CARREFOUR",
+            "commertialOffer": {
+              "Price": 0,
+              "ListPrice": 0,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "1773571",
+    "productName": "Aspiradora Robot Dreame F10 Trapeadora WiFi Mapeo Inteligente 13000Pa White",
+    "brand": "Dreame",
+    "productReference": "6978515250392",
+    "linkText": "aspiradora-robot-dreame-f10-trapeadora-wifi-mapeo-inteligente-13000pa-white-1773571",
+    "link": "https://www.carrefour.com.ar/aspiradora-robot-dreame-f10-trapeadora-wifi-mapeo-inteligente-13000pa-white-1773571/p",
+    "items": [
+      {
+        "itemId": "299827",
+        "name": "Aspiradora Robot Dreame F10 Trapeadora WiFi Mapeo Inteligente 13000Pa White",
+        "ean": "6978515250392",
+        "sellers": [
+          {
+            "sellerId": "Producteca238451",
+            "sellerName": "Multipoint",
+            "commertialOffer": {
+              "Price": 429999,
+              "ListPrice": 429999,
+              "AvailableQuantity": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

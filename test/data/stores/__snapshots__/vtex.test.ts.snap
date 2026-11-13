@@ -1,5 +1,101 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`carrefour fixture > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "brand": "Electrolux",
+      "external_ref": "/aspiradora-robot-electrolux-4-en-1-wi-fi-experience-azul-erb44-1767089/p",
+      "gtin": "7909569491447",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 359999,
+      "seller": "CARREFOUR",
+      "store": "carrefour",
+      "title": "Aspiradora Robot Electrolux 4 en 1 Wi-Fi Experience Azul ERB44",
+      "url": "https://www.carrefour.com.ar/aspiradora-robot-electrolux-4-en-1-wi-fi-experience-azul-erb44-1767089/p",
+    },
+    {
+      "brand": "Midea",
+      "external_ref": "/aspiradora-robot-midea-i5c-smart-giroscopica-trapeadora-wifi-4000pa-1777786/p",
+      "gtin": "7797087508064",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 449999,
+      "seller": "CARREFOUR",
+      "store": "carrefour",
+      "title": "Aspiradora Robot Midea I5C Smart Giroscópica Trapeadora WiFi 4000Pa",
+      "url": "https://www.carrefour.com.ar/aspiradora-robot-midea-i5c-smart-giroscopica-trapeadora-wifi-4000pa-1777786/p",
+    },
+  ],
+  "rejected": [
+    {
+      "external_ref": "/aspiradora-robot-atma-trapeadora-atar21c1dh-filtro-hepa-1760622/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/bb2404c2-b5da-4755-9669-134ba6b62cd8/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-dreame-f10-trapeadora-wifi-mapeo-inteligente-13000pa-white-1773571/p",
+      "reason": "third_party_seller",
+    },
+  ],
+  "scanned": 5,
+}
+`;
+
+exports[`cetrogar fixture > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "brand": "Electrolux",
+      "external_ref": "/aspiradora-electrolux-erb44-robot-4-1-wifi-control-remoto-ed6610/p",
+      "gtin": "7909569491430",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 321299,
+      "seller": "Cetrogar",
+      "store": "cetrogar",
+      "title": "Aspiradora Electrolux ERB44 Robot 4/1 Wifi control remoto",
+      "url": "https://www.cetrogar.com.ar/aspiradora-electrolux-erb44-robot-4-1-wifi-control-remoto-ed6610/p",
+    },
+    {
+      "brand": "Electrolux",
+      "external_ref": "/aspiradora-electrolux-erb62-robot-4-1-wifi-control-remoto-ed6611/p",
+      "gtin": "7909569501665",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 425899,
+      "seller": "Cetrogar",
+      "store": "cetrogar",
+      "title": "Aspiradora Electrolux ERB62 Robot 4/1 Wifi control remoto",
+      "url": "https://www.cetrogar.com.ar/aspiradora-electrolux-erb62-robot-4-1-wifi-control-remoto-ed6611/p",
+    },
+  ],
+  "rejected": [
+    {
+      "external_ref": "/aspiradora-robot-laser-m7-midea-ed4815/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-ezviz-smart-home-re5/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-electrolux-4-en-1-wi-fi-experience-mapeo-inteligente-y-base-autolimpieza-erb80-3071/p",
+      "reason": "third_party_seller",
+    },
+  ],
+  "scanned": 5,
+}
+`;
+
 exports[`coppel fixture > matches the reviewed snapshot 1`] = `
 {
   "listings": [
@@ -124,5 +220,101 @@ exports[`jumbo fixture > matches the reviewed snapshot 1`] = `
     },
   ],
   "scanned": 4,
+}
+`;
+
+exports[`naldo fixture > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "brand": "PEUGEOT",
+      "external_ref": "/aspiradora-robot-pv-r592-laser-mod-niza-208496/p",
+      "gtin": "7799034149597",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 499999,
+      "seller": "Naldo Lombardi SA Arg",
+      "store": "naldo",
+      "title": "Aspiradora Robot Peugeot Pv R592 Laser Modelo Niza",
+      "url": "https://www.naldo.com.ar/aspiradora-robot-pv-r592-laser-mod-niza-208496/p",
+    },
+    {
+      "brand": "ELECTROLUX",
+      "external_ref": "/aspiradora-robot-erb62-4en1-wifi-mapeo-209174/p",
+      "gtin": "7909569501665",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 569999,
+      "seller": "Naldo Lombardi SA Arg",
+      "store": "naldo",
+      "title": "Aspiradora Robot Electrolux Erb62 4en1 Wifi Mapeo",
+      "url": "https://www.naldo.com.ar/aspiradora-robot-erb62-4en1-wifi-mapeo-209174/p",
+    },
+  ],
+  "rejected": [
+    {
+      "external_ref": "/aspiradora-robot-dreame-d20-ultra-50547/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-lavadora-roborock-q7-l5-blanca-51040/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-y-trapeadora-irobot-roomba-max-705-con-base-autowash-49893/p",
+      "reason": "third_party_seller",
+    },
+  ],
+  "scanned": 5,
+}
+`;
+
+exports[`oncity fixture > matches the reviewed snapshot 1`] = `
+{
+  "listings": [
+    {
+      "brand": "SMARTLIFE",
+      "external_ref": "/aspiradora-robot-smartlife-sl-rvc013-146594/p",
+      "gtin": "7798081286590",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 399999,
+      "seller": "On City",
+      "store": "oncity",
+      "title": "Aspiradora Robot Smartlife Sl-Rvc013",
+      "url": "https://www.oncity.com/aspiradora-robot-smartlife-sl-rvc013-146594/p",
+    },
+    {
+      "brand": "Atma",
+      "external_ref": "/aspiradora-robot-atma-atar21c1pi-146143/p",
+      "gtin": "7798192369120",
+      "item_condition": null,
+      "model": null,
+      "observed_at": "2026-11-12T06:00:00-03:00",
+      "price_ars": 279999,
+      "seller": "On City",
+      "store": "oncity",
+      "title": "Aspiradora Robot Atma Atar21c1pi",
+      "url": "https://www.oncity.com/aspiradora-robot-atma-atar21c1pi-146143/p",
+    },
+  ],
+  "rejected": [
+    {
+      "external_ref": "/aspiradora-robot-dreame-d20-ultra-160338/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-xiaomi-vacuum-h50-10000pa-blanco-blanco-152797/p",
+      "reason": "out_of_stock",
+    },
+    {
+      "external_ref": "/aspiradora-robot-ezviz-smart-home-re5-blanco-98326/p",
+      "reason": "third_party_seller",
+    },
+  ],
+  "scanned": 5,
 }
 `;

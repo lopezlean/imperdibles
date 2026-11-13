@@ -123,7 +123,7 @@ function setup(
 ): Setup {
   const sqlite = opts.sqlite ?? createSqliteClient();
   // These tests replay a Frávega-only world; the VTEX stores seeded by 0003 have their own tests.
-  if (!opts.sqlite) sqlite.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel')");
+  if (!opts.sqlite) sqlite.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel', 'cetrogar', 'naldo', 'carrefour', 'oncity')");
   if (opts.tokenExpiry !== null && !opts.sqlite) addToken(sqlite, opts.tokenExpiry ?? "2026-11-11T00:00:00.000Z");
   const routes = opts.routes ?? composedRoutes();
   const fetched: string[] = [];
@@ -175,7 +175,7 @@ describe("imperdibles correr", () => {
   });
 
   it("reads every enabled VTEX store for each model and records its prices", async () => {
-    const sqlite = createSqliteClient(); // jumbo, easy and coppel stay enabled as seeded by 0003
+    const sqlite = createSqliteClient(); // every VTEX store stays enabled as seeded by 0003 and 0008
     addToken(sqlite, "2026-11-11T00:00:00.000Z");
     const routes = composedRoutes();
     const jumbo = JSON.stringify([
@@ -185,8 +185,8 @@ describe("imperdibles correr", () => {
       },
     ]);
     const empty = () => new Response("[]", { status: 200 });
-    for (const host of ["jumbo", "easy", "coppel"]) {
-      for (const term of ["Philco%20PHRA26N", "Irobot%20M611330", "aspiradora%20robot"]) routes.set(`https://www.${host}.com.ar/api/catalog_system/pub/products/search?ft=${term}&_from=0&_to=49`, empty);
+    for (const host of ["www.jumbo.com.ar", "www.easy.com.ar", "www.coppel.com.ar", "www.cetrogar.com.ar", "www.naldo.com.ar", "www.carrefour.com.ar", "www.oncity.com"]) {
+      for (const term of ["Philco%20PHRA26N", "Irobot%20M611330", "aspiradora%20robot"]) routes.set(`https://${host}/api/catalog_system/pub/products/search?ft=${term}&_from=0&_to=49`, empty);
     }
     routes.set(jumboSearchUrl("Philco PHRA26N"), () => new Response(jumbo, { status: 206 }));
     const s = setup({ sqlite, routes });

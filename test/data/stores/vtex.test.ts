@@ -1,20 +1,29 @@
-// Fixtures under fixtures/{jumbo,easy,coppel}/search-aspiradora-robot-derived.json were recorded on 2026-11-11
-// by an agent: one GET each of `/api/catalog_system/pub/products/search?ft=aspiradora%20robot&_from=0&_to=49`.
+// Fixtures under fixtures/{jumbo,easy,coppel}/search-aspiradora-robot-derived.json were recorded on 2026-11-11, and
+// fixtures/{cetrogar,naldo,carrefour,oncity}/... on 2026-11-13, by an agent: one GET each of `/api/catalog_system/pub/products/search?ft=aspiradora%20robot&_from=0&_to=49`.
 // Each response was trimmed to the fields the adapter reads and to a few products, so every file is "derived".
 // Hand-edited items (everything else is verbatim from the response):
 //   jumbo:  item 4 (Giroscópica) had its seller changed to sellerId "2" / "Tercero Derivado S.A." with stock 5.
 //   easy:   item 3 (Klauben) had its stock set to 0; item 4 (Ultracomb) got the same third-party seller edit.
 //   coppel: items 2 (empty EAN) and 3 (junk EAN "128449") had their stock set to 3 (the real ones were all out of
 //           stock); item 5 (Daewoo) got the third-party seller edit.
+//   cetrogar, naldo, oncity: the last item had the store's own (sellerId "1") offer removed, leaving only the real
+//           third-party offer, to exercise the seller rule. Everything else is verbatim.
+//   carrefour: the real response had no in-stock own offer (all 50 own offers were at stock 0 / price 0), so items 1
+//           (Electrolux 4 en 1) and 3 (Midea I5C) had the own offer set to Price 359999 / 449999, ListPrice 399999 /
+//           499999 and stock 3; the last item (Dreame F10) had the own offer removed, leaving the third-party one.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import type { BudgetedHttp } from "../../../src/data/http.js";
 import { UpstreamError } from "../../../src/data/http.js";
+import { CARREFOUR, carrefourSearchUrl, createCarrefourAdapter, parseCarrefourListing } from "../../../src/data/stores/carrefour.js";
+import { CETROGAR, cetrogarSearchUrl, createCetrogarAdapter, parseCetrogarListing } from "../../../src/data/stores/cetrogar.js";
 import { COPPEL, createCoppelAdapter, coppelSearchUrl, parseCoppelListing } from "../../../src/data/stores/coppel.js";
 import { EASY, createEasyAdapter, easySearchUrl, parseEasyListing } from "../../../src/data/stores/easy.js";
 import { JUMBO, createJumboAdapter, jumboSearchUrl, parseJumboListing } from "../../../src/data/stores/jumbo.js";
+import { NALDO, createNaldoAdapter, naldoSearchUrl, parseNaldoListing } from "../../../src/data/stores/naldo.js";
+import { ONCITY, createOncityAdapter, oncitySearchUrl, parseOncityListing } from "../../../src/data/stores/oncity.js";
 import { VTEX_PAGES, VTEX_PAGE_SIZE, parseVtexListing, validEan, vtexSearchUrl } from "../../../src/data/stores/vtex.js";
 import { StoreFormatError } from "../../../src/data/types.js";
 
@@ -190,6 +199,10 @@ describe.each([
   { id: "jumbo", store: JUMBO, origin: "https://www.jumbo.com.ar", parseStore: parseJumboListing, url: jumboSearchUrl, name: "Jumbo Argentina IO", inStock: 1, rejected: ["out_of_stock", "out_of_stock", "third_party_seller"] },
   { id: "easy", store: EASY, origin: "https://www.easy.com.ar", parseStore: parseEasyListing, url: easySearchUrl, name: "EASY", inStock: 2, rejected: ["out_of_stock", "third_party_seller"] },
   { id: "coppel", store: COPPEL, origin: "https://www.coppel.com.ar", parseStore: parseCoppelListing, url: coppelSearchUrl, name: "Coppel S.A.", inStock: 2, rejected: ["out_of_stock", "out_of_stock", "third_party_seller"] },
+  { id: "cetrogar", store: CETROGAR, origin: "https://www.cetrogar.com.ar", parseStore: parseCetrogarListing, url: cetrogarSearchUrl, name: "Cetrogar", inStock: 2, rejected: ["out_of_stock", "out_of_stock", "third_party_seller"] },
+  { id: "naldo", store: NALDO, origin: "https://www.naldo.com.ar", parseStore: parseNaldoListing, url: naldoSearchUrl, name: "Naldo Lombardi SA Arg", inStock: 2, rejected: ["out_of_stock", "out_of_stock", "third_party_seller"] },
+  { id: "carrefour", store: CARREFOUR, origin: "https://www.carrefour.com.ar", parseStore: parseCarrefourListing, url: carrefourSearchUrl, name: "CARREFOUR", inStock: 2, rejected: ["out_of_stock", "out_of_stock", "third_party_seller"] },
+  { id: "oncity", store: ONCITY, origin: "https://www.oncity.com", parseStore: parseOncityListing, url: oncitySearchUrl, name: "On City", inStock: 2, rejected: ["out_of_stock", "out_of_stock", "third_party_seller"] },
 ])("$id fixture", ({ id, store, origin, parseStore, url, name, inStock, rejected }) => {
   const r = parseStore(read(id), T);
 
@@ -229,6 +242,18 @@ describe("fixture EANs", () => {
   });
   it("jumbo: a real 13-digit EAN is kept", () => {
     expect(parseJumboListing(read("jumbo"), T).listings[0]!.gtin).toBe("7798192369120");
+  });
+});
+
+describe("adapters of the newer VTEX stores", () => {
+  it.each([
+    ["cetrogar", createCetrogarAdapter],
+    ["naldo", createNaldoAdapter],
+    ["carrefour", createCarrefourAdapter],
+    ["oncity", createOncityAdapter],
+  ] as const)("%s adapter carries its id", (id, create) => {
+    const http = { get: async () => new Response("[]"), used: () => 0 } as unknown as BudgetedHttp;
+    expect(create({ http, now: () => new Date("2026-11-12T09:00:00Z") }).id).toBe(id);
   });
 });
 

@@ -1,0 +1,150 @@
+[
+  {
+    "productId": "2662",
+    "productName": "Aspiradora Robot Smartlife Sl-Rvc013",
+    "brand": "SMARTLIFE",
+    "productReference": "146594",
+    "linkText": "aspiradora-robot-smartlife-sl-rvc013-146594",
+    "link": "https://www.oncity.com/aspiradora-robot-smartlife-sl-rvc013-146594/p",
+    "items": [
+      {
+        "itemId": "2662",
+        "name": "Aspiradora Robot Smartlife Sl-Rvc013",
+        "ean": "7798081286590",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "On City",
+            "commertialOffer": {
+              "Price": 399999,
+              "ListPrice": 456499,
+              "AvailableQuantity": 10
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "160338",
+    "productName": "Aspiradora robot Dreame D20 Ultra",
+    "brand": "Dreame",
+    "productReference": "6977328067593",
+    "linkText": "aspiradora-robot-dreame-d20-ultra-160338",
+    "link": "https://www.oncity.com/aspiradora-robot-dreame-d20-ultra-160338/p",
+    "items": [
+      {
+        "itemId": "160579",
+        "name": "Aspiradora robot Dreame D20 Ultra",
+        "ean": "6977328067593",
+        "sellers": [
+          {
+            "sellerId": "Producteca251708",
+            "sellerName": "Sportechstore",
+            "commertialOffer": {
+              "Price": 1569999,
+              "ListPrice": 1569999,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "On City",
+            "commertialOffer": {
+              "Price": 0,
+              "ListPrice": 0,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "12336",
+    "productName": "Aspiradora Robot Atma Atar21c1pi",
+    "brand": "Atma",
+    "productReference": "146143",
+    "linkText": "aspiradora-robot-atma-atar21c1pi-146143",
+    "link": "https://www.oncity.com/aspiradora-robot-atma-atar21c1pi-146143/p",
+    "items": [
+      {
+        "itemId": "12336",
+        "name": "Aspiradora Robot Atma Atar21c1pi",
+        "ean": "7798192369120",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "On City",
+            "commertialOffer": {
+              "Price": 279999,
+              "ListPrice": 439999,
+              "AvailableQuantity": 10
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "152797",
+    "productName": "Aspiradora Robot Xiaomi Vacuum H50 10000pa Blanco",
+    "brand": "Xiaomi",
+    "productReference": "BHR08GUEU-electroworld115",
+    "linkText": "aspiradora-robot-xiaomi-vacuum-h50-10000pa-blanco-blanco-152797",
+    "link": "https://www.oncity.com/aspiradora-robot-xiaomi-vacuum-h50-10000pa-blanco-blanco-152797/p",
+    "items": [
+      {
+        "itemId": "152921",
+        "name": "Aspiradora Robot Xiaomi Vacuum H50 10000pa Blanco Blanco",
+        "ean": "",
+        "sellers": [
+          {
+            "sellerId": "electroworld115",
+            "sellerName": "Electro World",
+            "commertialOffer": {
+              "Price": 889999,
+              "ListPrice": 1112999,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "On City",
+            "commertialOffer": {
+              "Price": 0,
+              "ListPrice": 0,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "98326",
+    "productName": "Aspiradora Robot Ezviz Smart Home RE5 Blanco",
+    "brand": "Ezviz",
+    "productReference": "6941545637600",
+    "linkText": "aspiradora-robot-ezviz-smart-home-re5-blanco-98326",
+    "link": "https://www.oncity.com/aspiradora-robot-ezviz-smart-home-re5-blanco-98326/p",
+    "items": [
+      {
+        "itemId": "98323",
+        "name": "Aspiradora Robot Ezviz Smart Home RE5 Blanco",
+        "ean": "6941545637600",
+        "sellers": [
+          {
+            "sellerId": "advantec172",
+            "sellerName": "TECNOMUNDO",
+            "commertialOffer": {
+              "Price": 544099,
+              "ListPrice": 725465,
+              "AvailableQuantity": 100
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

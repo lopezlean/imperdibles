@@ -102,3 +102,40 @@
 - Terms of service: PENDING OWNER.
 - Note: the API is not explicitly sanctioned by the store, so keep the request rate low.
 - Owner action for V10 to V12: apply `migrations/0003_seed_vtex_stores.sql` to the remote D1 (it enables the three stores; `UPDATE stores SET enabled = 0 WHERE id = '<store>'` turns one off).
+
+## V13 Cetrogar (VTEX catalog API)
+
+- Date: 2026-11-13
+- Checked: one live GET of `https://www.cetrogar.com.ar/api/catalog_system/pub/products/search?ft=aspiradora%20robot&_from=0&_to=49` (no session, `-A "Mozilla/5.0"`, `Accept: application/json`) (HTTP 206, 50 products on the first page; many are in stock because Cetrogar sells vacuums of every type), trimmed to `fixtures/cetrogar/search-aspiradora-robot-derived.json`.
+- Result: same VTEX shape as V10; own offers are `sellerId` "1" ("Cetrogar"). Fixture keeps only the fields the adapter reads, so no cookies or headers are stored.
+- Derived fixture edits: One product's own offer was removed, leaving only the real third-party offer, to exercise the seller rule.
+- Terms of service: PENDING OWNER.
+- Note: the API is not explicitly sanctioned by the store, so keep the request rate low.
+
+## V14 Naldo (VTEX catalog API)
+
+- Date: 2026-11-13
+- Checked: one live GET of `https://www.naldo.com.ar/api/catalog_system/pub/products/search?ft=aspiradora%20robot&_from=0&_to=49` (no session, `-A "Mozilla/5.0"`, `Accept: application/json`) (HTTP 200, 14 products), trimmed to `fixtures/naldo/search-aspiradora-robot-derived.json`.
+- Result: same VTEX shape as V10; own offers are `sellerId` "1" ("Naldo Lombardi SA Arg"). Fixture keeps only the fields the adapter reads, so no cookies or headers are stored.
+- Derived fixture edits: One product's own offer was removed, leaving only the real third-party offer, to exercise the seller rule.
+- Terms of service: PENDING OWNER.
+- Note: the API is not explicitly sanctioned by the store, so keep the request rate low.
+
+## V15 Carrefour (VTEX catalog API)
+
+- Date: 2026-11-13
+- Checked: one live GET of `https://www.carrefour.com.ar/api/catalog_system/pub/products/search?ft=aspiradora%20robot&_from=0&_to=49` (no session, `-A "Mozilla/5.0"`, `Accept: application/json`) (HTTP 206, 50 products), trimmed to `fixtures/carrefour/search-aspiradora-robot-derived.json`.
+- Result: same VTEX shape as V10; own offers are `sellerId` "1" ("CARREFOUR"). Fixture keeps only the fields the adapter reads, so no cookies or headers are stored.
+- Derived fixture edits: None of the 50 products had an in-stock own offer that day (own offers at stock 0 and price 0; the stock was held by marketplace sellers). Two products got an own offer with price and stock 3 (Price 359999 and 449999) and one product's own offer was removed, leaving the third-party one.
+- Terms of service: PENDING OWNER.
+- Note: the API is not explicitly sanctioned by the store, so keep the request rate low.
+
+## V16 On City (VTEX catalog API)
+
+- Date: 2026-11-13
+- Checked: one live GET of `https://www.oncity.com/api/catalog_system/pub/products/search?ft=aspiradora%20robot&_from=0&_to=49` (no session, `-A "Mozilla/5.0"`, `Accept: application/json`) (HTTP 206, 50 products), trimmed to `fixtures/oncity/search-aspiradora-robot-derived.json`.
+- Result: same VTEX shape as V10; own offers are `sellerId` "1" ("On City"). Fixture keeps only the fields the adapter reads, so no cookies or headers are stored.
+- Derived fixture edits: One product's own offer was removed, leaving only the real third-party offer, to exercise the seller rule.
+- Terms of service: PENDING OWNER.
+- Note: the API is not explicitly sanctioned by the store, so keep the request rate low.
+- Owner action for V13 to V16: apply `migrations/0008_seed_more_vtex_stores.sql` to the remote D1 (`pnpm db:migrate:remote`; it enables the four stores; `UPDATE stores SET enabled = 0 WHERE id = '<store>'` turns one off).

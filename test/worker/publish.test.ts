@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { categoryChannelKey } from "../../src/worker/category-channels.js";
 import { buildXPost } from "../../src/output/publish/messages.js";
 import { TelegramError, type TelegramClient } from "../../src/output/telegram/client.js";
 import { PUBLISH_CAP_PER_CALL, publishValidated } from "../../src/worker/publish.js";
@@ -120,6 +121,43 @@ const posts = (channel: string) =>
 beforeEach(async () => {
   db = createSqliteClient();
   await addRun("r1", ["m1", "m2", "m3"]);
+});
+
+const CATEGORY_CHAT = "@imperdibles_robots";
+
+describe("category channels", () => {
+  it("also posts the same card to the category channel when one is configured", async () => {
+    await db.run("INSERT INTO config (name, value) VALUES (?, ?)", [categoryChannelKey("aspiradoras-robot"), CATEGORY_CHAT]);
+    await addCandidate("c1", "r1", "m1");
+    const tg = fakeTelegram();
+    await run(tg.client);
+    const sent = tg.calls.filter((c) => c.kind === "photo" && c.chat === CATEGORY_CHAT);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.fileId).toBe("file-c1");
+    expect(sent[0]!.caption).toContain(LINK);
+  });
+
+  it("posts nothing extra when the category has no channel", async () => {
+    await addCandidate("c1", "r1", "m1");
+    const tg = fakeTelegram();
+    await run(tg.client);
+    expect(tg.calls.filter((c) => c.kind === "photo").map((c) => c.chat)).toEqual([CHANNEL, OWNER]);
+  });
+
+  it("keeps the main post and the report when the category channel fails", async () => {
+    await db.run("INSERT INTO config (name, value) VALUES (?, ?)", [categoryChannelKey("aspiradoras-robot"), CATEGORY_CHAT]);
+    await addCandidate("c1", "r1", "m1");
+    const tg = fakeTelegram();
+    const failing: TelegramClient = {
+      ...tg.client,
+      sendPhoto: async (p) => {
+        if (p.chat_id === CATEGORY_CHAT) throw new TelegramError(400, "chat not found");
+        return tg.client.sendPhoto(p);
+      },
+    };
+    expect(await run(failing)).toEqual({ published: ["c1"], failed: [], stale: [] });
+    expect((await status("c1")).status).toBe("published");
+  });
 });
 
 describe("publishValidated", () => {

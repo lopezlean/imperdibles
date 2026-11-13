@@ -8,10 +8,14 @@ import { createTokenProvider, MlAuthError } from "../src/data/ml/auth.js";
 import { createMlCatalog, type MlProduct } from "../src/data/ml/catalog.js";
 import { matchListings, pickCatalogProduct } from "../src/data/matching/match.js";
 import { extractModelCodes, extractVariants, normalizeBrand, writtenModelCode } from "../src/data/matching/normalize.js";
+import { createCarrefourAdapter } from "../src/data/stores/carrefour.js";
+import { createCetrogarAdapter } from "../src/data/stores/cetrogar.js";
 import { createCoppelAdapter } from "../src/data/stores/coppel.js";
 import { createEasyAdapter } from "../src/data/stores/easy.js";
 import { createFravegaAdapter } from "../src/data/stores/fravega.js";
 import { createJumboAdapter } from "../src/data/stores/jumbo.js";
+import { createNaldoAdapter } from "../src/data/stores/naldo.js";
+import { createOncityAdapter } from "../src/data/stores/oncity.js";
 import type { StoreAdapter } from "../src/data/types.js";
 import { storeName } from "../src/output/copy.js";
 import { createD1HttpClient } from "../src/shared/db/d1-http-client.js";
@@ -28,6 +32,10 @@ const ADAPTERS: Record<string, (deps: AdapterDeps) => StoreAdapter> = {
   jumbo: createJumboAdapter,
   easy: createEasyAdapter,
   coppel: createCoppelAdapter,
+  cetrogar: createCetrogarAdapter,
+  naldo: createNaldoAdapter,
+  carrefour: createCarrefourAdapter,
+  oncity: createOncityAdapter,
 };
 
 function describe(p: MlProduct, store: Parameters<typeof matchListings>[1]): string {

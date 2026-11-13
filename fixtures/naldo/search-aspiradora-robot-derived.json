@@ -1,0 +1,150 @@
+[
+  {
+    "productId": "44108",
+    "productName": "Aspiradora Robot Peugeot Pv R592 Laser Modelo Niza",
+    "brand": "PEUGEOT",
+    "productReference": "208496",
+    "linkText": "aspiradora-robot-pv-r592-laser-mod-niza-208496",
+    "link": "https://www.naldo.com.ar/aspiradora-robot-pv-r592-laser-mod-niza-208496/p",
+    "items": [
+      {
+        "itemId": "44362",
+        "name": "Aspiradora Robot Peugeot Pv R592 Laser Modelo Niza",
+        "ean": "7799034149597",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Naldo Lombardi SA Arg",
+            "commertialOffer": {
+              "Price": 499999,
+              "ListPrice": 824999,
+              "AvailableQuantity": 10
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "50547",
+    "productName": "Aspiradora robot Dreame D20 Ultra",
+    "brand": "Dreame",
+    "productReference": "6977328067593",
+    "linkText": "aspiradora-robot-dreame-d20-ultra-50547",
+    "link": "https://www.naldo.com.ar/aspiradora-robot-dreame-d20-ultra-50547/p",
+    "items": [
+      {
+        "itemId": "51566",
+        "name": "Aspiradora robot Dreame D20 Ultra",
+        "ean": "6977328067593",
+        "sellers": [
+          {
+            "sellerId": "garmin456",
+            "sellerName": "Garmin",
+            "commertialOffer": {
+              "Price": 1569999,
+              "ListPrice": 1569999,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "Naldo Lombardi SA Arg",
+            "commertialOffer": {
+              "Price": 0,
+              "ListPrice": 0,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "48803",
+    "productName": "Aspiradora Robot Electrolux Erb62 4en1 Wifi Mapeo",
+    "brand": "ELECTROLUX",
+    "productReference": "209174",
+    "linkText": "aspiradora-robot-erb62-4en1-wifi-mapeo-209174",
+    "link": "https://www.naldo.com.ar/aspiradora-robot-erb62-4en1-wifi-mapeo-209174/p",
+    "items": [
+      {
+        "itemId": "49411",
+        "name": "Aspiradora Robot Electrolux Erb62 4en1 Wifi Mapeo",
+        "ean": "7909569501665",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Naldo Lombardi SA Arg",
+            "commertialOffer": {
+              "Price": 569999,
+              "ListPrice": 569999,
+              "AvailableQuantity": 100
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "51040",
+    "productName": "Aspiradora Robot Lavadora roborock Q7 L5 Blanca",
+    "brand": "Roborock",
+    "productReference": "GLIC-B0F3337BV7",
+    "linkText": "aspiradora-robot-lavadora-roborock-q7-l5-blanca-51040",
+    "link": "https://www.naldo.com.ar/aspiradora-robot-lavadora-roborock-q7-l5-blanca-51040/p",
+    "items": [
+      {
+        "itemId": "52151",
+        "name": "Aspiradora Robot Lavadora roborock Q7 L5 Blanca",
+        "ean": "",
+        "sellers": [
+          {
+            "sellerId": "glicuy",
+            "sellerName": "Glic",
+            "commertialOffer": {
+              "Price": 520447.5,
+              "ListPrice": 693930,
+              "AvailableQuantity": 100
+            }
+          },
+          {
+            "sellerId": "1",
+            "sellerName": "Naldo Lombardi SA Arg",
+            "commertialOffer": {
+              "Price": 0,
+              "ListPrice": 0,
+              "AvailableQuantity": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "productId": "49893",
+    "productName": "Aspiradora y trapeadora Irobot Roomba Max 705 con Base AutoWash",
+    "brand": "IROBOT",
+    "productReference": "885155045775",
+    "linkText": "aspiradora-y-trapeadora-irobot-roomba-max-705-con-base-autowash-49893",
+    "link": "https://www.naldo.com.ar/aspiradora-y-trapeadora-irobot-roomba-max-705-con-base-autowash-49893/p",
+    "items": [
+      {
+        "itemId": "50696",
+        "name": "Aspiradora y trapeadora Irobot Roomba Max 705 con Base AutoWash",
+        "ean": "885155045775",
+        "sellers": [
+          {
+            "sellerId": "garmin456",
+            "sellerName": "Garmin",
+            "commertialOffer": {
+              "Price": 3236999,
+              "ListPrice": 3236999,
+              "AvailableQuantity": 1
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

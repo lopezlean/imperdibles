@@ -91,7 +91,7 @@ const routedReplay =
 function createWorld(replay: typeof fetch, startIso: string) {
   const db = createSqliteClient();
   // These tests replay a Frávega-only world; the VTEX stores seeded by 0003 have their own tests.
-  db.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel')");
+  db.raw.exec("UPDATE stores SET enabled = 0 WHERE id IN ('jumbo', 'easy', 'coppel', 'cetrogar', 'naldo', 'carrefour', 'oncity')");
   db.raw
     .prepare("INSERT INTO ml_tokens (id, access_token, refresh_token, expires_at) VALUES (1, 'fake-access', 'fake-refresh', '2099-01-01T00:00:00.000Z')")
     .run();
