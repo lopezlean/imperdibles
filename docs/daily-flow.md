@@ -53,6 +53,19 @@ bin/imperdibles cupones-link https://meli.la/...
 
 To drop a coupon, reply `rechazar` to its notice in the owner chat.
 
+## Category channels
+
+Each category can have its own public Telegram channel that receives the same card as the main channel. To enable one:
+
+1. Create a public channel (for example `@imperdibles_notebooks`) and add the bot as an admin that can post.
+2. Register it:
+
+```bash
+bin/imperdibles canal-categoria notebooks @imperdibles_notebooks
+```
+
+New publications of that category are then also sent there (best effort: a failure never affects the main post), and the category page on the site shows a "Seguir ... en Telegram" button after the next `ship`. Categories without a channel behave as before.
+
 ## Adding a category
 
 Categories live in the D1 `config` table (key `categories`), not in code. Add a migration in `migrations/` that appends to the JSON array (see `0007_even_more_categories.sql`), then:
