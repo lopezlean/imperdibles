@@ -35,6 +35,14 @@ describe("product pages build", () => {
     expect(html).toMatch(/property="og:image"[^>]*content="https:\/\/imperdibles\.com\.ar\/og\/hp-i3\.png"/);
   });
 
+  it("renders a share control that shares the product page, never the affiliate link", () => {
+    const html = site.read("producto/hp-i3/index.html");
+    expect(html).toContain("Compartir");
+    const wa = html.match(/href="(https:\/\/wa\.me\/[^"]*)"/)?.[1] ?? "";
+    expect(decodeURIComponent(wa.replace(/&amp;/g, "&"))).toContain("https://imperdibles.com.ar/producto/hp-i3/");
+    expect(wa).not.toContain("meli.la");
+  });
+
   it("builds one page per model", () => {
     expect(site.exists("producto/hp-i3/index.html")).toBe(true);
     expect(site.exists("producto/old-1/index.html")).toBe(true);

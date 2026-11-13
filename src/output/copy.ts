@@ -1,3 +1,5 @@
+import { formatArs } from "./format.js";
+
 /** Spec-fixed copy and constants. Plain values only: Worker-safe, never read from a file at runtime. */
 
 /** Duplicates `stores.name` on purpose: the Worker must not read it per request. */
@@ -110,6 +112,12 @@ export const PCT_BADGE = (pct: string): string => `${pct}% menos`;
 /** Product and category pages. */
 export const STALE_NOTICE = (fecha: string): string => `Este precio es del ${fecha}; puede haber cambiado.`;
 export const PRICE_AS_OF = (fecha: string): string => `precio al ${fecha}`;
+export const SHARE_LABEL = "Compartir";
+export const WHATSAPP_LABEL = "WhatsApp";
+export const COPY_LINK_LABEL = "Copiar link";
+export const LINK_COPIED = "Link copiado";
+export const shareText = (title: string, priceArs: number, pct: string): string =>
+  `${title}: ${formatArs(priceArs)} en Mercado Libre, ${pct}% menos que en otras tiendas.`;
 export const REVIEWS_LINK = "Ver opiniones en Mercado Libre";
 export const HISTORY_HEADING = "Cuándo fue imperdible";
 export const RELATED_HEADING = "Otros imperdibles de la categoría";

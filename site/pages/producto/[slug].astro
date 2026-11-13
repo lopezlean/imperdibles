@@ -1,7 +1,8 @@
 ---
-import { HISTORY_HEADING, RELATED_HEADING, REVIEWS_LINK, STALE_NOTICE } from "../../../src/output/copy.js";
+import { HISTORY_HEADING, RELATED_HEADING, REVIEWS_LINK, STALE_NOTICE, shareText } from "../../../src/output/copy.js";
 import { formatArs, formatDateLong, formatPct } from "../../../src/output/format.js";
 import DealCard from "../../components/DealCard.astro";
+import ShareButtons from "../../components/ShareButtons.astro";
 import Base from "../../layouts/Base.astro";
 import { activeCategories, buildProducts, isStale } from "../../lib/products.js";
 import { readSiteEnv } from "../../lib/env.js";
@@ -26,6 +27,8 @@ const c = product.latest.candidate;
 const category = activeCategories(d).find((x) => x.id === product.category);
 const related = products.filter((p) => p.category === product.category && p.slug !== product.slug).slice(0, 6);
 const path = productPath(product.slug);
+const pageUrl = absoluteUrl(siteUrl, path);
+const text = shareText(c.title, c.ml.price_ars, formatPct(c));
 ---
 
 <Base
@@ -56,6 +59,7 @@ const path = productPath(product.slug);
     <div class="list">
       <DealCard deal={product.latest} />
     </div>
+    <ShareButtons title={c.title} text={text} url={pageUrl} />
     <p class="reviews">
       <a href={product.latest.affiliate_link} rel="sponsored noopener" target="_blank">{REVIEWS_LINK}</a>
     </p>
