@@ -1,9 +1,8 @@
 import "dotenv/config";
 import { Writable } from "node:stream";
 import { createInterface } from "node:readline/promises";
-import { TelegramClient } from "telegram";
-import { StringSession } from "telegram/sessions/index.js";
 import { safeErrorName } from "../src/local/coupons/gramjs-reader.js";
+import { createTelegramWebClient } from "../src/local/coupons/telegram-web-client.js";
 
 /**
  * One-time owner step. Logs in with the owner's Telegram account and prints the session string
@@ -37,7 +36,7 @@ async function main(): Promise<void> {
       process.stdout.write("\n");
     }
   };
-  const client = new TelegramClient(new StringSession(""), apiId, apiHash, { connectionRetries: 3 });
+  const client = createTelegramWebClient("", apiId, apiHash);
   try {
     await client.start({
       phoneNumber: () => rl.question("Phone number (with country code): "),

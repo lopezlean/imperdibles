@@ -1,6 +1,5 @@
-import { TelegramClient } from "telegram";
-import { StringSession } from "telegram/sessions/index.js";
 import type { ChannelPost, ChannelReader } from "./reader.js";
+import { createTelegramWebClient } from "./telegram-web-client.js";
 
 export type RawMessage = { id: number; date: number; message?: string | null };
 
@@ -68,8 +67,6 @@ export function safeErrorName(e: unknown): string {
 }
 
 function defaultClient(cfg: GramjsReaderConfig): GramjsClientLike {
-  const client = new TelegramClient(new StringSession(cfg.session), cfg.apiId, cfg.apiHash, {
-    connectionRetries: 3,
-  });
+  const client = createTelegramWebClient(cfg.session, cfg.apiId, cfg.apiHash);
   return client as unknown as GramjsClientLike;
 }
