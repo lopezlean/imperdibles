@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadSiteData } from "../../site/lib/deals.js";
-import { buildProducts, categoryProducts, CATEGORY_LIMIT, isStale } from "../../site/lib/products.js";
+import { buildProducts, categoryProducts, CATEGORY_LIMIT, freshByCategory, isStale } from "../../site/lib/products.js";
 import { createSqliteClient } from "../support/sqlite-client.js";
 import { seedDeal } from "./support/seed-deals.js";
 
@@ -90,5 +90,17 @@ describe("isStale", () => {
     expect(isStale("2026-11-05", "2026-11-13")).toBe(true);
     expect(isStale("2026-11-06", "2026-11-13")).toBe(false);
     expect(isStale("2026-11-13", "2026-11-13")).toBe(false);
+  });
+});
+
+describe("freshByCategory", () => {
+  it("groups non-stale products by active category in category order and drops stale and empty groups", async () => {
+    await seedDeal(db, { id: "a", run_date: "2026-11-12", model_id: "m1", category: "monitores" });
+    await seedDeal(db, { id: "b", run_date: "2026-11-11", model_id: "m2", category: "smart-tv" });
+    await seedDeal(db, { id: "c", run_date: "2026-10-01", model_id: "m3", category: "smart-tv" });
+    const d = await loadSiteData(db);
+    const groups = freshByCategory(d, "2026-11-13");
+    expect(groups.map((g) => g.category.id)).toEqual(d.categories.map((c) => c.id).filter((id) => ["monitores", "smart-tv"].includes(id)));
+    expect(groups.flatMap((g) => g.products.map((p) => p.model_id)).sort()).toEqual(["m1", "m2"]);
   });
 });
