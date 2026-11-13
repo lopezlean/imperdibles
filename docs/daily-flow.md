@@ -67,5 +67,6 @@ Keep existing entries first so the daily rotation order does not shift.
 
 - `/producto/<slug>/`: one page per model ever published, with its latest price (dated), the Mercado Libre button and its history. Prices older than 7 days carry a staleness notice.
 - `/categoria/<id>/`: the 48 newest products of each category.
+- `/og/<slug>.png`: the share card (same design as the Telegram card) used as `og:image` of each product page. Cards are cached in `.cache/og/` by candidate and price; the folder is safe to delete.
 
 All of them are in the sitemap with `lastmod`. Google no longer supports sitemap pings, so there is no notify step.
