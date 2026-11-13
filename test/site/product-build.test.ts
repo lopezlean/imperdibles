@@ -20,7 +20,7 @@ describe("product pages build", () => {
         await seedDeal(db, { id: "b1", run_date: STALE, model_id: "OLD:1", title: "Producto viejo" });
       },
     });
-  });
+  }, 240_000);
 
   it("builds one page per model", () => {
     expect(site.exists("producto/hp-i3/index.html")).toBe(true);

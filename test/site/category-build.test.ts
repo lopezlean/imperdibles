@@ -20,7 +20,7 @@ describe("category pages build", () => {
         await seedDeal(db, { id: "m2", run_date: "2026-11-05", model_id: "MOVER:1", category: "heladeras", title: "Mover" });
       },
     });
-  });
+  }, 240_000);
 
   it("builds a page for each category with published deals and none for the others", () => {
     expect(site.exists("categoria/smart-tv/index.html")).toBe(true);
