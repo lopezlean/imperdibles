@@ -27,5 +27,5 @@ const scope = plainScope(coupon.scope);
     </ul>
     <p class="note">{formatValidity(coupon.valid_from, coupon.valid_until)}</p>
   </div>
-  <a class="cta" href={link} target="_blank" rel="sponsored noopener" data-copy={coupon.code}>{COUPONS_USE}</a>
+  <a class="cta" href={link} target="_blank" rel="sponsored noopener" data-copy={coupon.code} data-affiliate-link data-affiliate-placement="coupon_card">{COUPONS_USE}</a>
 </article>

@@ -50,7 +50,7 @@ const scale = (price: number) => `${Math.round((price / max) * 1000) / 10}%`;
         </div>
       ))
     }
-    <a class="cta" href={deal.affiliate_link} rel="sponsored noopener">{CTA_ML}</a>
+    <a class="cta" href={deal.affiliate_link} rel="sponsored noopener" data-affiliate-link data-affiliate-placement="deal_card" data-product-id={deal.model_id}>{CTA_ML}</a>
     <p class="note">{CARD_FOOTER(formatDateShort(deal.run_date))}</p>
   </div>
 </article>

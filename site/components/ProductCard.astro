@@ -31,7 +31,7 @@ const photo = catalogPhotoUrl(c.image_url);
       <strong>{formatArs(c.ml.price_ars)}</strong>
       <small>{PRICE_AS_OF(formatDateShort(latest.run_date))}</small>
     </p>
-    <a class="cta" href={latest.affiliate_link} rel="sponsored noopener">{CTA_ML}</a>
+    <a class="cta" href={latest.affiliate_link} rel="sponsored noopener" data-affiliate-link data-affiliate-placement="product_card" data-product-id={product.slug}>{CTA_ML}</a>
   </div>
 </article>
 
