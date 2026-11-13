@@ -23,6 +23,11 @@ describe("product pages build", () => {
     });
   }, 240_000);
 
+  it("ships a favicon and links it", () => {
+    expect(site.exists("favicon.svg")).toBe(true);
+    expect(site.read("producto/hp-i3/index.html")).toContain('href="/favicon.svg"');
+  });
+
   it("builds one page per model", () => {
     expect(site.exists("producto/hp-i3/index.html")).toBe(true);
     expect(site.exists("producto/old-1/index.html")).toBe(true);

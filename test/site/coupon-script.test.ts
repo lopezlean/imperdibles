@@ -18,7 +18,7 @@ function fakeDate(getNow: () => number): DateConstructor {
   } as DateConstructor;
 }
 
-function setup(cards: { from: number; until: number }[], navigatorImpl: unknown) {
+function setup(cards: { from: number; until: number }[], navigatorImpl: unknown, capture: (name: string) => void = () => {}) {
   let now = NOW;
   const els: FakeEl[] = cards.map((c) => ({ dataset: { from: iso(c.from), until: iso(c.until) }, hidden: false }));
   const empty: FakeEl = { dataset: {}, hidden: true };
@@ -30,7 +30,7 @@ function setup(cards: { from: number; until: number }[], navigatorImpl: unknown)
       listeners[type] = fn;
     },
   };
-  new Function("document", "navigator", "Date", COUPON_PAGE_SCRIPT)(document, navigatorImpl, fakeDate(() => now));
+  new Function("document", "navigator", "Date", "window", COUPON_PAGE_SCRIPT)(document, navigatorImpl, fakeDate(() => now), { posthog: { capture } });
   return {
     els,
     empty,
@@ -91,11 +91,13 @@ describe("coupon page script", () => {
 
   it("confirms the copy on the button and restores its label", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    const { click } = setup([{ from: -1, until: 60 }], { clipboard: { writeText } });
+    const capture = vi.fn();
+    const { click } = setup([{ from: -1, until: 60 }], { clipboard: { writeText } }, capture);
     const button: FakeEl = { dataset: { copy: "X1" }, hidden: false, textContent: "Usar" };
     click(button);
     await vi.advanceTimersByTimeAsync(0);
     expect(button.textContent).toBe("Código copiado");
+    expect(capture).toHaveBeenCalledWith("coupon_code_copied");
     await vi.advanceTimersByTimeAsync(2500);
     expect(button.textContent).toBe("Usar");
   });
