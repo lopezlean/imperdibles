@@ -10,6 +10,7 @@ import {
   productPath,
   productSlug,
   categoryPath,
+  ogPath,
   weekdayName,
 } from "../../site/lib/slugs.js";
 
@@ -81,5 +82,6 @@ describe("product and category paths", () => {
   it("builds product and category paths", () => {
     expect(productPath("x")).toBe("/producto/x/");
     expect(categoryPath("smart-tv")).toBe("/categoria/smart-tv/");
+    expect(ogPath("hp-i3")).toBe("/og/hp-i3.png");
   });
 });

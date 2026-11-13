@@ -28,6 +28,21 @@ describe("product pages build", () => {
     expect(site.read("producto/hp-i3/index.html")).toContain('href="/favicon.svg"');
   });
 
+  it("serves a share card PNG per product and uses it as og:image", () => {
+    expect([...site.bytes("og/hp-i3.png").subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
+    expect(site.exists("og/old-1.png")).toBe(true);
+    const html = site.read("producto/hp-i3/index.html");
+    expect(html).toMatch(/property="og:image"[^>]*content="https:\/\/imperdibles\.com\.ar\/og\/hp-i3\.png\?v=[0-9a-f]+"/);
+  });
+
+  it("renders a share control that shares the product page, never the affiliate link", () => {
+    const html = site.read("producto/hp-i3/index.html");
+    expect(html).toContain("Compartir");
+    const wa = html.match(/href="(https:\/\/wa\.me\/[^"]*)"/)?.[1] ?? "";
+    expect(decodeURIComponent(wa.replace(/&amp;/g, "&"))).toContain("https://imperdibles.com.ar/producto/hp-i3/");
+    expect(wa).not.toContain("meli.la");
+  });
+
   it("builds one page per model", () => {
     expect(site.exists("producto/hp-i3/index.html")).toBe(true);
     expect(site.exists("producto/old-1/index.html")).toBe(true);

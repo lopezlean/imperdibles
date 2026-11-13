@@ -1,0 +1,48 @@
+---
+import { COPY_LINK_LABEL, LINK_COPIED, SHARE_LABEL, WHATSAPP_LABEL } from "../../src/output/copy.js";
+import { whatsappUrl } from "../lib/share.js";
+
+export interface Props {
+  title: string;
+  text: string;
+  url: string;
+}
+
+const { title, text, url } = Astro.props;
+---
+
+<div class="share" data-share-root data-title={title} data-text={text} data-url={url}>
+  <button type="button" class="chip" data-share hidden>{SHARE_LABEL}</button>
+  <a class="chip" data-wa href={whatsappUrl(text, url)} target="_blank" rel="noopener">{WHATSAPP_LABEL}</a>
+  <button type="button" class="chip" data-copy-link data-done={LINK_COPIED}>{COPY_LINK_LABEL}</button>
+</div>
+
+<script is:inline>
+  (function () {
+    var root = document.querySelector("[data-share-root]");
+    if (!root) return;
+    var share = root.querySelector("[data-share]");
+    var wa = root.querySelector("[data-wa]");
+    var copy = root.querySelector("[data-copy-link]");
+    var data = { title: root.dataset.title, text: root.dataset.text, url: root.dataset.url };
+    if (navigator.share) {
+      share.hidden = false;
+      wa.hidden = true;
+      share.addEventListener("click", function () {
+        navigator.share(data).catch(function () {});
+      });
+    }
+    copy.addEventListener("click", function () {
+      var label = copy.textContent;
+      if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+      navigator.clipboard.writeText(data.url).then(function () {
+        copy.textContent = copy.dataset.done;
+        setTimeout(function () { copy.textContent = label; }, 2000);
+      }, function () {});
+    });
+  })();
+</script>
+
+<style>
+  .share { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+</style>
