@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { shareText } from "../../src/output/copy.js";
-import { whatsappUrl } from "../../site/lib/share.js";
+import { shareMessage, whatsappUrl } from "../../site/lib/share.js";
 
 describe("share", () => {
   it("shareText carries the title, the price and the discount", () => {
@@ -10,10 +10,14 @@ describe("share", () => {
     expect(text).toContain("17,5%");
   });
 
-  it("whatsappUrl encodes the text and the page URL together", () => {
-    const url = whatsappUrl("Robot & Co", "https://x.test/producto/a/");
-    expect(url.startsWith("https://wa.me/?text=")).toBe(true);
-    expect(url).toContain(encodeURIComponent("Robot & Co https://x.test/producto/a/"));
+  it("shareMessage puts the page URL first and the affiliate buy link below it", () => {
+    const msg = shareMessage("Robot Zeta: $1.", "https://x.test/producto/a/", "https://meli.la/abc");
+    expect(msg).toBe("Robot Zeta: $1.\nhttps://x.test/producto/a/\n\nComprar en Mercado Libre: https://meli.la/abc");
+  });
+
+  it("whatsappUrl encodes the whole message", () => {
+    const url = whatsappUrl("Robot & Co\nhttps://x.test/p/");
+    expect(url).toBe(`https://wa.me/?text=${encodeURIComponent("Robot & Co\nhttps://x.test/p/")}`);
     expect(url).not.toContain("& ");
   });
 });
