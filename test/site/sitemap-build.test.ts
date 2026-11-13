@@ -64,6 +64,15 @@ describe("sitemap build", () => {
     expect(block).not.toContain("<lastmod>");
   });
 
+  it("lists product and category pages with lastmod and photos", () => {
+    const xml = site.read("sitemap-0.xml");
+    const product = entry(xml, "/producto/m-b/");
+    expect(product).toContain("<lastmod>");
+    expect(imageLocs(product)).toEqual([IMG_B]);
+    expect(imageLocs(entry(xml, "/producto/m-c/"))).toEqual([]);
+    expect(entry(xml, "/categoria/aspiradoras-robot/")).toContain("<lastmod>");
+  });
+
   it("declares only the base and image namespaces", () => {
     const xml = site.read("sitemap-0.xml");
     const urlset = /<urlset[^>]*>/.exec(xml)![0];
