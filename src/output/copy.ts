@@ -77,6 +77,7 @@ export const NAV = {
   como: "Cómo elegimos",
   canal: "Canal de Telegram",
   cupones: "Cupones",
+  blackFriday: "Black Friday",
 } as const;
 
 /** /cupones page copy. */
@@ -123,3 +124,13 @@ export const REVIEWS_LINK = "Ver opiniones en Mercado Libre";
 export const HISTORY_HEADING = "Cuándo fue imperdible";
 export const RELATED_HEADING = "Otros imperdibles de la categoría";
 export const CATEGORIES_LABEL = "Categorías";
+
+/** /black-friday page. */
+export const BLACK_FRIDAY_TITLE = "Ofertas Black Friday en Mercado Libre: solo precios más bajos que en otras tiendas | imperdibles";
+export const BLACK_FRIDAY_H1 = "Black Friday en Mercado Libre: solo lo que realmente sale menos";
+export const BLACK_FRIDAY_LEAD =
+  "En Black Friday abundan los descuentos inflados. Acá solo figura lo que cuesta menos en Mercado Libre que en otras tiendas, con los dos precios y la fecha a la vista.";
+export const BLACK_FRIDAY_DESCRIPTION = (count: number): string =>
+  `${count === 1 ? "1 producto" : `${count} productos`} de Mercado Libre más baratos que en otras tiendas, con precios comparados y fecha. Sin descuentos inflados.`;
+export const BLACK_FRIDAY_EMPTY = "Todavía no hay imperdibles vigentes.";
+export const BLACK_FRIDAY_EMPTY_LEAD = "Mientras tanto, mirá los cupones vigentes o seguí el canal de Telegram.";

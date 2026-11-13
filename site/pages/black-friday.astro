@@ -1,0 +1,66 @@
+---
+import {
+  BLACK_FRIDAY_DESCRIPTION,
+  BLACK_FRIDAY_EMPTY,
+  BLACK_FRIDAY_EMPTY_LEAD,
+  BLACK_FRIDAY_H1,
+  BLACK_FRIDAY_LEAD,
+  BLACK_FRIDAY_TITLE,
+} from "../../src/output/copy.js";
+import ProductCard from "../components/ProductCard.astro";
+import Base from "../layouts/Base.astro";
+import { readSiteEnv } from "../lib/env.js";
+import { freshByCategory } from "../lib/products.js";
+import { absoluteUrl, breadcrumbLd, categoryItemListLd, ogImageOf } from "../lib/seo.js";
+import { getSiteData } from "../lib/site-data.js";
+import { categoryPath } from "../lib/slugs.js";
+
+const d = await getSiteData();
+const { siteUrl, channelUrl } = readSiteEnv(process.env);
+const today = new Date().toISOString().slice(0, 10);
+const groups = freshByCategory(d, today);
+const products = groups.flatMap((g) => g.products);
+const empty = products.length === 0;
+---
+
+<Base
+  title={BLACK_FRIDAY_TITLE}
+  description={BLACK_FRIDAY_DESCRIPTION(products.length)}
+  path="/black-friday/"
+  ogImage={ogImageOf(products.map((p) => p.latest))}
+  jsonLd={[
+    breadcrumbLd([
+      { name: "Inicio", url: absoluteUrl(siteUrl, "/") },
+      { name: "Black Friday", url: absoluteUrl(siteUrl, "/black-friday/") },
+    ]),
+    categoryItemListLd(products, siteUrl),
+  ]}
+  noindex={empty}
+  threshold_pct={d.threshold_pct}
+  channelUrl={channelUrl}
+>
+  <main class="wrap today">
+    <div class="sel">
+      <h1>{BLACK_FRIDAY_H1}</h1>
+      <p>{BLACK_FRIDAY_LEAD}</p>
+    </div>
+    {
+      empty ? (
+        <div class="empty">
+          <h2>{BLACK_FRIDAY_EMPTY}</h2>
+          <p>{BLACK_FRIDAY_EMPTY_LEAD}</p>
+          <p><a href="/cupones/">Cupones</a></p>
+        </div>
+      ) : (
+        groups.map((g) => (
+          <section aria-labelledby={`cat-${g.category.id}`}>
+            <h2 id={`cat-${g.category.id}`}><a href={categoryPath(g.category.id)}>{g.category.name}</a></h2>
+            <div class="list">
+              {g.products.map((product) => <ProductCard product={product} />)}
+            </div>
+          </section>
+        ))
+      )
+    }
+  </main>
+</Base>

@@ -88,3 +88,11 @@ export function activeCategories(d: SiteData): SiteData["categories"] {
   const owned = new Set(buildProducts(d).map((p) => p.category));
   return d.categories.filter((c) => owned.has(c.id));
 }
+
+/** Non-stale products grouped by active category, in category order; empty groups are dropped. Each group is capped at CATEGORY_LIMIT. */
+export function freshByCategory(d: SiteData, today: string): { category: SiteData["categories"][number]; products: Product[] }[] {
+  const fresh = buildProducts(d).filter((p) => !isStale(p.latest.run_date, today));
+  return d.categories
+    .map((category) => ({ category, products: categoryProducts(fresh, category.id) }))
+    .filter((g) => g.products.length > 0);
+}
