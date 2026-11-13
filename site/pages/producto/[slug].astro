@@ -2,9 +2,11 @@
 import { HISTORY_HEADING, RELATED_HEADING, REVIEWS_LINK, STALE_NOTICE, shareText } from "../../../src/output/copy.js";
 import { formatArs, formatDateLong, formatPct } from "../../../src/output/format.js";
 import DealCard from "../../components/DealCard.astro";
+import PriceChart from "../../components/PriceChart.astro";
 import ShareButtons from "../../components/ShareButtons.astro";
 import Base from "../../layouts/Base.astro";
 import { cardVersion } from "../../lib/card-version.js";
+import { priceHistory } from "../../lib/price-history.js";
 import { activeCategories, buildProducts, isStale } from "../../lib/products.js";
 import { readSiteEnv } from "../../lib/env.js";
 import { absoluteUrl, breadcrumbLd, ogCardUrl, productDescription, productLd, productTitle } from "../../lib/seo.js";
@@ -64,6 +66,7 @@ const text = shareText(c.title, c.ml.price_ars, formatPct(c));
     <p class="reviews">
       <a href={product.latest.affiliate_link} rel="sponsored noopener" target="_blank">{REVIEWS_LINK}</a>
     </p>
+    <PriceChart history={priceHistory(product)} />
     <section aria-labelledby="historial">
       <h2 id="historial">{HISTORY_HEADING}</h2>
       <ul class="plain">
