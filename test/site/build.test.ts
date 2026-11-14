@@ -93,6 +93,14 @@ describe("site build", () => {
     }
   });
 
+  it("writes llms.txt with today's offers", () => {
+    const txt = site.read("llms.txt");
+    expect(txt.startsWith("# imperdibles\n")).toBe(true);
+    expect(txt).toContain("[Robot Alfa](https://imperdibles.com.ar/producto/m-a/): $750");
+    expect(txt).toContain("](https://imperdibles.com.ar/transparencia/)");
+    expect(site.read("robots.txt")).toContain("User-agent: GPTBot");
+  });
+
   it("writes robots and sitemap", () => {
     const robots = site.read("robots.txt");
     expect(robots).toContain("Sitemap: https://imperdibles.com.ar/sitemap-index.xml");

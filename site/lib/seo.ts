@@ -68,8 +68,31 @@ export const itemListLd = (items: Deal[]): object => ({
 /** JSON for an inline script tag; "<" is escaped so the content cannot close the tag. */
 export const jsonLdScript = (data: object): string => JSON.stringify(data).replace(/</g, "\\u003c");
 
-export const buildRobotsTxt = (siteUrl: string): string =>
-  `User-agent: *\nAllow: /\nDisallow: /internal/\nDisallow: /telegram/\n\nSitemap: ${absoluteUrl(siteUrl, "/sitemap-index.xml")}\n`;
+/** AI search and answer-engine crawlers that get an explicit group (same rules as `*`). */
+export const AI_CRAWLERS = [
+  "GPTBot",
+  "OAI-SearchBot",
+  "ChatGPT-User",
+  "ClaudeBot",
+  "Claude-SearchBot",
+  "Claude-User",
+  "PerplexityBot",
+  "Perplexity-User",
+  "Google-Extended",
+  "Applebot-Extended",
+  "Bingbot",
+] as const;
+
+const ROBOTS_RULES = "Allow: /\nDisallow: /internal/\nDisallow: /telegram/\n";
+
+export const buildRobotsTxt = (siteUrl: string): string => {
+  const groups = ["*", ...AI_CRAWLERS].map((agent) => `User-agent: ${agent}\n${ROBOTS_RULES}`);
+  return [
+    ...groups.map((g, i) => (i === 0 ? g : `\n${g}`)),
+    `\n# LLM-friendly summary: ${absoluteUrl(siteUrl, "/llms.txt")}\n`,
+    `\nSitemap: ${absoluteUrl(siteUrl, "/sitemap-index.xml")}\n`,
+  ].join("");
+};
 
 export const productTitle = (p: Product): string =>
   `${p.latest.candidate.title}: ${formatPct(p.latest.candidate)}% más barato en Mercado Libre | imperdibles`;

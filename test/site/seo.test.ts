@@ -3,6 +3,7 @@ import {
   absoluteUrl,
   breadcrumbLd,
   buildDescription,
+  AI_CRAWLERS,
   buildRobotsTxt,
   categoryItemListLd,
   ogCardUrl,
@@ -139,10 +140,23 @@ describe("json-ld", () => {
 });
 
 describe("buildRobotsTxt", () => {
-  it("allows all, blocks internal routes and points to the sitemap index", () => {
-    expect(buildRobotsTxt("https://imperdibles.com.ar")).toBe(
-      "User-agent: *\nAllow: /\nDisallow: /internal/\nDisallow: /telegram/\n\nSitemap: https://imperdibles.com.ar/sitemap-index.xml\n",
+  const txt = buildRobotsTxt("https://imperdibles.com.ar");
+  const group = (agent: string) => new RegExp(`User-agent: ${agent}\\nAllow: /\\nDisallow: /internal/\\nDisallow: /telegram/\\n`);
+
+  it("keeps the wildcard group first and points to the sitemap index", () => {
+    expect(txt.startsWith("User-agent: *\nAllow: /\nDisallow: /internal/\nDisallow: /telegram/\n")).toBe(true);
+    expect(txt).toContain("Sitemap: https://imperdibles.com.ar/sitemap-index.xml\n");
+  });
+
+  it("explicitly allows every AI crawler with the same disallows", () => {
+    for (const agent of AI_CRAWLERS) expect(txt).toMatch(group(agent));
+    expect(AI_CRAWLERS).toEqual(
+      expect.arrayContaining(["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User", "Google-Extended", "Applebot-Extended", "Bingbot"]),
     );
+  });
+
+  it("references llms.txt in a comment", () => {
+    expect(txt).toContain("# LLM-friendly summary: https://imperdibles.com.ar/llms.txt\n");
   });
 });
 
